@@ -351,6 +351,7 @@ function Create({auth,produits,departements,departementPrincipal,motifs,fourniss
                                             setData("date",newValue);
                                         }}
                                     />
+
                                 </div>
                                 <div>
                                     <div className={"md:col-span-2 font-bold text-orange-500"}>
