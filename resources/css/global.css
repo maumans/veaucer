@@ -1,0 +1,23 @@
+.MuiInputBase-input:focus
+{
+    --tw-ring-color: transparent !important;
+}
+
+/*!* Appliquez ces styles lorsque le champ de texte est en focus *!
+.MuiTextField-root .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+    border-color: orange; !* Couleur de la bordure en orange *!
+}
+
+!* Appliquez ces styles lorsque le champ de texte est survolé *!
+.MuiTextField-root .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+    border-color: orange; !* Couleur de la bordure en orange lors du survol *!
+}
+
+!* Styles pour les labels *!
+.MuiInputLabel-root {
+    color: orange; !* Couleur du label en orange *!
+}
+
+.MuiInputLabel-root.Mui-focused {
+    color: orange; !* Couleur du label en orange lors du focus *!
+}*/
