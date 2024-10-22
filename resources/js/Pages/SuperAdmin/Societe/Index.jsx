@@ -210,6 +210,33 @@ function Index({auth,errors,referentiels,societes,typeSocietes,error,success}) {
         router.delete(route('superAdmin.societe.destroy',{userId:auth.user.id,id:data.id}),{onSuccess:()=>setOpenDelete(false)})
     };
 
+    const societesActions = [
+        {
+            permission: 'show-societes',
+            condition: (row) => true, // toujours afficher
+            title: 'Détails',
+            color: 'secondary',
+            icon: <Visibility />,
+            onClick: (row) => handleShow(row.original.slug),
+        },
+        {
+            permission: 'edit-societes',
+            condition: (row) => true, // toujours afficher si l'édition est autorisée
+            title: 'Modifier',
+            color: 'info',
+            icon: <Edit />,
+            onClick: (row) => handleEdit(row.original.slug),
+        },
+        {
+            permission: 'delete-societes',
+            condition: (row) => true, // afficher si 'delete-societes' est permis
+            title: (row) => row.original.status ? 'Suspendre' : 'Activer',
+            color: (row) => row.original.status ? 'error' : 'success',
+            icon: (row) => row.original.status ? <Delete /> : <Check />,
+            onClick: (row) => handleDelete(row.original.slug, row.original.status ? 'delete' : 'check'),
+        }
+    ];
+
     const columns = useMemo(
         () => [
             {
@@ -259,31 +286,26 @@ function Index({auth,errors,referentiels,societes,typeSocietes,error,success}) {
             {
                 accessorKey: 'action',
                 header: 'Action',
-                Cell: ({ row }) =>(
+                enableColumnFilter: false,
+                Cell: ({ row }) => (
                     <div className={'flex gap-2'} key={row.original.id}>
-                        <Button onClick={()=>handleShow(row.original)} variant={'contained'} size={'small'} color={'info'}>
-                            <Visibility></Visibility>
-                        </Button>
-
-                        <Button onClick={()=>handleEdit(row.original)} variant={'contained'} size={'small'} color={'secondary'}>
-                            <Edit></Edit>
-                        </Button>
-
-                        {
-                            row.original.status
-                            ?
-                            <Button onClick={()=>handleDelete(row.original.id,"delete")} variant={'contained'} size={'small'} color={'error'}>
-                                <Delete></Delete>
-                            </Button>
-                            :
-                            <Button onClick={()=>handleDelete(row.original.id,'check')} variant={'contained'} size={'small'} color={'success'}>
-                                <Check></Check>
-                            </Button>
-                        }
+                        {societesActions.map(action =>
+                                auth?.permissions?.includes(action.permission) && action.condition(row) && (
+                                    <Button
+                                        key={action.permission}
+                                        title={typeof action.title === 'function' ? action.title(row) : action.title}
+                                        onClick={() => action.onClick(row)}
+                                        variant={'outlined'}
+                                        size={'small'}
+                                        color={typeof action.color === 'function' ? action.color(row) : action.color}
+                                    >
+                                        {typeof action.icon === 'function' ? action.icon(row) : action.icon}
+                                    </Button>
+                                )
+                        )}
                     </div>
                 )
-
-            },
+            }
         ],
         [],
     );
@@ -322,35 +344,25 @@ function Index({auth,errors,referentiels,societes,typeSocietes,error,success}) {
     });
 
     return (
-        <ReferentielLayout
+        <PanelLayout
+            auth={auth}
             success={success}
             error={error}
-           auth={auth}
-           errors={errors}
-           referentiels={referentiels}
-           referentiel={'Société'}
-           active={'referentiel'}
-           sousActive={'superAdmin.societe.index'}
-           breadcrumbs={[
-               {
-                   text:"Société",
-                   href:route("superAdmin.societe.index",auth.user.id),
-                   active:false
-               },
-               /*{
-                   text:"Création",
-                   href:route("superAdmin.societe.create",[auth.user.id]),
-                   active:true
-               }*/
-           ]}
+            active={'societe'}
         >
             <div className={'grid gap-5 bg-gray-200 p-2 rounded border'}>
 
 
                 <div className={'flex justify-end'}>
-                    <Button color={'warning'} variant={'contained'} onClick={handleClickOpen} >
-                        <AddCircle className={'mr-1'}></AddCircle> Ajout société
-                    </Button>
+                    {
+                        auth?.permissions?.some(permission=>permission==='create-societes') ?
+                            <Button color={'warning'} variant={'contained'} onClick={handleClickOpen} >
+                                <AddCircle className={'mr-1'}></AddCircle> Ajout société
+                            </Button>
+                            :
+                            ""
+                    }
+
 
                     {
                         ///////ADD DIALOG
@@ -677,7 +689,7 @@ function Index({auth,errors,referentiels,societes,typeSocietes,error,success}) {
                 />
             </div>
 
-        </ReferentielLayout>
+        </PanelLayout>
     );
 }
 

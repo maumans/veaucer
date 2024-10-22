@@ -10,4 +10,14 @@ class Depense extends Model
     use HasFactory;
 
     protected $guarded=[];
+
+    public function operation(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Operation::class);
+    }
+
+    public function motif(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Motif::class);
+    }
 }

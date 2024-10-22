@@ -21,6 +21,11 @@ class Produit extends Model
         return $this->belongsTo(SousCategorie::class);
     }
 
+    public function operations()
+    {
+        return $this->hasMany(OperationProduit::class);
+    }
+
     public function fournisseurPrincipal()
     {
         return $this->belongsTo(Fournisseur::class);

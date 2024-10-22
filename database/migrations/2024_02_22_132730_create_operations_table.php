@@ -34,7 +34,8 @@ return new class extends Migration
             $table->foreignId('caisse_destinataire_id')->nullable()->constrained('caisses')->cascadeOnDelete();
             $table->foreignId('stock_id')->nullable()->constrained('stocks')->cascadeOnDelete();
             $table->foreignId('stock_destinataire_id')->nullable()->constrained('stocks')->cascadeOnDelete();
-            $table->enum('status',['commandé','en attente','reçu',"annulé"])->nullable();
+            $table->enum('etat',['EN ATTENTE','COMMANDE','LIVRE',"ANNULE"])->default("EN ATTENTE")->nullable();
+            $table->boolean('status')->default(true)->nullable();
             $table->timestamps();
         });
     }

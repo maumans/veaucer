@@ -28,7 +28,7 @@ class Societe extends Model
 
     public function caissePrincipale()
     {
-        return $this->hasOne(Caisse::class, 'caisse_principale_id');
+        return $this->belongsTo(Caisse::class, 'caisse_principale_id')->with('departement');
     }
 
     /*public function roleUsers()

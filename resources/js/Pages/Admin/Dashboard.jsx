@@ -85,7 +85,7 @@ function Index({auth,errors}) {
                     <div className={'grid xl:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-2'}>
                         {
                             restes.map(({icon,title,montant,color,id})=>(
-                                <ColorIconCard id={id} icon={icon} color={color} montant={montant} title={title} />                            ))
+                                <ColorIconCard key={id} id={id} icon={icon} color={color} montant={montant} title={title} />                            ))
                         }
 
                     </div>
@@ -98,7 +98,7 @@ function Index({auth,errors}) {
                     <div className={'grid xl:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-2'}>
                         {
                             debut.map(({icon,title,montant,color,id})=>(
-                                <ColorIconCard id={id} icon={icon} color={color} montant={montant} title={title} />
+                                <ColorIconCard key={id} id={id} icon={icon} color={color} montant={montant} title={title} />
                                 ))
                         }
 

@@ -47,7 +47,7 @@ function Create({auth,typeProduits,typeProduit,sousCategories,fournisseurs,devis
             sousActive={'produit'}
             breadcrumbs={[
                 {
-                    text:"Inventaire",
+                    text:"Produit",
                     href:route("admin.produit.index",auth.user.id),
                     active:false
                 },

@@ -18,7 +18,7 @@ class CategorieProduitSeeder extends Seeder
     {
         DB::table('categories')->delete();
 
-        $categorie = Categorie::create([
+        $restaurant = Categorie::create([
             "nom"=>'restaurant',
             'libelle'=>"Restaurant"
         ]);
@@ -26,19 +26,19 @@ class CategorieProduitSeeder extends Seeder
         SousCategorie::create([
             "nom"=>'jus',
             'libelle'=>"Jus",
-            'categorie_id'=>$categorie->id
+            'categorie_id'=>$restaurant->id
         ]);
 
         SousCategorie::create([
             "nom"=>'alcool',
             'libelle'=>"Alcool",
-            'categorie_id'=>$categorie->id
+            'categorie_id'=>$restaurant->id
         ]);
 
         SousCategorie::create([
             "nom"=>'plat',
             'libelle'=>"Plat",
-            'categorie_id'=>$categorie->id
+            'categorie_id'=>$restaurant->id
         ]);
     }
 }

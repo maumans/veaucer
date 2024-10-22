@@ -25,22 +25,20 @@ class ProfilController extends Controller
 
     public function connect(RoleUser $roleUser)
     {
-        session()->put("profil",$roleUser->role->nom);
+        session()->put("profil",$roleUser->role->name);
         session()->put("societe",$roleUser->societe);
 
-        switch ($roleUser->role->nom) {
-            case "superAdmin":
+        switch ($roleUser->role->name) {
+            case "SuperAdmin":
                 return redirect()->route("superAdmin.dashboard",Auth::id());
-            case "admin":
+            case "Admin":
                 return redirect()->route("admin.dashboard",Auth::id());
-            case "employe":
+            case "Employe":
                 return redirect()->route("employe.dashboard",Auth::id());
-            case "client":
-                return redirect()->route("client.dashboard",Auth::id());
             case "comptable":
-                //session()->put("caisse",Caisse::where('user_id',Auth::id())->where("societe_id",$roleUser->societe->id)->whereRelation("typeCaisse","libelle","Caisse de zone")->first());
-                //session()->put("zone",Caisse::where('user_id',Auth::id())->where("societe_id",$roleUser->societe->id)->whereRelation("typeCaisse","libelle","Caisse de zone")->first()->zone);
                 return redirect()->route("comptable.dashboard",Auth::id());
+            default:
+                return null;
         }
 
     }

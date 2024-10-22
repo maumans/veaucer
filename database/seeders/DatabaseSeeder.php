@@ -23,16 +23,16 @@ class DatabaseSeeder extends Seeder
         // ]);
 
         $this->call([
-            //RolePermissionSeeder::class,
+            /*RolePermissionSeeder::class,
             ReferentielSeeder::class,
-            RoleUserSeeder::class,
             TypeSocieteSeeder::class,
             SocieteSeeder::class,
             FournisseurSeeder::class,
             TypeProduitSeeder::class,
             CategorieProduitSeeder::class,
             MotifSeeder::class,
-            TypeOperationSeeder::class,
+            TypeOperationSeeder::class,*/
+            FastSeeder::class
         ]);
 
     }

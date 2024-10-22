@@ -331,7 +331,7 @@ function Index({auth,errors,produits,typeProduits,sousCategories,error,success})
             sousActive={'produit'}
             breadcrumbs={[
                 {
-                    text:"Inventaire",
+                    text:"Produit",
                     href:route("admin.produit.index",[auth.user.id]),
                     active:false
                 },

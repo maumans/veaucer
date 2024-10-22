@@ -18,11 +18,12 @@ import {Alert, AlertTitle, Autocomplete, Button, Snackbar} from "@mui/material";
 import {Add, AddCircle, AddOutlined, Check, Close, Delete, Edit, Visibility} from "@mui/icons-material";
 import InputError from "@/Components/InputError.jsx";
 import {formatNumber} from "chart.js/helpers";
+import useDidUpdate from "@/Fonctions/useDidUpadte.jsx";
+import dayjs from "dayjs";
 
 function Index({auth,errors,appros,typeProduits,categorieProduits,error,success}) {
     //PAGINATION
 
-    const [approsSt, setApprosSt] = useState([]);
     const [isError, setIsError] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isRefetching, setIsRefetching] = useState(false);
@@ -38,56 +39,29 @@ function Index({auth,errors,appros,typeProduits,categorieProduits,error,success}
         pageSize:appros.per_page,
     });
 
-    useEffect(()=>{
-        setRowCount(appros.total)
-        setApprosSt(appros.data)
-        setIsRefetching(false)
-    },[appros])
 
-    //if you want to avoid useEffect, look at the React Query example instead
-    useEffect(() => {
+    useDidUpdate(() => {
 
-        /*if (!approsSt.length) {
-            setIsLoading(true);
-        } else {
-            setIsRefetching(true);
-        }*/
-
-        setIsRefetching(true);
-        setIsLoading(true);
-
-        axios.post(route('admin.stockAppro.paginationFiltre'),
+        router.get(route('admin.stockAppro.index',[auth.user.id]),
             {
                 'start': pagination.pageIndex * pagination.pageSize,
                 "size": pagination.pageSize,
-                'filters': columnFilters ?? [],
+                'filters': (columnFilters??[]).reduce((acc,item)=> {
+                    acc[item.id] = item.value;
+                    return acc;
+                },{}),
                 'globalFilter': globalFilter ?? '',
                 'sorting': sorting ?? []
+            },{
+                preserveScroll:true,preserveState:true
             })
-            .then(response => {
-                setApprosSt(response.data.data);
-                setRowCount(response.data.rowCount);
-
-                setIsLoading(false)
-                setIsRefetching(false);
-            })
-            .catch(err => {
-                setIsError(true);
-                console.error(error);
-            })
-
-        setIsError(false);
-        setIsLoading(false);
-        setIsRefetching(false);
-
-    }, [
-        columnFilters,
-        globalFilter,
+    },[
         pagination.pageIndex,
         pagination.pageSize,
-        sorting,
+        globalFilter,
+        columnFilters,
+        sorting
     ])
-
 
     //PAGINATION
 
@@ -152,6 +126,7 @@ function Index({auth,errors,appros,typeProduits,categorieProduits,error,success}
     const handleEdit = (  el ) => {
         router.get(route("admin.stockAppro.edit",[auth.user.id,el.id]),{preserveScroll:true})
 
+
         /*setData({
             'id' : el.id,
             'nom': el.nom || '',
@@ -162,15 +137,9 @@ function Index({auth,errors,appros,typeProduits,categorieProduits,error,success}
         setOpenEdit(true);*/
     };
 
-    const handleShow = (  el ) => {
-        setData({
-            'id' : el.id,
-            'nom': el.nom || '',
-            'typeProduit':el.type_souscripteur || null,
-            'categorieProduit':el.categorie_souscripteur ||null,
-        })
-
-        setOpenShow(true);
+    const handleShow = (  id ) => {
+        alert(id);
+        router.get(route('admin.stockAppro.show',[auth.user.id,id]))
     };
 
     const handleDelete = (id,message) => {
@@ -203,17 +172,20 @@ function Index({auth,errors,appros,typeProduits,categorieProduits,error,success}
                 accessorKey: 'date', //access nested data with dot notation
                 header: 'Date',
                 //size: 10,
+                Cell: ({row}) =>(
+                    dayjs(row.original.date).format('DD/MM/YYYY')
+                )
             },
             {
                 accessorKey: 'total', //access nested data with dot notation
                 header: 'Total',
-                valueLabelFormat: (value) =>(
-                    formatNumber(value.total)+' GNF'
+                Cell: ({row}) =>(
+                    formatNumber(row.original.total)+' GNF'
                 )
                 //size: 10,
             },
             {
-                accessorKey: 'fournisseur',
+                accessorKey: 'fournisseur.nom',
                 header: 'Fournisseur',
                 //size: 50,
                 Cell: ({ row }) =>(
@@ -221,24 +193,24 @@ function Index({auth,errors,appros,typeProduits,categorieProduits,error,success}
                 )
             },
             {
-                accessorKey: 'status',
-                header: 'Status',
+                accessorKey: 'etat',
+                header: 'Etat',
                 //size: 50,
                 Cell: ({ row }) =>(
-                    row.original.status === 'commandé'
+                    row.original.etat === 'COMMANDE'
                         ?
                         <div className={'p-2 font-bold bg-green-500 text-white w-fit h-fit rounded'}>
-                            {row.original.status}
+                            {row.original.etat}
                         </div>
                         :
-                        row.original.status === 'annulé'
+                        row.original.etat === 'ANNULE'
                             ?
                             <div className={'p-2 font-bold bg-red-500 text-white w-fit h-fit rounded'}>
-                                {row.original.status}
+                                {row.original.etat}
                             </div>
                             :
                         <div className={'p-2 font-bold bg-blue-500 text-white w-fit h-fit rounded'}>
-                            {row.original.status}
+                            {row.original.etat}
                         </div>
                 )
             },
@@ -247,24 +219,30 @@ function Index({auth,errors,appros,typeProduits,categorieProduits,error,success}
                 header: 'Action',
                 Cell: ({ row }) =>(
                     <div className={'flex gap-2'} key={row.original.id}>
-                        <Button onClick={()=>handleShow(row.original)} variant={'contained'} size={'small'} color={'info'}>
+                        <Button onClick={()=>handleShow(row.original.id)} variant={'contained'} size={'small'} color={'info'}>
                             <Visibility></Visibility>
                         </Button>
 
-                        <Button onClick={()=>handleEdit(row.original)} variant={'contained'} size={'small'} color={'secondary'}>
-                            <Edit></Edit>
-                        </Button>
 
                         {
-                            row.original.status
-                                ?
-                                <Button onClick={()=>handleDelete(row.original.id,"delete")} variant={'contained'} size={'small'} color={'error'}>
-                                    <Delete></Delete>
+                            row.original.etat==="COMMANDE"
+                                &&
+                            <>
+                                <Button onClick={()=>handleEdit(row.original)} variant={'contained'} size={'small'} color={'secondary'}>
+                                    <Edit></Edit>
                                 </Button>
-                                :
-                                <Button onClick={()=>handleDelete(row.original.id,'check')} variant={'contained'} size={'small'} color={'success'}>
-                                    <Check></Check>
-                                </Button>
+                                {
+                                    row.original.status
+                                    ?
+                                    <Button onClick={()=>handleDelete(row.original.id,"delete")} variant={'contained'} size={'small'} color={'error'}>
+                                        <Delete></Delete>
+                                    </Button>
+                                    :
+                                    <Button onClick={()=>handleDelete(row.original.id,'check')} variant={'contained'} size={'small'} color={'success'}>
+                                        <Check></Check>
+                                    </Button>
+                                }
+                            </>
                         }
                     </div>
                 )
@@ -277,7 +255,7 @@ function Index({auth,errors,appros,typeProduits,categorieProduits,error,success}
 
     const table = useMaterialReactTable({
         columns,
-        data:approsSt,
+        data:appros.data,
         //enableRowSelection: true,
         getRowId: (row) => row.id,
         initialState: { showColumnFilters: false},

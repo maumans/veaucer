@@ -19,17 +19,26 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import SettingsIcon from '@mui/icons-material/Settings';
 import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
-import {ExpandLess, ExpandMore, LibraryBooks, ListAlt, Person, Widgets} from "@mui/icons-material";
+import {
+    Dashboard,
+    ExpandLess,
+    ExpandMore,
+    Group,
+    LibraryBooks,
+    ListAlt,
+    Person,
+    Storage,
+    Widgets
+} from "@mui/icons-material";
 import {Breadcrumbs, Collapse} from "@mui/material";
-
 import {createTheme, ThemeProvider} from '@mui/material/styles';
 import {frFR} from '@mui/material/locale';
-import {fr} from "date-fns/locale";
-import {LocalizationProvider} from "@mui/x-date-pickers/LocalizationProvider";
-import {AdapterDateFns} from "@mui/x-date-pickers/AdapterDateFns";
+import 'dayjs/locale/fr';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import {router} from "@inertiajs/react";
 import SnackBar from "@/Components/SnackBar.jsx";
-
+import OrderedSideBarMenu from "@/Components/OrderedSideBarMenu.jsx";
 
 const theme = createTheme(
     {
@@ -69,8 +78,6 @@ export default function PanelLayout(props) {
             id2=props.auth.societe.id
         }
 
-        //open===id?setOpen(""):setOpen(id)
-
         router.get( route(r,[id1,id2],{replace:false}))
     }
 
@@ -98,55 +105,38 @@ export default function PanelLayout(props) {
         active===open ?setOpen(""):setOpen(active)
     };
 
+    const superAdminPermissionLinks = [
+        { permission: 'display-dashboard', href: route('superAdmin.dashboard',props.auth?.user?.id), icon: <Dashboard/>, text: 'Tableau de bord', nom: 'superAdminDashboard',parent:false },
+        { permission: 'display-users', href: route('user.index'), icon: <Person/>, text: 'Gestion des users', nom: 'user',parent:false },
+        { permission: 'display-roles', href: route('role.index'), icon: <Group/>, text: 'Gestion des roles', nom: 'role',parent:false },
+
+        ///DROPDOWN
+        { permission: 'display-referentiels', icon: <Storage/>, text: 'Reférentiels', nom: 'referentiel', parent:true},
+        { permission: 'display-societes', href: route('superAdmin.societe.index',props.auth?.user?.id), icon: <Storage/>, text: 'Société', nom: 'societe', parent:"referentiel" },
+    ];
 
     const drawer = (
         <div className={"z-0"}>
-            <Toolbar className="bg-black text-orange-500 text-2xl font-bold p-0 m-0 z-0">
-                <Link href={"/"}>
-                    VEAUCER
-                </Link>
+            <Toolbar className="bg-black text-white text-2xl font-bold p-0 m-0 z-0">
+                <div>
+                    <Link href={"/"}>
+                        {
+                            props.auth?.societe?.nom || "Veaucer"
+                        }
+                    </Link>
+                </div>
             </Toolbar>
+
+            { props.auth.superAdmin &&
+                <OrderedSideBarMenu auth={props.auth} permissions={props.auth?.permissions} permissionLinks={superAdminPermissionLinks} active={props.active}/>
+            }
+
             <List className={"p-0 m-0"}>
 
-                { props.auth.superAdmin &&
+                {/*{ props.auth.superAdmin &&
                     [
                         {routeLink:"superAdmin.dashboard",text:'Tableau de bord',active:"superAdminDashboard",icon:<DashboardIcon/>,collapse:false},
                         {routeLink:"superAdmin.referentiel.index",text:'Référentiel',active:"referentiel",icon:<LibraryBooks/>,collapse:false},
-                       /* {
-                            routeLinks:[
-                                {
-                                    sousActive:"client",
-                                    route:"admin.rapport.client.index",
-                                    text:'Client'
-                                },
-                                {
-                                    sousActive:"agent",
-                                    route:"admin.rapport.agent.index",
-                                    text:'Agent'
-                                },
-                                {
-                                    sousActive:"fournisseur",
-                                    route:"admin.rapport.fournisseur.index",
-                                    text:'Fournisseur'
-                                },
-                                {
-                                    sousActive:"partenaire",
-                                    route:"admin.rapport.partenaire.index",
-                                    text:'Partenaire'
-                                },
-                                {
-                                    sousActive:"caisse",
-                                    route:"admin.rapport.caisse.index",
-                                    text:'Caisse'
-                                },
-                                {
-                                    sousActive:"banque",
-                                    route:"admin.rapport.banque.index",
-                                    text:'Banque'
-                                }
-                            ],
-                            active:'rapport',text:'Rapport',icon:<ListAltIcon/>,collapse:true
-                        },*/
 
                     ].map(({routeLink,text,active,icon,collapse,routeLinks}, index) => (
 
@@ -192,12 +182,11 @@ export default function PanelLayout(props) {
                                 </Collapse>
                             </Fragment>
 
-                    ))}
+                    ))}*/}
 
                 { props.auth.admin &&
                     [
                         {routeLink:"admin.dashboard",text:'Tableau de bord',active:"adminDashboard",icon:<DashboardIcon/>,collapse:false},
-                        //{routeLink:"superAdmin.referentiel.index",text:'Référentiel',active:"referentiel",icon:<LibraryBooks/>,collapse:false},
                          {
                              routeLinks:[
                                  {
@@ -412,7 +401,7 @@ export default function PanelLayout(props) {
 
     return (
         <ThemeProvider theme={theme}>
-            <LocalizationProvider adapterLocale={fr} dateAdapter={AdapterDateFns}>
+            <LocalizationProvider adapterLocale={'fr'} dateAdapter={AdapterDayjs}>
                 <Box sx={{ display: 'flex' }}>
                     <AppBar
                         position="fixed"
@@ -425,7 +414,9 @@ export default function PanelLayout(props) {
                     >
                         <Head>
                             <link rel="shortcut icon" type="image/x-icon" href="/images/logo.jpg"/>
-                            <title>Veaucer</title>
+                            {/*{
+                                props.auth?.societe?.nom || "Veaucer"
+                            }*/}
                         </Head>
                         <nav className="bg-black border-b h-full w-full">
                             <div className="max-w-9xl lg:px-20 md:px-8 sm:px-6">
@@ -572,7 +563,6 @@ export default function PanelLayout(props) {
                                 </Breadcrumbs>
                             </div>
                         }
-                        {/*className={"my-16 lg:px-20 md:px-8 sm:px-6 "}*/}
                         <div  className={props.breadcrumbs?'mt-28 lg:px-20 md:px-8 px-5':'mt-20 lg:px-20 md:px-8 px-5'}>
                             {props.children}
                         </div>
@@ -586,12 +576,6 @@ export default function PanelLayout(props) {
                             props.error &&
                             <SnackBar error={props.error}/>
                         }
-
-                        {/* <div className={'text-center'}>
-                            <span>
-                                Copyright © 2022, by Addvalis Enterprise
-                            </span>
-                        </div>*/}
                     </Box>
                 </Box>
             </LocalizationProvider>
@@ -600,9 +584,5 @@ export default function PanelLayout(props) {
 }
 
 PanelLayout.propTypes = {
-    /**
-     * Injected by the documentation to work in an iframe.
-     * You won't need it on your project.
-     */
     window: PropTypes.func,
 }

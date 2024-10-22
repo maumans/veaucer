@@ -109,8 +109,11 @@ class SocieteController extends Controller
                 "societe_id"=>$societe->id,
             ]);
 
+            $caissePrincipale->departement_id=$departementPrincipal->id;
             $societe->caisse_principale_id=$caissePrincipale->id;
             $societe->departement_principal_id=$departementPrincipal->id;
+
+            $caissePrincipale->save();
             $societe->save();
 
             $user->societeAdmin()->associate($societe)->save();

@@ -36,6 +36,8 @@ return new class extends Migration
 
             $table->foreignId('operation_id')->nullable()->constrained('operations')->cascadeOnDelete();
 
+            $table->enum('etat', ['EN ATTENTE', 'LIVRE', 'ANNULE'])->default("EN ATTENTE")->nullable();
+
             $table->boolean("status")->default(true)->nullable();
 
             $table->timestamps();

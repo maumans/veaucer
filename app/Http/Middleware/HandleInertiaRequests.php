@@ -32,6 +32,18 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+
+        $roles=[];
+        $permissions=[];
+        $admin = false;
+        if($request->user())
+        {
+            $user=User::where('id',$request->user()->id)->first();
+
+            $permissions=$user->getAllPermissions()->pluck('name');
+            $roles=$user->roles()->pluck('name');
+        }
+
         //dd(User::where("id",$request->user()->id)->with('roles.permissions')->get());
         return [
             ...parent::share($request),
@@ -39,11 +51,12 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
                 "profil"=>session("profil"),
                 "societe"=>session("societe"),
-                'superAdmin'=>session("profil")==="superAdmin",
-                'admin'=>session("profil")==="admin",
-                'comptable'=>session("profil")==="comptable",
-                'client'=>session("profil")==="client",
-                'employe'=>session("profil")==="employe",
+                'superAdmin'=>session("profil")==="SuperAdmin",
+                'admin'=>session("profil")==="Admin",
+                'comptable'=>session("profil")==="Comptable",
+                'employe'=>session("profil")==="Employe",
+                'roles' => $roles,
+                'permissions' => $permissions,
             ],
             'success'=> session('success'),
             'error'=> session('error'),

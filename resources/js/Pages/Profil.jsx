@@ -3,24 +3,20 @@ import {Head, router} from "@inertiajs/react";
 import GuestLayout from "@/Layouts/GuestLayout";
 import PersonIcon from '@mui/icons-material/Person';
 
-function profilSwitch(libelle)
+function profilSwitch(name)
 {
-    switch(libelle)
+    switch(name)
     {
-        case "admin":
+        case "Admin":
             return "Administrateur"
-        case "superAdmin":
+        case "SuperAdmin":
             return "Super administrateur"
+        case "Comptable":
+            return "Comptable"
         case "Employe":
             return "Employe"
-        case "caissierZone":
-            return "Caissier de zone"
-        case "caissierPrincipal":
-            return "Caissier principal"
-        case "caissierSecondaire":
-            return "Caissier secondaire"
         default:
-            return <span className="capitalize">{libelle}</span>
+            return <span className="capitalize">{name}</span>
 
     }
 }
@@ -45,7 +41,7 @@ function Profil({authProfil}) {
                     {
                         authProfil?.profils.map(profil=>(
                            <button style={{width:200}} key={profil.id} className={"bg-gray-200 p-5 flex flex-col space-y-4 items-center rounded border-orange-500 border-2 w-full"} onClick={()=>handleConnect(profil.id)}>
-                               <div className="p-5 rounded-full bg-white w-fit border border-orange-500 border-2">
+                               <div className="p-5 rounded-full bg-white w-fit border-orange-500 border-2">
                                    <PersonIcon className="text-5xl" />
                                </div>
                                <div>

@@ -7,6 +7,7 @@ import {useForm} from "@inertiajs/react";
 import Divider from "@mui/material/Divider";
 import ReferentielLayout from "@/Layouts/ReferentielLayout.jsx";
 import NumberFormatCustomUtils from "@/Pages/Utils/NumberFormatCustomUtils.jsx";
+import PanelLayout from "@/Layouts/PanelLayout.jsx";
 
 function Create({auth,typeSocietes,errors,success,error,referentiels}) {
 
@@ -41,15 +42,11 @@ function Create({auth,typeSocietes,errors,success,error,referentiels}) {
     }
 
     return (
-        <ReferentielLayout
+        <PanelLayout
+            auth={auth}
             success={success}
             error={error}
-            auth={auth}
-            errors={errors}
-            referentiels={referentiels}
-            referentiel={'Société'}
-            active={'referentiel'}
-            sousActive={'superAdmin.societe.create'}
+            active={'societe'}
             breadcrumbs={[
                 {
                     text:"Société",
@@ -63,6 +60,8 @@ function Create({auth,typeSocietes,errors,success,error,referentiels}) {
                 }
             ]}
         >
+
+
             <div>
                 <div className="w-full">
                     <motion.div
@@ -249,7 +248,7 @@ function Create({auth,typeSocietes,errors,success,error,referentiels}) {
 
                 </div>
             </div>
-        </ReferentielLayout>
+        </PanelLayout>
     );
 }
 

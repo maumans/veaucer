@@ -52,7 +52,7 @@ function Create({auth,typeProduits,sousCategories,fournisseurs,devises,uniteMesu
                     active:false
                 },
                 {
-                    text:"Création",
+                    text:"Modification",
                     href:route("admin.produit.create",[auth.user.id]),
                     active:true
                 }

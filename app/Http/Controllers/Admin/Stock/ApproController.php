@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Admin\Stock;
 
 use App\Http\Controllers\Controller;
+use App\Models\Caisse;
 use App\Models\Categorie;
 use App\Models\Departement;
 use App\Models\Depense;
 use App\Models\Fournisseur;
+use App\Models\Location;
 use App\Models\Motif;
 use App\Models\Operation;
 use App\Models\OperationProduit;
@@ -26,15 +28,44 @@ class ApproController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $appros = Operation::where('status', true)->whereRelation('typeOperation','libelle', "approvisionnement")->orderBy('created_at')->with('fournisseur')->paginate(10);
 
-        $typeProduits = TypeProduit::where('status', true)->orderBy('nom')->get();
-        $categorieProduits = Categorie::where('status', true)->orderBy('nom')->get();
+        $query = Operation::query()->where('status', true)
+            ->orderByDesc("created_at")
+            ->with("fournisseur")
+            ->whereRelation('typeOperation','libelle', "approvisionnement")
+            ->when($request->get("globalFilter"),function ($query,$value) use ($request){
+                $query->where(function ($q) use ($request,$value) {
+                    $q->where('nom', 'like', "%" . $value . "%")
+                        ->orWhere('total', 'like', "%" .$value . "%");
+                });
+            })->when($request->get("filters"),function ($query,$filters){
+                foreach ($filters as $key => $value) {
+
+                    $f=explode('.',$key);
+                    if (isset($f[1]))
+                    {
+                        $query->whererelation($f[0],$f[1], 'like', "%" . $value . "%");
+                    }
+                    else
+                    {
+                        $query->where($key, 'like', "%" . $value . "%");
+                    }
+                }
+            })->when($request->get("sorting"),function ($query,$value)use($request){
+
+                $id=$value[0]['id'];
+                $desc=$value[1]['desc'];
+
+                if(count(explode(".",$value[0]['id']))==0) {
+                    $query->orderBy($id, $desc =='true' ? 'desc' : 'asc');
+                }
+            });
+
 
         return Inertia::render('Admin/Stock/Appro/Index',[
-            'appros' => $appros,
+            'appros' => $query->paginate($request->size??10),
             /*'typeProduits' => $typeProduits,
             'categorieProduits' => $categorieProduits,*/
         ]);
@@ -59,6 +90,9 @@ class ApproController extends Controller
 
         $departements = Departement::where('id', session('societe')['id'])->where('status', true)->get();
         $departementPrincipal = Departement::where('id', session('societe')['id'])->where('status', true)->where('type', 'PRINCIPAL')->first();
+        $caisses=Caisse::where('societe_id', session('societe')['id'])->where('status', true)->with('departement')->get();
+        $societe= Societe::where('id',session('societe')['id'])->first();
+        $societe && $caissePrincipale=$societe->caissePrincipale;
 
         return Inertia::render("Admin/Stock/Appro/Create",[
             'produits' => $produits,
@@ -67,6 +101,8 @@ class ApproController extends Controller
             'fournisseurPrincipal' => $fournisseurPrincipal,
             'departements' => $departements,
             'departementPrincipal' => $departementPrincipal,
+            'caisses' => $caisses,
+            'caissePrincipale' => $caissePrincipale,
         ]);
     }
 
@@ -75,12 +111,12 @@ class ApproController extends Controller
      */
     public function store($id,Request $request)
     {
-        dd($request->date);
 
         $request->validate([
             "fournisseur" => 'required',
             "departement" => 'required',
             "commandes" => 'required',
+            "caisse" => !$request->enregistrer ?'required':'',
         ]);
 
         DB::beginTransaction();
@@ -88,27 +124,65 @@ class ApproController extends Controller
         try {
 
             $operation=Operation::create([
-                "date" => Carbon::create($request->date),
+                "date" => Carbon::make($request->date),
                 "total" => $request->totalCommande + $request->totalDepense,
                 "montant" => $request->totalCommande + $request->totalDepense,
                 "type_operation_id" => TypeOperation::where('nom','approvisionnement')->first()->id,
                 "auteur_id" => Auth::id(),
                 "societe_id" => session('societe')['id'],
                 "fournisseur_id" => $request->fournisseur['id'],
-                "status" => 'commandé',
+                "status" => $request->enregistrer ? 'COMMANDE' : 'LIVRE',
             ]);
+
+            if(!$request->enregistrer)
+            {
+                $caisse=Caisse::where('id',$request->caisse['id'])->where('status',true)->first();
+
+                if($caisse)
+                {
+                    if($caisse->solde < $request->totalCommande+$request->totalDepense)
+                    {
+                        return redirect()->back()->with('error','Solde insuffisant dans la caisse');
+                    }
+                }
+                else
+                {
+                    return redirect()->back()->with('error','Caisse inexistante');
+                }
+            }
 
             foreach ($request->commandes as $commande)
             {
+                $stock=Stock::where('departement_id', $request->departement['id'])->where('status', true)->where('produit_id', $commande['produit']['id'])->where('societe_id', session('societe')['id'])->first();
+
                 OperationProduit::create([
                     'quantite' =>  $commande['quantite'],
                     'prixAchat' =>  $commande['prixAchat'],
-                    'stock_id' => Stock::where('departement_id', $request->departement['id'])->where('status', true)->where('produit_id', $commande['produit']['id'])->where('societe_id', session('societe')['id'])->first()->id,
+                    'stock_id' => $stock->id,
                     'produit_id' => $commande['produit']['id'],
                     'operation_id' => $operation->id,
                     "societe_id" => session('societe')['id'],
+                    "etat" => $request->enregistrer ? 'COMMANDE' : 'LIVRE',
                 ]);
+                if(!$request->enregistrer)
+                {
+                    $stock->quantite += $commande['quantite'];
+                    $stock->save();
+
+                    if($caisse)
+                    {
+                        $caisse->solde -= $commande['prixAchat']*$commande['quantite'];
+                        $caisse->save();
+                    }
+                    else
+                    {
+                        return redirect()->back()->with('error','Veuillez selectionner la caisse');
+                    }
+
+                }
             }
+
+
 
             foreach ($request->depenses as $depense)
             {
@@ -119,7 +193,15 @@ class ApproController extends Controller
                     'operation_id' => $operation->id,
                     "societe_id" => session('societe')['id'],
                     "fournisseur_id" => $request->fournisseur['id'],
+                    "etat" => $request->enregistrer ? 'EN ATTENTE' : 'LIVRE',
                 ]);
+
+                if(!$request->enregistrer)
+                {
+                    $caisse->solde -= $depense['montant'];
+                    $caisse->save();
+                }
+
             }
 
             DB::commit();
@@ -137,63 +219,183 @@ class ApproController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show($userId,$id)
     {
-        //
+        // Récupérer l'approvisionnement avec ses relations (fournisseur, produits, et dépenses)
+        $appro = Operation::where('id', $id)
+            ->with(['fournisseur', 'produits' => function ($query) {
+                    $query->where('operation_produits.status', true);
+            },
+            'depenses' => function ($query) {
+                $query->with('motif');
+            },
+        ])
+        ->where('status', true)
+        ->firstOrFail();
+
+        // Formater les données des commandes et des dépenses pour la vue
+        $commandes = $appro->produits->map(function ($op) {
+            return [
+                'produit' => $op->produit,
+                'quantite' => $op->quantite,
+                'prixAchat' => $op->prixAchat,
+            ];
+        });
+
+        $depenses = $appro->depenses->map(function ($depense) {
+            return [
+                'motif' => $depense->motif,
+                'montant' => $depense->total,
+            ];
+        });
+
+        /*dd([
+            'appro' => [
+                'id' => $appro->id,
+                'fournisseur' => $appro->fournisseur,
+                'date' => Carbon::make($appro->date)->format('Y-m-d'),
+                'totalCommande' => $appro->montant ?? 0,
+                'totalDepense' => $appro->depenses->sum('total'),
+                'commandes' => $commandes,
+                'depenses' => $depenses,
+            ]]);*/
+
+        // Renvoyer les données à la vue Inertia
+        return Inertia::render('Admin/Stock/Appro/Show', [
+            'appro' => [
+                'id' => $appro->id,
+                'fournisseur' => $appro->fournisseur,
+                'date' => Carbon::make($appro->date)->format('Y-m-d'),
+                'totalCommande' => $appro->montant ?? 0,
+                'totalDepense' => $appro->depenses->sum('total'),
+                'commandes' => $commandes,
+                'depenses' => $depenses,
+            ]
+        ]);
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit($userId,$produitId)
+    public function edit($userId,$id)
     {
-        $produit=Produit::where("id",$produitId)->with('fournisseurPrincipal','categorieProduit','typeProduit')->first();
+        // Récupérer l'approvisionnement à modifier avec ses relations
+        $appro = Operation::with('produits', 'depenses', 'fournisseur')
+            ->where('id', $id)
+            ->where('status', '!=', 'annulé')
+            ->firstOrFail();
 
-        $typeProduits=TypeProduit::where("status",true)/*->where("societe_id",session('societe')['id'])->orWhere("societe_id",null)*/->get();
-        $categorieProduits=CategorieProduit::where("status",true)/*->where("societe_id",session('societe')['id'])->orWhere("societe_id",null)*/->get();
-        $fournisseurs=Fournisseur::where("status",true)/*->where("societe_id",session('societe')['id'])->orWhere("societe_id",null)*/->get();
+        // Charger les produits, motifs, et autres données pour la modification
+        $produits = Produit::where('status', true)
+            ->where(function ($query) {
+                $query->where('societe_id', session('societe')['id'])
+                    ->orWhere('societe_id', null);
+            })
+            ->orderBy('nom')
+            ->get();
 
-        return Inertia::render("Admin/Catalogue/Produit/Edit",["produit"=>$produit,'typeProduits'=>$typeProduits,"fournisseurs"=>$fournisseurs,"categorieProduits"=>$categorieProduits]);
+        $motifs = Motif::where('status', true)
+            ->where(function ($query) {
+                $query->where('societe_id', session('societe')['id'])
+                    ->orWhere('societe_id', null);
+            })
+            ->orderBy('nom')
+            ->get();
 
+        $fournisseurs = Fournisseur::where('status', true)
+            ->where(function ($query) {
+                $query->where('societe_id', session('societe')['id'])
+                    ->orWhere('societe_id', null);
+            })
+            ->orderBy('nom')
+            ->get();
+
+        $departements = Departement::where('societe_id', session('societe')['id'])->get();
+        $caisses = Caisse::where('societe_id', session('societe')['id'])->where('status', true)->with('departement')->get();
+        $caissePrincipale = Societe::where('id', session('societe')['id'])->first()->caissePrincipale;
+
+        return Inertia::render('Admin/Stock/Appro/Edit', [
+            'appro' => $appro,
+            'produits' => $produits,
+            'motifs' => $motifs,
+            'fournisseurs' => $fournisseurs,
+            'departements' => $departements,
+            'caisses' => $caisses,
+            'caissePrincipale' => $caissePrincipale,
+        ]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Produit $produit)
+    public function update(Request $request, $userId, $id)
     {
         $request->validate([
-            'nom' => 'required',
-            "typeProduit" => 'required',
-            "categorieProduit" => 'required',
+            'fournisseur' => 'required',
+            'departement' => 'required',
+            'commandes' => 'required',
+            'caisse' => !$request->enregistrer ? 'required' : '',
         ]);
 
         DB::beginTransaction();
 
         try {
+            $operation = Operation::findOrFail($id);
 
-            $produit->update([
-                "nom" => $request->nom,
-                "description" => $request->description,
-                "prixAchat" => $request->prixAchat,
-                "prixVente" => $request->prixVente,
-                "stockInitial" => $request->stockInitial,
-                "stockMinimal" => $request->stockMinimal,
-                "image" => $request->image,
-                "type_produit_id" => $request->typeProduit['id'],
-                "categorie_produit_id" => $request->categorieProduit['id'],
-                "fournisseur_principal_id" => $request->fournisseur['id'],
+            // Mise à jour des informations de l'opération
+            $operation->update([
+                'date' => Carbon::make($request->date),
+                'total' => $request->totalCommande + $request->totalDepense,
+                'montant' => $request->totalCommande + $request->totalDepense,
+                'fournisseur_id' => $request->fournisseur['id'],
+                'status' => $request->enregistrer ? 'commandé' : 'reçu',
             ]);
 
+            // Mise à jour des produits et des dépenses
+            $operation->produits()->delete();
+            $operation->depenses()->delete();
+
+            foreach ($request->commandes as $commande) {
+                $stock = Stock::where('departement_id', $request->departement['id'])
+                    ->where('status', true)
+                    ->where('produit_id', $commande['produit']['id'])
+                    ->where('societe_id', session('societe')['id'])
+                    ->first();
+
+                OperationProduit::create([
+                    'quantite' => $commande['quantite'],
+                    'prixAchat' => $commande['prixAchat'],
+                    'stock_id' => $stock->id,
+                    'produit_id' => $commande['produit']['id'],
+                    'operation_id' => $operation->id,
+                    'societe_id' => session('societe')['id'],
+                    'status' => $request->enregistrer ? false : true,
+                ]);
+
+                if (!$request->enregistrer) {
+                    $stock->quantite += $commande['quantite'];
+                    $stock->save();
+                }
+            }
+
+            foreach ($request->depenses as $depense) {
+                Depense::create([
+                    'total' => $depense['montant'],
+                    'motif_id' => $depense['motif']['id'],
+                    'auteur_id' => Auth::id(),
+                    'operation_id' => $operation->id,
+                    'societe_id' => session('societe')['id'],
+                    'fournisseur_id' => $request->fournisseur['id'],
+                    'status' => $request->enregistrer ? false : true,
+                ]);
+            }
+
             DB::commit();
-
-            return redirect()->back()->with("success", "Inventaire modifié avec succés");
-
-        }
-        catch (\Exception $e) {
+            return redirect()->action([ApproController::class, 'index'])
+                ->with('success', 'Approvisionnement mis à jour avec succès.');
+        } catch (\Exception $e) {
             DB::rollBack();
-            dd($e->getMessage());
-
+            return redirect()->back()->withErrors(['error' => 'Erreur lors de la mise à jour : ' . $e->getMessage()]);
         }
     }
 
@@ -227,14 +429,6 @@ class ApproController extends Controller
 
             foreach ($request->filters as $filter)
             {
-                /*if ($filter['id'] == 'typeProduit')
-                {
-                    $query->whereRelation('typeProduit','nom','like',"%".$filter['value']."%");
-                }
-                else if($filter['id'] == 'categorieProduit')
-                {
-                    $query->whereRelation('categorieProduit','nom','like',"%".$filter['value']."%");
-                }*/
                 if ($filter['id'] == 'produit')
                 {
                     $query->whereRelation('produit','nom','like',"%".$filter['value']."%");
@@ -260,7 +454,7 @@ class ApproController extends Controller
                 }*/
             }
 
-        })->with("fournisseur")/*->where('status', true)*/->skip($request->start)->take($request->size);
+        })->orderByDesc('created_at')->with("fournisseur")/*->where('status', true)*/->skip($request->start)->take($request->size);
 
         foreach ($request->sorting as $sort)
         {

@@ -24,7 +24,6 @@ return new class extends Migration
             $table->string("slug")->nullable();
             $table->boolean("status")->default(true)->nullable();
             $table->foreignId('type_societe_id')->nullable()->constrained('type_societes')->cascadeOnDelete();
-            $table->foreignId('caisse_principal_id')->nullable()->constrained('type_societes')->cascadeOnDelete();
             $table->timestamps();
         });
     }

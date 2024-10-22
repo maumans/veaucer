@@ -7,13 +7,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Models\Role;
 use Spatie\Permission\Traits\HasRoles;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable,HasSlug;
+    use HasApiTokens, HasFactory, Notifiable,HasSlug,HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -60,7 +61,7 @@ class User extends Authenticatable
         return 'slug';
     }
 
-    public function roles()
+    public function roles(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
         return $this->belongsToMany(Role::class);
     }
@@ -79,22 +80,14 @@ class User extends Authenticatable
 
     public function isSuperAdmin()
     {
-        if($this->roles()->where("nom","superAdmin")->first())
+        if($this->roles()->where("name","SuperAdmin")->first())
             return true;
         else return false;
     }
 
     public function isAdmin()
     {
-        if($this->roles()->where("nom","admin")->first())
-            return true;
-        else return false;
-
-    }
-
-    public function isClient()
-    {
-        if($this->roles()->where("nom","client")->first())
+        if($this->roles()->where("name","Admin")->first())
             return true;
         else return false;
 
@@ -102,7 +95,7 @@ class User extends Authenticatable
 
     public function isEmploye()
     {
-        if($this->roles()->where("nom","employe")->first())
+        if($this->roles()->where("name","Employe")->first())
             return true;
         else return false;
 
@@ -110,7 +103,7 @@ class User extends Authenticatable
 
     public function isComptable()
     {
-        if($this->roles()->where("nom","comptable")->first())
+        if($this->roles()->where("name","Comptable")->first())
             return true;
         else return false;
     }

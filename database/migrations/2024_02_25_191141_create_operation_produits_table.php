@@ -19,7 +19,8 @@ return new class extends Migration
             $table->double("prixVente")->nullable();
             $table->double("tva")->nullable();
             $table->double("remise")->nullable();
-            $table->string('status')->default(true)->nullable();
+            $table->enum('etat', ['COMMANDE', 'LIVRE', 'ANNULE'])->default("COMMANDE")->nullable();
+            $table->boolean('status')->default(true)->nullable();
             $table->foreignId('stock_id')->nullable()->constrained('stocks')->cascadeOnDelete();
             $table->foreignId("operation_id")->nullable()->constrained("operations")->cascadeOnDelete();
             $table->foreignId("produit_id")->nullable()->constrained("produits")->cascadeOnDelete();

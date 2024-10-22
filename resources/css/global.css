@@ -3,21 +3,51 @@
     --tw-ring-color: transparent !important;
 }
 
-/*!* Appliquez ces styles lorsque le champ de texte est en focus *!
-.MuiTextField-root .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
-    border-color: orange; !* Couleur de la bordure en orange *!
+.primaryBgColor
+{
+    background-color:#008dd2
 }
 
-!* Appliquez ces styles lorsque le champ de texte est survolé *!
-.MuiTextField-root .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
-    border-color: orange; !* Couleur de la bordure en orange lors du survol *!
+.primaryBgColorClair
+{
+    background-color: #05a1ee
 }
 
-!* Styles pour les labels *!
-.MuiInputLabel-root {
-    color: orange; !* Couleur du label en orange *!
+.primaryColor
+{
+    color:#008dd2
 }
 
-.MuiInputLabel-root.Mui-focused {
-    color: orange; !* Couleur du label en orange lors du focus *!
-}*/
+.primaryColorClair
+{
+    color:#05a1ee
+}
+
+.secondaryBgColor
+{
+    background-color:#ffbd00
+}
+
+.secondaryBgColorHover:hover
+{
+    background-color: #eaad02
+}
+
+.secondaryColor
+{
+    color:#ffbd00
+}
+
+.secondaryBorderColor
+{
+    border:2px solid #ffbd00
+}
+
+.nprogress-busy
+{
+    z-index: 1103!important;
+}
+
+#nprogress .bar {
+    z-index: 9999 !important;
+}

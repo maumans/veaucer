@@ -4,22 +4,18 @@ import {motion} from "framer-motion";
 
 import InputError from "@/Components/InputError";
 import {useForm} from "@inertiajs/react";
-import Divider from "@mui/material/Divider";
-import ReferentielLayout from "@/Layouts/ReferentielLayout.jsx";
 import NumberFormatCustomUtils from "@/Pages/Utils/NumberFormatCustomUtils.jsx";
 import PanelLayout from "@/Layouts/PanelLayout.jsx";
 import {MaterialReactTable, useMaterialReactTable} from "material-react-table";
 import {Check, Close, Delete, Edit, Visibility} from "@mui/icons-material";
 import {MRT_Localization_FR} from "material-react-table/locales/fr/index.js";
 import {formatNumber} from "chart.js/helpers";
-import SnackBar from "@/Components/SnackBar.jsx";
 import {DatePicker} from "@mui/x-date-pickers";
-import {format} from "date-fns";
 import dayjs from 'dayjs';
-function Create({auth,produits,departements,departementPrincipal,motifs,fournisseurs,fournisseurPrincipal,devises,uniteMesures,errors,success,error,referentiels}) {
+function Create({auth,produits,departements,departementPrincipal,caisses,caissePrincipale,motifs,fournisseurs,fournisseurPrincipal,devises,uniteMesures,errors,success,error,referentiels}) {
 
     const {data,setData, post, processing}=useForm({
-        "date":Date.now(),
+        "date":dayjs(),
         'nom':'',
         'prixAchat':'',
         'prixVente':'',
@@ -29,6 +25,7 @@ function Create({auth,produits,departements,departementPrincipal,motifs,fourniss
         'motif':null,
         'fournisseur':fournisseurPrincipal,
         'departement':departementPrincipal,
+        'caisse':caissePrincipale,
         'uniteMesure':null,
         'devise':null,
         'commandes':[],
@@ -36,6 +33,7 @@ function Create({auth,produits,departements,departementPrincipal,motifs,fourniss
         'montantDepense':"",
         'totalCommande':null,
         'totalDepense':null,
+        'enregistrer':false,
     });
 
     const [isRefetching, setIsRefetching] = useState(false);
@@ -44,6 +42,14 @@ function Create({auth,produits,departements,departementPrincipal,motifs,fourniss
 
     const columns = useMemo(
         () => [
+            {
+                accessorKey: 'produitId', //access nested data with dot notationid', //access nested data with dot notation
+                header: 'ID',
+                //size: 10,
+                Cell: ({ row }) =>(
+                    row.original.produitId
+                )
+            },
             {
                 accessorKey: 'nom', //access nested data with dot notation
                 header: 'Nom',
@@ -82,7 +88,7 @@ function Create({auth,produits,departements,departementPrincipal,motifs,fourniss
                 //size: 10,
                 Cell: ({ row }) =>(
                     <Button key={row.original.id} onClick={()=>handleRemoveToCommande(row.original.id)} variant={'contained'} size={'small'} color={'error'}>
-                        <Close></Close>
+                        <Close/>
                     </Button>
                 )
             },
@@ -123,12 +129,20 @@ function Create({auth,produits,departements,departementPrincipal,motifs,fourniss
         [],
     );
 
+    useEffect(() =>{
+        setSuccessSt(success)
+    },[success])
+
+    useEffect(() =>{
+        setErrorSt(error)
+    },[error])
+
     const onHandleChange = (e) => {
         e.target.type === 'checkbox'
-            ?
-            setData(e.target.name,e.target.checked)
-            :
-            setData(e.target.name,e.target.value);
+        ?
+        setData(e.target.name,e.target.checked)
+        :
+        setData(e.target.name,e.target.value);
     };
 
 
@@ -149,17 +163,17 @@ function Create({auth,produits,departements,departementPrincipal,motifs,fourniss
     {
         if(data.produit && data.prixAchat && data.quantite)
         {
-            const p={
-                id: data.produit.id,
+            let p={
+                id: Date.now(),
+                produitId: data.produit.id,
                 produit: data.produit,
                 prixAchat: data.prixAchat,
                 quantite: data.quantite,
                 montant: data.prixAchat*data.quantite,
-
             }
 
             let commandes= []
-            let trouve=false
+            let trouve= false
 
             data.commandes.map((c)=>{
                 if(c.id === p.id)
@@ -176,7 +190,6 @@ function Create({auth,produits,departements,departementPrincipal,motifs,fourniss
             {
                 commandes.push(p)
             }
-
 
             setData((data)=>({
                 ...data,
@@ -201,6 +214,15 @@ function Create({auth,produits,departements,departementPrincipal,motifs,fourniss
 
     }
 
+    function handleRemoveToCommande(id)
+    {
+        setData(prevData=>({
+            ...prevData,
+            "commandes":prevData.commandes.filter((c)=>c.id !== id)
+        }))
+        setSuccessSt('Produit retiré avec succès')
+    }
+
     useEffect(()=>{
         let t=0
         data.commandes.map((c)=>t+=parseInt(c.montant))
@@ -212,12 +234,6 @@ function Create({auth,produits,departements,departementPrincipal,motifs,fourniss
         data.depenses.map((d)=>t+=parseInt(d.montant))
         setData("totalDepense",t)
     },[data.depenses])
-
-    function handleRemoveToCommande(id)
-    {
-        setData("commandes",data.commandes.filter((c)=>(c.id !== id)));
-        setSuccessSt('Produit retiré avec succès')
-    }
 
     useEffect(()=>(
         setData((data)=>({
@@ -231,7 +247,8 @@ function Create({auth,produits,departements,departementPrincipal,motifs,fourniss
         if(data.motif && data.montantDepense)
         {
             let d={
-                id: data.motif.id,
+                id: Date.now(),
+                motifId: data.motif.id,
                 motif: data.motif,
                 montant: data.montantDepense,
             }
@@ -240,12 +257,11 @@ function Create({auth,produits,departements,departementPrincipal,motifs,fourniss
             let depenses= []
 
             data.depenses.map((c)=>{
-                if(c.id === data.motif.id)
+                if(c.id === d.id)
                 {
                     c.montant=d.montant
                     trouve=true
                 }
-                console.log
                 depenses.push(c)
             })
 
@@ -254,8 +270,8 @@ function Create({auth,produits,departements,departementPrincipal,motifs,fourniss
                 depenses.push(d)
             }
 
-            setData((data)=>({
-                ...data,
+            setData((prevData)=>({
+                ...prevData,
                 depenses,
                 motif: null,
                 montantDepense: '',
@@ -278,7 +294,11 @@ function Create({auth,produits,departements,departementPrincipal,motifs,fourniss
 
     function handleRemoveToDepense(id)
     {
-        setData("depenses",data.depenses.filter((d)=>(d.id !== id)));
+        setData((prevData)=>({
+            ...prevData,
+            "depenses":prevData.depenses.filter((c)=>c.id !== id)
+        }));
+
         setSuccessSt('Dépense retirée avec succès')
     }
 
@@ -302,7 +322,6 @@ function Create({auth,produits,departements,departementPrincipal,motifs,fourniss
         localization: MRT_Localization_FR
     });
 
-
     return (
         <PanelLayout
             auth={auth}
@@ -315,11 +334,6 @@ function Create({auth,produits,departements,departementPrincipal,motifs,fourniss
                     text:"Appro",
                     href:route("admin.stockAppro.index",auth.user.id),
                     active:false
-                },
-                {
-                    text:"Création",
-                    href:route("admin.stockAppro.create",[auth.user.id]),
-                    active:true
                 }
             ]}
         >
@@ -343,15 +357,15 @@ function Create({auth,produits,departements,departementPrincipal,motifs,fourniss
                                     </div>
                                     <DatePicker
                                         className={"w-full"}
-                                        /*openTo="day"
-                                        views={['year','month','day']}*/
+                                        openTo="day"
+                                        views={['year','month','day']}
+                                        format={'DD/MM/YYYY'}
                                         //label="Date de la commande"
                                         value={data.date}
                                         onChange={(newValue) => {
                                             setData("date",newValue);
                                         }}
                                     />
-
                                 </div>
                                 <div>
                                     <div className={"md:col-span-2 font-bold text-orange-500"}>
@@ -365,11 +379,33 @@ function Create({auth,produits,departements,departementPrincipal,motifs,fourniss
                                         options={departements}
                                         getOptionLabel={(option)=>"Stock "+option.nom}
                                         isOptionEqualToValue={(option, value) => option.id === value.id}
-                                        renderInput={(params)=><TextField  fullWidth {...params} placeholder={"Stock"} label={params.nom}/>}
+                                        renderInput={(params)=><TextField  fullWidth {...params} placeholder={"Stock"} label={params.nom} required/>}
                                     />
                                     <InputError message={errors["departement"]}/>
                                 </div>
-
+                                <div>
+                                    <div className={"md:col-span-2 font-bold text-orange-500"}>
+                                        Caisse de paiement
+                                    </div>
+                                    <Autocomplete
+                                        value={data.caisse}
+                                        className={"w-full"}
+                                        onChange={(e,val)=>setData("departement",val)}
+                                        disablePortal={true}
+                                        options={caisses}
+                                        getOptionLabel={(option)=>"Caisse dep. "+option?.departement?.nom}
+                                        isOptionEqualToValue={(option, value) => option.id === value.id}
+                                        renderInput={(params)=><TextField  fullWidth {...params} placeholder={"Caisse"} label={params.nom} required/>}
+                                    />
+                                    <InputError message={errors["caisse"]}/>
+                                    {
+                                        data.caisse
+                                        &&
+                                        <div className={'text-orange-500 font-bold mt-5'}>
+                                            Solde: {formatNumber(data.caisse.solde)+' GNF'}
+                                        </div>
+                                    }
+                                </div>
                                 <div>
                                     <div className={"md:col-span-2 font-bold text-orange-500"}>
                                         Fournisseur
@@ -382,17 +418,15 @@ function Create({auth,produits,departements,departementPrincipal,motifs,fourniss
                                         options={fournisseurs}
                                         getOptionLabel={(option)=>option.nom}
                                         isOptionEqualToValue={(option, value) => option.id === value.id}
-                                        renderInput={(params)=><TextField  fullWidth {...params} placeholder={"Fournisseur principal"} label={params.nom}/>}
+                                        renderInput={(params)=><TextField  fullWidth {...params} placeholder={"Fournisseur"} label={params.nom} required/>}
                                     />
                                     <InputError message={errors["fournisseur"]}/>
                                 </div>
-
                             </div>
-
                             <div className={"grid grid-cols-1 md:grid-cols-2 gap-5 border p-3 rounded"}>
 
-                                <div className={"md:col-span-2 font-bold text-orange-500"}>
-                                    Ajout de produits à la commande
+                                <div className={"md:col-span-2 font-bold text-orange-500 text-xl"}>
+                                    Ajout des produits
                                 </div>
 
                                 <div className={"md:col-span-2"}>
@@ -406,7 +440,6 @@ function Create({auth,produits,departements,departementPrincipal,motifs,fourniss
                                         :
                                         ""
                                 }
-
                                 <div>
                                     <Autocomplete
                                         value={data.produit}
@@ -435,7 +468,6 @@ function Create({auth,produits,departements,departementPrincipal,motifs,fourniss
                                         className={"w-full"} label="Prix d'achat" name="prixAchat" onChange={onHandleChange}/>
                                     <InputError message={errors.prixAchat}/>
                                 </div>
-
                                 <div className={"w-full"}>
                                     <TextField
                                         value={data.quantite}
@@ -450,8 +482,6 @@ function Create({auth,produits,departements,departementPrincipal,motifs,fourniss
                                         className={"w-full"} label="Quantité" name="quantite" onChange={onHandleChange}/>
                                     <InputError message={errors.quantite}/>
                                 </div>
-
-
                                 <div className={"md:col-span-2 w-fit"}>
                                     <Button onClick={handleAddToCommande} variant={'contained'} sx={{color:"white"}} color={'primary'} type={"button"}>
                                         Ajouter
@@ -461,7 +491,7 @@ function Create({auth,produits,departements,departementPrincipal,motifs,fourniss
                             </div>
 
                             <div className={"grid grid-cols-1 md:grid-cols-2 gap-5 border p-3 rounded"}>
-                                <div className={"md:col-span-2 font-bold text-orange-500"}>
+                                <div className={"md:col-span-2 font-bold text-orange-500 text-xl"}>
                                     Dépense supplémentaires
                                 </div>
 
@@ -516,15 +546,15 @@ function Create({auth,produits,departements,departementPrincipal,motifs,fourniss
 
                             </div>
 
-                            <div className={"w-full md:col-span-2 flex gap-2 justify-end"}>
-                                <Button variant={'contained'} color={'success'} type={"submit"}>
-                                    Valider
+                            <div className={"w-full md:col-span-2 flex gap-4 mt-10 py-2 px-1 bg-gray-100 rounded"}>
+                                <Button onClick={()=>setData('enregistrer',false)} variant={'contained'} sx={{color:"white"}} color={'primary'} type={"submit"}>
+                                    Enregistrer & recevoir
+                                </Button>
+
+                                <Button onClick={()=>setData('enregistrer',true)} variant={'contained'} color={'success'} type={"submit"}>
+                                    Enregistrer
                                 </Button>
                             </div>
-
-                            {/*<SnackBar success={successSt}/>
-
-                            <SnackBar error={errorSt}/>*/}
 
                         </form>
 
@@ -535,5 +565,4 @@ function Create({auth,produits,departements,departementPrincipal,motifs,fourniss
         </PanelLayout>
     );
 }
-
 export default Create;
