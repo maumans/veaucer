@@ -18,7 +18,7 @@ import {Alert, AlertTitle, Autocomplete, Button, Snackbar} from "@mui/material";
 import {Add, AddCircle, AddOutlined, Check, Close, Delete, Edit, Visibility} from "@mui/icons-material";
 import InputError from "@/Components/InputError.jsx";
 
-function Index({auth,errors,produits,typeProduits,sousCategories,error,success}) {
+function Index({auth,errors,produits,typeProduits,categories,error,success}) {
     //PAGINATION
 
     const [produitsSt, setProduitsSt] = useState([]);
@@ -96,7 +96,7 @@ function Index({auth,errors,produits,typeProduits,sousCategories,error,success})
             'id':'',
             'nom':'',
             'typeProduit':null,
-            'sousCategorie':null,
+            'categorie':null,
         }
     )
 
@@ -155,7 +155,7 @@ function Index({auth,errors,produits,typeProduits,sousCategories,error,success})
             'id' : el.id,
             'nom': el.nom || '',
             'typeProduit':el.type_souscripteur || null,
-            'sousCategorie':el.categorie_souscripteur ||null,
+            'categorie':el.categorie_souscripteur ||null,
         })
 
         setOpenEdit(true);*/
@@ -165,8 +165,8 @@ function Index({auth,errors,produits,typeProduits,sousCategories,error,success})
         setData({
             'id' : el.id,
             'nom': el.nom || '',
-            'typeProduit':el.type_souscripteur || null,
-            'sousCategorie':el.categorie_souscripteur ||null,
+            'typeProduit':el.type_produit || null,
+            'categories':el.categorie ||null,
         })
 
         setOpenShow(true);
@@ -368,15 +368,15 @@ function Index({auth,errors,produits,typeProduits,sousCategories,error,success})
                                 >
                                     <Autocomplete
                                         className={"w-full"}
-                                        onChange={(e,val)=>setData("sousCategorie",val)}
+                                        onChange={(e,val)=>setData("categorie",val)}
                                         disablePortal={true}
-                                        options={sousCategories}
+                                        options={categories}
                                         groupBy={(option) => option.categorie.libelle}
                                         getOptionLabel={(option)=>option.nom}
                                         isOptionEqualToValue={(option, value) => option.id === value.id}
                                         renderInput={(params)=><TextField  fullWidth {...params} placeholder={"Catégorie de produit"} label={params.nom}/>}
                                     />
-                                    <InputError message={errors["data.sousCategorie"]}/>
+                                    <InputError message={errors["data.categorie"]}/>
                                 </div>
 
                             </div>
@@ -433,17 +433,17 @@ function Index({auth,errors,produits,typeProduits,sousCategories,error,success})
                                     className={"w-full"}
                                 >
                                     <Autocomplete
-                                        value={data.sousCategorie}
+                                        value={data.categorie}
                                         className={"w-full"}
-                                        onChange={(e,val)=>setData("sousCategorie",val)}
+                                        onChange={(e,val)=>setData("categorie",val)}
                                         disablePortal={true}
-                                        options={sousCategories}
+                                        options={categories}
                                         groupBy={(option) => option.categorie.libelle}
                                         getOptionLabel={(option)=>option.nom}
                                         isOptionEqualToValue={(option, value) => option.id === value.id}
                                         renderInput={(params)=><TextField  fullWidth {...params} placeholder={"Catégorie de produit"} label={params.nom}/>}
                                     />
-                                    <InputError message={errors["data.sousCategorie"]}/>
+                                    <InputError message={errors["data.categorie"]}/>
                                 </div>
                             </div>
                         </DialogContent>
@@ -489,7 +489,7 @@ function Index({auth,errors,produits,typeProduits,sousCategories,error,success})
                                             CATEGORIE
                                         </div>
                                         <div className={'py-2 px-2'}>
-                                            {data.sousCategorie?.nom}
+                                            {data.categorie?.nom}
                                         </div>
                                     </>
 

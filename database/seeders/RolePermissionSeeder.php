@@ -150,7 +150,7 @@ class RolePermissionSeeder extends Seeder
         ]);
 
         Permission::create([
-            'name' => 'display-dashboard-employes',
+            'name' => 'display-dashboard-employe',
             'libelle' => 'Affichage du dashboard employé',
             'groupe' => 'dashboard',
         ]);

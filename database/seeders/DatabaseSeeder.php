@@ -23,7 +23,7 @@ class DatabaseSeeder extends Seeder
         // ]);
 
         $this->call([
-            /*RolePermissionSeeder::class,
+            RolePermissionSeeder::class,
             ReferentielSeeder::class,
             TypeSocieteSeeder::class,
             SocieteSeeder::class,
@@ -31,8 +31,8 @@ class DatabaseSeeder extends Seeder
             TypeProduitSeeder::class,
             CategorieProduitSeeder::class,
             MotifSeeder::class,
-            TypeOperationSeeder::class,*/
-            FastSeeder::class
+            TypeOperationSeeder::class,
+            //FastSeeder::class
         ]);
 
     }

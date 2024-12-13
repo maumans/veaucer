@@ -16,9 +16,9 @@ class Produit extends Model
         return $this->belongsTo(TypeProduit::class);
     }
 
-    public function sousCategorie()
+    public function categorie()
     {
-        return $this->belongsTo(SousCategorie::class);
+        return $this->belongsTo(Categorie::class);
     }
 
     public function operations()

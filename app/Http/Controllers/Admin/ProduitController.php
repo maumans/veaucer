@@ -4,9 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\SuperAdmin\SocieteController;
-use App\Models\Categorie;
 use App\Models\Departement;
-use App\Models\SousCategorie;
+use App\Models\Categorie;
 use App\Models\Fournisseur;
 use App\Models\Produit;
 use App\Models\Stock;
@@ -27,21 +26,21 @@ class ProduitController extends Controller
     {
         $produits = Produit::where('status', true)->orderBy('nom')->where(function ($query){
             $query->where("societe_id",session('societe')['id'])->orWhere("societe_id",null);
-        })->with('typeProduit','sousCategorie')->paginate(10);
+        })->with('typeProduit','categorie')->paginate(10);
 
 
         $typeProduits = TypeProduit::where('status', true)->where(function ($query){
             $query->where("societe_id",session('societe')['id'])->orWhere("societe_id",null);
         })->orderBy('nom')->get();
 
-        $sousCategories = SousCategorie::where('status', true)->where(function ($query){
+        $categories = Categorie::where('status', true)->where(function ($query){
             $query->where("societe_id",session('societe')['id'])->orWhere("societe_id",null);
-        })->with('categorie')->orderBy('nom')->get();
+        })->orderBy('nom')->get();
 
         return Inertia::render('Admin/Catalogue/Produit/Index',[
             'produits' => $produits,
             'typeProduits' => $typeProduits,
-            'sousCategories' => $sousCategories,
+            'categories' => $categories,
         ]);
     }
 
@@ -56,9 +55,9 @@ class ProduitController extends Controller
 
         $typeProduit = TypeProduit::where('status', true)->where('nom', 'unité')->first();
 
-        $sousCategories = SousCategorie::where('status', true)->where(function ($query){
+        $categories = Categorie::where('status', true)->where(function ($query){
             $query->where("societe_id",session('societe')['id'])->orWhere("societe_id",null);
-        })->with('categorie')->orderBy('nom')->get();
+        })->orderBy('nom')->get();
 
         $fournisseurs = Fournisseur::where('status', true)->where(function ($query){
             $query->where("societe_id",session('societe')['id'])->orWhere("societe_id",null);
@@ -67,7 +66,7 @@ class ProduitController extends Controller
         return Inertia::render("Admin/Catalogue/Produit/Create",[
             'typeProduits' => $typeProduits,
             'typeProduit' => $typeProduit,
-            'sousCategories' => $sousCategories,
+            'categories' => $categories,
             'fournisseurs' => $fournisseurs,
         ]);
     }
@@ -80,7 +79,7 @@ class ProduitController extends Controller
         $request->validate([
             'nom' => 'required',
             "typeProduit" => 'required',
-            "sousCategorie" => 'required',
+            "categorie" => 'required',
         ]);
 
         DB::beginTransaction();
@@ -96,7 +95,7 @@ class ProduitController extends Controller
                 "stockGlobal" => $request->stockGlobal,
                 "image" => $request->image,
                 "type_produit_id" => $request->typeProduit['id'],
-                "sous_categorie_id" => $request->sousCategorie['id'],
+                "categorie_id" => $request->categorie['id'],
                 "fournisseur_principal_id" => $request->fournisseur['id'],
                 "societe_id" => session('societe')['id'],
             ]);
@@ -135,21 +134,21 @@ class ProduitController extends Controller
      */
     public function edit($userId,$produitId)
     {
-        $produit=Produit::where("id",$produitId)->with('fournisseurPrincipal','sousCategorie','typeProduit')->first();
+        $produit=Produit::where("id",$produitId)->with('fournisseurPrincipal','categorie','typeProduit')->first();
 
         $typeProduits=TypeProduit::where("status",true)->where(function ($query){
             $query->where("societe_id",session('societe')['id'])->orWhere("societe_id",null);
         })->get();
 
-        $sousCategories = SousCategorie::where('status', true)->where(function ($query){
+        $categories = Categorie::where('status', true)->where(function ($query){
             $query->where("societe_id",session('societe')['id'])->orWhere("societe_id",null);
-        })->with('categorie')->orderBy('nom')->get();
+        })->orderBy('nom')->get();
 
         $fournisseurs=Fournisseur::where("status",true)->where(function ($query){
             $query->where("societe_id",session('societe')['id'])->orWhere("societe_id",null);
         })->get();
 
-        return Inertia::render("Admin/Catalogue/Produit/Edit",["produit"=>$produit,'typeProduits'=>$typeProduits,"fournisseurs"=>$fournisseurs,"sousCategories"=>$sousCategories]);
+        return Inertia::render("Admin/Catalogue/Produit/Edit",["produit"=>$produit,'typeProduits'=>$typeProduits,"fournisseurs"=>$fournisseurs,"categories"=>$categories]);
 
     }
 
@@ -161,7 +160,7 @@ class ProduitController extends Controller
         $request->validate([
             'nom' => 'required',
             "typeProduit" => 'required',
-            "sousCategorie" => 'required',
+            "categorie" => 'required',
         ]);
 
         DB::beginTransaction();
@@ -177,7 +176,7 @@ class ProduitController extends Controller
                 "stockMinimal" => $request->stockMinimal,
                 "image" => $request->image,
                 "type_produit_id" => $request->typeProduit['id'],
-                "sous_categorie_id" => $request->sousCategorie['id'],
+                "categorie_id" => $request->categorie['id'],
                 "fournisseur_principal_id" => $request->fournisseur['id'],
                 "societe_id" => session('societe')['id'],
             ]);
@@ -228,9 +227,9 @@ class ProduitController extends Controller
                 {
                     $query->whereRelation('typeProduit','nom','like',"%".$filter['value']."%");
                 }
-                else if($filter['id'] == 'sousCategorie')
+                else if($filter['id'] == 'categorie')
                 {
-                    $query->whereRelation('sousCategorie','nom','like',"%".$filter['value']."%");
+                    $query->whereRelation('categorie','nom','like',"%".$filter['value']."%");
                 }
                 else if($filter['id'] == 'fournisseur')
                 {
@@ -244,7 +243,7 @@ class ProduitController extends Controller
 
             if($request->globalFilter)
             {
-                $query->whereRelation('typeProduit','nom','like', "%".$request->globalFilter."%")->orWhereRelation('sousCategorie','nom','like', "%".$request->globalFilter."%")->orWhereRelation('fournisseurPrincipal','nom','like', "%".$request->globalFilter."%")->orWhere('nom','like', "%".$request->globalFilter."%")->orWhere('prixAchat','like', "%".$request->globalFilter."%")->orWhere('prixVente','like', "%".$request->globalFilter."%");
+                $query->whereRelation('typeProduit','nom','like', "%".$request->globalFilter."%")->orWhereRelation('categorie','nom','like', "%".$request->globalFilter."%")->orWhereRelation('fournisseurPrincipal','nom','like', "%".$request->globalFilter."%")->orWhere('nom','like', "%".$request->globalFilter."%")->orWhere('prixAchat','like', "%".$request->globalFilter."%")->orWhere('prixVente','like', "%".$request->globalFilter."%");
 
                 /*$colonnes = Schema::getColumnListing('produits'); // Obtient la liste des colonnes de la table 'produits'
 
@@ -253,7 +252,7 @@ class ProduitController extends Controller
                 }*/
             }
 
-        })->with('typeProduit','sousCategorie',"fournisseurPrincipal")/*->where('status', true)*/->skip($request->start)->take($request->size);
+        })->with('typeProduit','categorie',"fournisseurPrincipal")/*->where('status', true)*/->skip($request->start)->take($request->size);
 
         foreach ($request->sorting as $sort)
         {
@@ -277,20 +276,20 @@ class ProduitController extends Controller
     {
         $produits = Produit::where('status', true)->orderBy('nom')->where(function ($query){
             $query->where("societe_id",session('societe')['id'])->orWhere("societe_id",null);
-        })->with('typeProduit','sousCategorie')->paginate(10);
+        })->with('typeProduit','categorie')->paginate(10);
 
         $typeProduits = TypeProduit::where('status', true)->where(function ($query){
             $query->where("societe_id",session('societe')['id'])->orWhere("societe_id",null);
         })->orderBy('nom')->get();
 
-        $sousCategories = SousCategorie::where('status', true)->where(function ($query){
+        $categories = Categorie::where('status', true)->where(function ($query){
             $query->where("societe_id",session('societe')['id'])->orWhere("societe_id",null);
         })->with('categorie')->orderBy('nom')->get();
 
         return Inertia::render('Inventaire',[
             'produits' => $produits,
             'typeProduits' => $typeProduits,
-            'sousCategories' => $sousCategories,
+            'categories' => $categories,
         ]);
     }
 

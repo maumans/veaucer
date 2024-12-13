@@ -25,7 +25,7 @@ return new class extends Migration
             $table->integer('notes')->nullable();
             $table->enum('etat',['ACTIF','HORS STOCK','EN PROMOTION'])->default("ACTIF")->nullable();
             $table->boolean('status')->default(true)->nullable();
-            $table->foreignId('sous_categorie_id')->nullable()->constrained('sous_categories')->cascadeOnDelete();
+            $table->foreignId('categorie_id')->nullable()->constrained('categories')->cascadeOnDelete();
             $table->foreignId('type_produit_id')->nullable()->constrained('type_produits')->cascadeOnDelete();
             $table->foreignId("fournisseur_principal_id")->nullable()->constrained("fournisseurs")->cascadeOnDelete();
             $table->foreignId("unite_mesure_id")->nullable()->constrained("unite_mesures")->cascadeOnDelete();

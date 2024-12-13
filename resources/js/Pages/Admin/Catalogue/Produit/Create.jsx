@@ -9,7 +9,7 @@ import ReferentielLayout from "@/Layouts/ReferentielLayout.jsx";
 import NumberFormatCustomUtils from "@/Pages/Utils/NumberFormatCustomUtils.jsx";
 import PanelLayout from "@/Layouts/PanelLayout.jsx";
 
-function Create({auth,typeProduits,typeProduit,sousCategories,fournisseurs,devises,uniteMesures,errors,success,error,referentiels}) {
+function Create({auth,typeProduits,typeProduit,categories,fournisseurs,devises,uniteMesures,errors,success,error,referentiels}) {
 
     const {data,setData, post, processing}=useForm({
         'id':'',
@@ -20,7 +20,7 @@ function Create({auth,typeProduits,typeProduit,sousCategories,fournisseurs,devis
         'stockMinimal':'',
         'image':'',
         'typeProduit':typeProduit,
-        'sousCategorie':null,
+        'categorie':null,
         'fournisseur':null,
         'uniteMesure':null,
         'devise':null,
@@ -106,15 +106,14 @@ function Create({auth,typeProduits,typeProduit,sousCategories,fournisseurs,devis
                                 <div>
                                     <Autocomplete
                                         className={"w-full"}
-                                        onChange={(e,val)=>setData("sousCategorie",val)}
+                                        onChange={(e,val)=>setData("categorie",val)}
                                         disablePortal={true}
-                                        options={sousCategories}
-                                        groupBy={(option) => option.categorie.libelle}
-                                        getOptionLabel={(option)=>option.nom}
+                                        options={categories}
+                                        getOptionLabel={(option)=>option.libelle}
                                         isOptionEqualToValue={(option, value) => option.id === value.id}
-                                        renderInput={(params)=><TextField  fullWidth {...params} placeholder={"Categorie de produit"} label={params.nom}/>}
+                                        renderInput={(params)=><TextField  fullWidth {...params} placeholder={"Categorie de produit"} label={params.libelle}/>}
                                     />
-                                    <InputError message={errors["data.sousCategorie"]}/>
+                                    <InputError message={errors["data.categorie"]}/>
                                 </div>
 
 

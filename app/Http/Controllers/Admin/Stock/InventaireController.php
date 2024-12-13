@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin\Stock;
 
 use App\Http\Controllers\Controller;
 use App\Models\Produit;
-use App\Models\SousCategorie;
+use App\Models\Categorie;
 use App\Models\TypeProduit;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -22,14 +22,14 @@ class InventaireController extends Controller
             $query->where("societe_id",session('societe')['id'])->orWhere("societe_id",null);
         })->orderBy('nom')->get();
 
-        $sousCategories = SousCategorie::where('status', true)->where(function ($query){
+        $categories = Categorie::where('status', true)->where(function ($query){
             $query->where("societe_id",session('societe')['id'])->orWhere("societe_id",null);
         })->with('categorie')->orderBy('nom')->get();
 
         return Inertia::render('Admin/Stock/Inventaire/Index',[
             'produits' => $produits,
             'typeProduits' => $typeProduits,
-            'sousCategories' => $sousCategories,
+            'categories' => $categories,
         ]);
     }
 
@@ -43,9 +43,9 @@ class InventaireController extends Controller
                 {
                     $query->whereRelation('typeProduit','nom','like',"%".$filter['value']."%");
                 }
-                else if($filter['id'] == 'sousCategorie')
+                else if($filter['id'] == 'categorie')
                 {
-                    $query->whereRelation('sousCategorie','nom','like',"%".$filter['value']."%");
+                    $query->whereRelation('categorie','nom','like',"%".$filter['value']."%");
                 }
                 else if($filter['id'] == 'fournisseur')
                 {
@@ -59,7 +59,7 @@ class InventaireController extends Controller
 
             if($request->globalFilter)
             {
-                $query->whereRelation('typeProduit','nom','like', "%".$request->globalFilter."%")->orWhereRelation('sousCategorie','nom','like', "%".$request->globalFilter."%")->orWhereRelation('fournisseurPrincipal','nom','like', "%".$request->globalFilter."%")->orWhere('nom','like', "%".$request->globalFilter."%")->orWhere('stockGlobal','like', "%".$request->globalFilter."%")->orWhere('stockMinimal','like', "%".$request->globalFilter."%");
+                $query->whereRelation('typeProduit','nom','like', "%".$request->globalFilter."%")->orWhereRelation('categorie','nom','like', "%".$request->globalFilter."%")->orWhereRelation('fournisseurPrincipal','nom','like', "%".$request->globalFilter."%")->orWhere('nom','like', "%".$request->globalFilter."%")->orWhere('stockGlobal','like', "%".$request->globalFilter."%")->orWhere('stockMinimal','like', "%".$request->globalFilter."%");
 
                 /*$colonnes = Schema::getColumnListing('produits'); // Obtient la liste des colonnes de la table 'produits'
 
@@ -68,7 +68,7 @@ class InventaireController extends Controller
                 }*/
             }
 
-        })->with('typeProduit','sousCategorie',"fournisseurPrincipal")/*->where('status', true)*/->skip($request->start)->take($request->size);
+        })->with('typeProduit','categorie',"fournisseurPrincipal")/*->where('status', true)*/->skip($request->start)->take($request->size);
 
         foreach ($request->sorting as $sort)
         {

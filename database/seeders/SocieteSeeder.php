@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\Caisse;
 use App\Models\Departement;
-use App\Models\Role;
 use App\Models\RoleUser;
 use App\Models\Societe;
 use App\Models\TypeSociete;
@@ -12,6 +11,7 @@ use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 class SocieteSeeder extends Seeder
 {

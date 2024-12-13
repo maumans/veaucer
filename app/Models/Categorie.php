@@ -11,8 +11,8 @@ class Categorie extends Model
 
     protected $guarded = [];
 
-    public function sousCategories()
+    public function produits()
     {
-        return $this->hasMany(SousCategorie::class);
+        return $this->hasMany(Produit::class);
     }
 }

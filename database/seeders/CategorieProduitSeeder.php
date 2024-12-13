@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Categorie;
 use App\Models\CategorieProduit;
-use App\Models\SousCategorie;
+use App\Models\Categorie;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -18,27 +18,24 @@ class CategorieProduitSeeder extends Seeder
     {
         DB::table('categories')->delete();
 
-        $restaurant = Categorie::create([
-            "nom"=>'restaurant',
-            'libelle'=>"Restaurant"
-        ]);
-
-        SousCategorie::create([
+        $jus=Categorie::create([
             "nom"=>'jus',
             'libelle'=>"Jus",
-            'categorie_id'=>$restaurant->id
         ]);
 
-        SousCategorie::create([
+        $biere=Categorie::create([
+            "nom"=>'bière',
+            'libelle'=>"Bière",
+        ]);
+
+        $alcool=Categorie::create([
             "nom"=>'alcool',
             'libelle'=>"Alcool",
-            'categorie_id'=>$restaurant->id
         ]);
 
-        SousCategorie::create([
+        $plat=Categorie::create([
             "nom"=>'plat',
             'libelle'=>"Plat",
-            'categorie_id'=>$restaurant->id
         ]);
     }
 }

@@ -9,7 +9,7 @@ import ReferentielLayout from "@/Layouts/ReferentielLayout.jsx";
 import NumberFormatCustomUtils from "@/Pages/Utils/NumberFormatCustomUtils.jsx";
 import PanelLayout from "@/Layouts/PanelLayout.jsx";
 
-function Create({auth,typeProduits,sousCategories,fournisseurs,devises,uniteMesures,errors,success,error,produit}) {
+function Create({auth,typeProduits,categories,fournisseurs,devises,uniteMesures,errors,success,error,produit}) {
 
     const {data,setData, post, processing}=useForm({
         'id':produit.id,
@@ -20,7 +20,7 @@ function Create({auth,typeProduits,sousCategories,fournisseurs,devises,uniteMesu
         'stockMinimal':produit.stockMinimal,
         'image':produit.image,
         'typeProduit':produit.type_produit,
-        'sousCategorie':produit.sous_categorie,
+        'categorie':produit.categorie,
         'fournisseur':produit.fournisseur_principal,
         'uniteMesure':produit.unite_mesure,
         'devise':produit.devise,
@@ -105,17 +105,17 @@ function Create({auth,typeProduits,sousCategories,fournisseurs,devises,uniteMesu
 
                                 <div>
                                     <Autocomplete
-                                        value={data.sousCategorie}
+                                        value={data.categorie}
                                         className={"w-full"}
-                                        onChange={(e,val)=>setData("sousCategorie",val)}
+                                        onChange={(e,val)=>setData("categorie",val)}
                                         disablePortal={true}
-                                        options={sousCategories}
+                                        options={categories}
                                         groupBy={(option) => option.categorie.libelle}
                                         getOptionLabel={(option)=>option.nom}
                                         isOptionEqualToValue={(option, value) => option.id === value.id}
                                         renderInput={(params)=><TextField  fullWidth {...params} placeholder={"Categorie de produit"} label={params.nom}/>}
                                     />
-                                    <InputError message={errors["data.sousCategorie"]}/>
+                                    <InputError message={errors["data.categorie"]}/>
                                 </div>
 
 
@@ -132,6 +132,7 @@ function Create({auth,typeProduits,sousCategories,fournisseurs,devises,uniteMesu
                                 </div>
                                 <div className={"w-full"}>
                                     <TextField
+                                        value={data.prixAchat}
                                         InputProps={{
                                             inputComponent: NumberFormatCustomUtils,
                                             endAdornment:"GNF",
@@ -147,6 +148,7 @@ function Create({auth,typeProduits,sousCategories,fournisseurs,devises,uniteMesu
 
                                 <div className={"w-full"}>
                                     <TextField
+                                        value={data.prixVente}
                                         InputProps={{
                                             inputComponent: NumberFormatCustomUtils,
                                             endAdornment:"GNF",
