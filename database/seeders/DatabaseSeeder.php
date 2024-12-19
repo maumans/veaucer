@@ -32,6 +32,7 @@ class DatabaseSeeder extends Seeder
             CategorieProduitSeeder::class,
             MotifSeeder::class,
             TypeOperationSeeder::class,
+            ConfigurationPermissionsSeeder::class,
             //FastSeeder::class
         ]);
 

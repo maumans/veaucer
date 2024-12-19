@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\Categorie;
 use App\Models\CategorieProduit;
-use App\Models\Categorie;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;

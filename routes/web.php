@@ -4,6 +4,8 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Http\Controllers\SuperAdmin\SocieteConfigurationController;
+use App\Http\Controllers\SuperAdmin\ThemeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -46,6 +48,42 @@ Route::middleware('auth')->group(function () {
 
 ///SUPER ADMIN
 Route::middleware(['auth',"userIsSuperAdmin","profilActif"])->group(function () {
+    Route::get('superAdmin/dashboard/{user}', [\App\Http\Controllers\SuperAdmin\DashboardController::class, 'index'])->name('superAdmin.dashboard');
+    
+    // Routes de configuration société
+    Route::prefix('superAdmin/societe')->name('superAdmin.societe.')->group(function () {
+        // Configuration
+        Route::get('/configuration/{user}', [SocieteConfigurationController::class, 'index'])
+            ->name('configuration.index')
+            ->middleware('permission:display-societe-configuration');
+        Route::get('/configuration/{societe}/show', [SocieteConfigurationController::class, 'show'])
+            ->name('configuration.show')
+            ->middleware('permission:display-societe-configuration');
+        Route::put('/configuration/{societe}', [SocieteConfigurationController::class, 'update'])
+            ->name('configuration.update')
+            ->middleware('permission:edit-societe-configuration');
+
+        // Thème
+        Route::get('/{societe}/theme', [ThemeController::class, 'index'])
+            ->name('theme.index')
+            ->middleware('permission:display-societe-themes');
+        Route::get('/{societe}/theme/create', [ThemeController::class, 'create'])
+            ->name('theme.create')
+            ->middleware('permission:create-societe-themes');
+        Route::post('/{societe}/theme', [ThemeController::class, 'store'])
+            ->name('theme.store')
+            ->middleware('permission:create-societe-themes');
+        Route::get('/{societe}/theme/{theme}/edit', [ThemeController::class, 'edit'])
+            ->name('theme.edit')
+            ->middleware('permission:edit-societe-themes');
+        Route::put('/{societe}/theme/{theme}', [ThemeController::class, 'update'])
+            ->name('theme.update')
+            ->middleware('permission:edit-societe-themes');
+        Route::delete('/{societe}/theme/{theme}', [ThemeController::class, 'destroy'])
+            ->name('theme.destroy')
+            ->middleware('permission:delete-societe-themes');
+    });
+
     Route::resource('superAdmin.referentiel', \App\Http\Controllers\SuperAdmin\ReferentielController::class);
 
     Route::resource('superAdmin.role', \App\Http\Controllers\SuperAdmin\RoleController::class);
@@ -55,17 +93,48 @@ Route::middleware(['auth',"userIsSuperAdmin","profilActif"])->group(function () 
     Route::resource('superAdmin.parametre', \App\Http\Controllers\SuperAdmin\ParametreController::class);
     Route::resource('superAdmin.devise', \App\Http\Controllers\SuperAdmin\DeviseController::class);
 
-    Route::resource('superAdmin.societe', \App\Http\Controllers\SuperAdmin\SocieteController::class);
-    Route::post('superAdmin/societe/paginationFiltre',[\App\Http\Controllers\SuperAdmin\SocieteController::class,'paginationFiltre'])->name('superAdmin.societe.paginationFiltre');
-
+    Route::resource('superAdmin/{superAdmin}/societe', \App\Http\Controllers\SuperAdmin\SocieteController::class)->names('superAdmin.societe');
+    Route::post('superAdmin/{superAdmin}/societe/paginationFiltre',[\App\Http\Controllers\SuperAdmin\SocieteController::class,'paginationFiltre'])->name('superAdmin.societe.paginationFiltre');
 
     Route::resource('superAdmin.typeSociete', \App\Http\Controllers\SuperAdmin\TypeSocieteController::class);
     Route::post('superAdmin/typeSociete/paginationFiltre',[\App\Http\Controllers\SuperAdmin\TypeSocieteController::class,'paginationFiltre'])->name('superAdmin.typeSociete.paginationFiltre');
 
-    Route::get("superAdmin/{id}/dashboard/",function(){
-        return Inertia::render('SuperAdmin/Dashboard');
-    })->name("superAdmin.dashboard");
+    // Route::get("superAdmin/{id}/dashboard/",function(){
+    //     return Inertia::render('SuperAdmin/Dashboard');
+    // })->name("superAdmin.dashboard");
 
+    // Routes de configuration société
+    // Route::middleware(['auth', 'role:SuperAdmin'])->group(function () {
+    //     Route::prefix('superAdmin/societe/{societe}')->name('superAdmin.societe.')->group(function () {
+    //         // Configuration
+    //         Route::get('/configuration', [SocieteConfigurationController::class, 'index'])
+    //             ->name('configuration.index')
+    //             ->middleware('permission:display-societe-configuration');
+    //         Route::put('/configuration', [SocieteConfigurationController::class, 'update'])
+    //             ->name('configuration.update')
+    //             ->middleware('permission:edit-societe-configuration');
+
+    //         // Thèmes
+    //         Route::get('/themes', [ThemeController::class, 'index'])
+    //             ->name('themes.index')
+    //             ->middleware('permission:display-societe-themes');
+    //         Route::get('/themes/create', [ThemeController::class, 'create'])
+    //             ->name('themes.create')
+    //             ->middleware('permission:create-societe-themes');
+    //         Route::post('/themes', [ThemeController::class, 'store'])
+    //             ->name('themes.store')
+    //             ->middleware('permission:create-societe-themes');
+    //         Route::get('/themes/{theme}/edit', [ThemeController::class, 'edit'])
+    //             ->name('themes.edit')
+    //             ->middleware('permission:edit-societe-themes');
+    //         Route::put('/themes/{theme}', [ThemeController::class, 'update'])
+    //             ->name('themes.update')
+    //             ->middleware('permission:edit-societe-themes');
+    //         Route::delete('/themes/{theme}', [ThemeController::class, 'destroy'])
+    //             ->name('themes.destroy')
+    //             ->middleware('permission:delete-societe-themes');
+    //     });
+    // });
 });
 
 ////////////////////////////////
@@ -125,10 +194,13 @@ Route::middleware(['auth',"userIsAdmin","profilActif"])->group(function () {
 
 });
 
-
 ///CLIENT
 Route::middleware(['auth',"userIsClient","profilActif"])->group(function () {
 
+});
+
+Route::middleware(['auth'])->group(function () {
+    // Suppression des anciennes routes de configuration
 });
 
 require __DIR__.'/auth.php';

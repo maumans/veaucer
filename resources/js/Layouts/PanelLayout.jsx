@@ -39,6 +39,9 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import {router} from "@inertiajs/react";
 import SnackBar from "@/Components/SnackBar.jsx";
 import OrderedSideBarMenu from "@/Components/OrderedSideBarMenu.jsx";
+import PaletteIcon from '@mui/icons-material/Palette';
+import BusinessIcon from '@mui/icons-material/Business';
+import TuneIcon from '@mui/icons-material/Tune';
 
 const theme = createTheme(
     {
@@ -106,13 +109,17 @@ export default function PanelLayout(props) {
     };
 
     const superAdminPermissionLinks = [
-        { permission: 'display-dashboard', href: route('superAdmin.dashboard',props.auth?.user?.id), icon: <Dashboard/>, text: 'Tableau de bord', nom: 'superAdminDashboard',parent:false },
-        { permission: 'display-users', href: route('user.index'), icon: <Person/>, text: 'Gestion des users', nom: 'user',parent:false },
-        { permission: 'display-roles', href: route('role.index'), icon: <Group/>, text: 'Gestion des roles', nom: 'role',parent:false },
+        { permission: 'display-dashboard', href: route('superAdmin.dashboard', props.auth?.user?.id), icon: <DashboardIcon/>, text: 'Tableau de bord', nom: 'superAdminDashboard', parent: false },
+        { permission: 'display-users', href: route('user.index'), icon: <Person/>, text: 'Gestion des users', nom: 'user', parent: false },
+        { permission: 'display-roles', href: route('role.index'), icon: <Group/>, text: 'Gestion des roles', nom: 'role', parent: false },
 
-        ///DROPDOWN
-        { permission: 'display-referentiels', icon: <Storage/>, text: 'Reférentiels', nom: 'referentiel', parent:true},
-        { permission: 'display-societes', href: route('superAdmin.societe.index',props.auth?.user?.id), icon: <Storage/>, text: 'Société', nom: 'societe', parent:"referentiel" },
+        // Dropdown Référentiels
+        { permission: 'display-referentiels', icon: <Storage/>, text: 'Reférentiels', nom: 'referentiel', parent: true },
+        { permission: 'display-societes', href: route('superAdmin.societe.index', { superAdmin: props.auth?.user?.id }), icon: <BusinessIcon/>, text: 'Sociétés', nom: 'societe', parent: "referentiel" },
+        
+        // Dropdown Configuration
+        { permission: 'display-societe-configuration', icon: <SettingsIcon/>, text: 'Configuration', nom: 'configuration', parent: true },
+        { permission: 'display-societe-configuration', href: route('superAdmin.societe.configuration.index', { user: props.auth?.user?.id }), icon: <TuneIcon/>, text: 'Gestion des sociétés', nom: 'societeConfiguration', parent: "configuration" },
     ];
 
     const drawer = (
@@ -132,57 +139,6 @@ export default function PanelLayout(props) {
             }
 
             <List className={"p-0 m-0"}>
-
-                {/*{ props.auth.superAdmin &&
-                    [
-                        {routeLink:"superAdmin.dashboard",text:'Tableau de bord',active:"superAdminDashboard",icon:<DashboardIcon/>,collapse:false},
-                        {routeLink:"superAdmin.referentiel.index",text:'Référentiel',active:"referentiel",icon:<LibraryBooks/>,collapse:false},
-
-                    ].map(({routeLink,text,active,icon,collapse,routeLinks}, index) => (
-
-                        !collapse ?
-
-                            <Fragment key={index}>
-                                <ListItem disablePadding sx={props.active===active ? {color: "#f97316",borderRight:"2px solid #f97316",backgroundColor:"#d5deee"}:{color: "black"}}>
-                                    <ListItemButton onClick={()=>handleClick(routeLink,active,props.auth.user.id,0)}>
-                                        <ListItemIcon sx={props.active===active ? {color: "#f97316"}:{color: "black"}}>
-                                            {icon}
-                                        </ListItemIcon>
-                                        <ListItemText primary={text} />
-                                    </ListItemButton>
-                                </ListItem>
-                                <Divider  component="li"/>
-                            </Fragment>
-                            :
-                            <Fragment key={index}>
-                                <ListItemButton key={index} sx={(active===props.active) ? {color: "#f97316",borderRight:"2px solid #f97316",backgroundColor:"#d5deee"}:{color: "black"}} onClick={()=>handleClickCollapse(active)}>
-                                    <ListItemIcon sx={props.active===active ? {color: "#f97316"}:{color: "black"}}>
-                                        {icon}
-                                    </ListItemIcon>
-                                    <ListItemText primary={text} />
-                                    {(open === active) ? <ExpandLess /> : <ExpandMore />}
-                                </ListItemButton>
-
-                                <Divider  component="li"/>
-                                <Collapse in={ open === active} timeout="auto" unmountOnExit>
-                                    <List component="div" disablePadding>
-                                        {
-                                            routeLinks?.map((rlink,i)=>(
-                                                <div key={i} style={(props.sousActive===rlink.sousActive && active===props.active) ? {color: "#f97316",backgroundColor:"#f1f7fd"}:{color: "black"}}>
-                                                    <Link href={route(rlink.route,[props.auth.user.id,0],{preserveState:true})}>
-                                                        <ListItemButton>
-                                                            <ListItemText className={'pl-16'} primary={rlink.text}/>
-                                                        </ListItemButton>
-                                                    </Link>
-                                                    <Divider color={'#f97316'} component="li"/>
-                                                </div>
-                                            ))
-                                        }
-                                    </List>
-                                </Collapse>
-                            </Fragment>
-
-                    ))}*/}
 
                 { props.auth.admin &&
                     [

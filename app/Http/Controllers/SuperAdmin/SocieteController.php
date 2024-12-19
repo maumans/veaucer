@@ -22,7 +22,7 @@ class SocieteController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index($superAdmin)
     {
         $societes = Societe::/*where('status', true)->*/orderBy('nom')->with('typeSociete')->paginate(10);
         $typeSocietes = TypeSociete::/*where('status', true)->*/orderBy('nom')->get();

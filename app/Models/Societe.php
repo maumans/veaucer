@@ -4,12 +4,18 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Permission\Models\Role;
 
 class Societe extends Model
 {
     use HasFactory;
 
     protected $guarded =[];
+
+    public function configuration()
+    {
+        return $this->hasOne(SocieteConfiguration::class);
+    }
 
     public function typeSociete()
     {
@@ -44,5 +50,20 @@ class Societe extends Model
     public function posteEmployes()
     {
         return $this->hasMany(PosteEmploye::class);
+    }
+
+    public function themes()
+    {
+        return $this->hasMany(Theme::class);
+    }
+
+    public function themeActif()
+    {
+        return $this->hasOne(Theme::class)->where('actif', true)->where('est_defaut', true);
+    }
+
+    public function configurations()
+    {
+        return $this->hasMany(SocieteConfiguration::class);
     }
 }
