@@ -37,7 +37,7 @@ class ProduitController extends Controller
             $query->where("societe_id",session('societe')['id'])->orWhere("societe_id",null);
         })->orderBy('nom')->get();
 
-        return Inertia::render('Admin/Catalogue/Produit/Index',[
+        return Inertia::render('Admin/Stock/Produit/Index',[
             'produits' => $produits,
             'typeProduits' => $typeProduits,
             'categories' => $categories,
@@ -63,11 +63,16 @@ class ProduitController extends Controller
             $query->where("societe_id",session('societe')['id'])->orWhere("societe_id",null);
         })->orderBy('nom')->get();
 
-        return Inertia::render("Admin/Catalogue/Produit/Create",[
+        $departements = Departement::where('id', session('societe')['id'])->where('status', true)->get();
+        $departementPrincipal = Departement::where('id', session('societe')['id'])->where('status', true)->where('type', 'PRINCIPAL')->first();
+
+        return Inertia::render("Admin/Stock/Produit/Create",[
             'typeProduits' => $typeProduits,
             'typeProduit' => $typeProduit,
             'categories' => $categories,
             'fournisseurs' => $fournisseurs,
+            'departements' => $departements,
+            'departementPrincipal' => $departementPrincipal,
         ]);
     }
 
@@ -80,6 +85,7 @@ class ProduitController extends Controller
             'nom' => 'required',
             "typeProduit" => 'required',
             "categorie" => 'required',
+            "quantite" => 'nullable',
         ]);
 
         DB::beginTransaction();
@@ -93,10 +99,11 @@ class ProduitController extends Controller
                 "prixVente" => $request->prixVente,
                 "stockMinimal" => $request->stockMinimal,
                 "stockGlobal" => $request->stockGlobal,
+                "quantite" => $request->quantite,
                 "image" => $request->image,
                 "type_produit_id" => $request->typeProduit['id'],
                 "categorie_id" => $request->categorie['id'],
-                "fournisseur_principal_id" => $request->fournisseur['id'],
+                "fournisseur_principal_id" => $request->fournisseur? $request->fournisseur['id'] : null,
                 "societe_id" => session('societe')['id'],
             ]);
 
@@ -148,7 +155,7 @@ class ProduitController extends Controller
             $query->where("societe_id",session('societe')['id'])->orWhere("societe_id",null);
         })->get();
 
-        return Inertia::render("Admin/Catalogue/Produit/Edit",["produit"=>$produit,'typeProduits'=>$typeProduits,"fournisseurs"=>$fournisseurs,"categories"=>$categories]);
+        return Inertia::render("Admin/Stock/Produit/Edit",["produit"=>$produit,'typeProduits'=>$typeProduits,"fournisseurs"=>$fournisseurs,"categories"=>$categories]);
 
     }
 
@@ -161,6 +168,8 @@ class ProduitController extends Controller
             'nom' => 'required',
             "typeProduit" => 'required',
             "categorie" => 'required',
+            "quantite" => 'nullable',
+
         ]);
 
         DB::beginTransaction();
@@ -175,6 +184,7 @@ class ProduitController extends Controller
                 "stockGlobal" => $request->stockGlobal,
                 "stockMinimal" => $request->stockMinimal,
                 "image" => $request->image,
+                "quantite" => $request->quantite,
                 "type_produit_id" => $request->typeProduit['id'],
                 "categorie_id" => $request->categorie['id'],
                 "fournisseur_principal_id" => $request->fournisseur['id'],

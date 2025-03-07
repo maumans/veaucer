@@ -39,13 +39,9 @@ class SocieteConfigurationController extends Controller
             'societe' => $societe->only('id', 'nom'),
             'configuration' => $configuration,
             'options' => [
-                'fuseaux_horaires' => \DateTimeZone::listIdentifiers(\DateTimeZone::AFRICA),
                 'langues_disponibles' => [
                     'fr' => 'Français',
                     'en' => 'English',
-                    'pular' => 'Pular',
-                    'malinke' => 'Malinké',
-                    'soussou' => 'Soussou'
                 ],
                 'devises_disponibles' => [
                     'GNF' => 'Franc Guinéen',
@@ -53,15 +49,16 @@ class SocieteConfigurationController extends Controller
                     'USD' => 'Dollar US'
                 ],
                 'modules_disponibles' => [
-                    'evenements' => 'Gestion des événements',
-                    'reservations' => 'Système de réservation',
                     'stocks' => 'Gestion des stocks',
                     'comptabilite' => 'Comptabilité',
-                    'rapports' => 'Rapports et analyses'
+                    'rapports' => 'Rapports et analyses',
+                    'evenements' => 'Gestion des événements',
+                    'reservations' => 'Système de réservation',
                 ],
                 'methodes_paiement_disponibles' => [
                     'especes' => 'Espèces',
                     'carte_bancaire' => 'Carte bancaire',
+                    'orange_money' => 'Orange Money',
                     'mobile_money' => 'Mobile Money',
                     'virement' => 'Virement bancaire'
                 ]

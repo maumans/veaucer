@@ -5,9 +5,11 @@ namespace App\Http\Controllers\SuperAdmin;
 use App\Http\Controllers\Controller;
 use App\Models\Caisse;
 use App\Models\Departement;
-use App\Models\Role;
 use App\Models\RoleUser;
 use App\Models\Societe;
+use App\Models\SocieteConfiguration;
+use App\Models\Stock;
+use App\Models\Theme;
 use App\Models\TypeCaisse;
 use App\Models\TypeSociete;
 use App\Models\User;
@@ -16,6 +18,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
+use Spatie\Permission\Models\Role;
 
 class SocieteController extends Controller
 {
@@ -42,6 +45,32 @@ class SocieteController extends Controller
 
         return Inertia::render("SuperAdmin/Societe/Create",[
             'typeSocietes' => $typeSocietes,
+            'configuration' => new SocieteConfiguration(),
+            'options' => [
+                'langues_disponibles' => [
+                    'fr' => 'Français',
+                    'en' => 'English',
+                ],
+                'devises_disponibles' => [
+                    'GNF' => 'Franc Guinéen',
+                    'EUR' => 'Euro',
+                    'USD' => 'Dollar US'
+                ],
+                'modules_disponibles' => [
+                    'stocks' => 'Gestion des stocks',
+                    'comptabilite' => 'Comptabilité',
+                    'rapports' => 'Rapports et analyses',
+                    'evenements' => 'Gestion des événements',
+                    'reservations' => 'Système de réservation',
+                ],
+                'methodes_paiement_disponibles' => [
+                    'especes' => 'Espèces',
+                    'carte_bancaire' => 'Carte bancaire',
+                    'orange_money' => 'Orange Money',
+                    'mobile_money' => 'Mobile Money',
+                    'virement' => 'Virement bancaire'
+                ]
+            ]
         ]);
     }
 
@@ -56,6 +85,15 @@ class SocieteController extends Controller
             'adresseMail' => 'email',
             'telephone1' => 'required',
             'typeSociete' => 'required',
+
+            'modules_actifs' => 'array',
+            'notifications' => 'array',
+            'securite' => 'array',
+            'methodes_paiement' => 'array',
+            'general' => 'array',
+
+            'couleur_primaire' => 'required|string|max:7',
+            'couleur_secondaire' => 'required|string|max:7',
         ]);
 
         DB::beginTransaction();
@@ -84,7 +122,7 @@ class SocieteController extends Controller
                 "telephone" => $request->telephoneAdmin,
             ]);
 
-            $role = Role::where("nom", "admin")->first();
+            $role = Role::where("name", "admin")->first();
 
             RoleUser::create([
                 "user_id" => $user->id,
@@ -105,8 +143,13 @@ class SocieteController extends Controller
                 "user_id"=>$user->id,
                 "type"=>'PRINCIPAL',
                 "telephone" => $request->telephoneAdmin,
-                "caisse_principale_id"=>$caissePrincipale->id,
                 "societe_id"=>$societe->id,
+            ]);
+
+            $stockPrincipal=Stock::create([
+                "departement_id"=>$departementPrincipal->id,
+                "societe_id"=>$societe->id,
+                
             ]);
 
             $caissePrincipale->departement_id=$departementPrincipal->id;
@@ -117,6 +160,32 @@ class SocieteController extends Controller
             $societe->save();
 
             $user->societeAdmin()->associate($societe)->save();
+
+
+            $configuration = $societe->configuration ?? new SocieteConfiguration();
+            $configuration->societe_id = $societe->id;
+            $configuration->modules_actifs = $request->input('modules_actifs', []);
+            $configuration->notifications = $request->input('notifications', []);
+            $configuration->securite = $request->input('securite', []);
+            $configuration->methodes_paiement = $request->input('methodes_paiement', []);
+            
+            // Mise à jour des paramètres généraux
+            if ($request->has('general')) {
+                $general = $request->input('general');
+                $configuration->langue_par_defaut = $general['default_language'] ?? 'fr';
+                $configuration->devise_par_defaut = $general['currency'] ?? 'GNF';
+                $configuration->fuseau_horaire = $general['timezone'] ?? 'Africa/Conakry';
+            }
+            
+            $configuration->save();
+
+            Theme::create([
+                'societe_id' => $societe->id,
+                'nom' => 'Thème principal',
+                'couleur_primaire' => $request->couleur_primaire,
+                'couleur_secondaire' => $request->couleur_secondaire,
+                'est_defaut' => true,
+            ]);
 
             DB::commit();
 
@@ -133,7 +202,7 @@ class SocieteController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(User $user, Societe $societe)
     {
         //
     }
@@ -149,7 +218,7 @@ class SocieteController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Societe $societe)
+    public function update(Request $request,User $user, Societe $societe)
     {
         $request->validate([
             'nom' => 'required',
@@ -189,18 +258,18 @@ class SocieteController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Societe $societe)
+    public function destroy($user, Societe $societe)
     {
+        
         DB::beginTransaction();
 
         try {
-            $societe->status= !$societe->status;
 
-            $societe->save();
+            $societe->delete();
 
             DB::commit();
 
-            return redirect()->back()->with('success','Societe suspendue avec succès');
+            return redirect()->back()->with('success','Societe supprimée avec succès');
 
         }
         catch (\Exception $e) {
@@ -211,7 +280,7 @@ class SocieteController extends Controller
 
     }
 
-    public function paginationFiltre(Request $request): \Illuminate\Http\JsonResponse
+    public function paginationFiltre(Request $request, User $user): \Illuminate\Http\JsonResponse
     {
         $extraQuery = Societe::where(function($query) use ($request) {
 

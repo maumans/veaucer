@@ -18,13 +18,13 @@ class TypeOperationSeeder extends Seeder
         DB::table('type_operations')->delete();
 
         TypeOperation::create([
-            "nom"=>'approvisionnement',
-            'libelle'=>"Approvisionnement"
+            "nom"=>'entrée',
+            'libelle'=>"Entrée"
         ]);
 
         TypeOperation::create([
-            "nom"=>'vente',
-            'libelle'=>"Vente"
+            "nom"=>'sortie',
+            'libelle'=>"Sortie"
         ]);
     }
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import {
     Box,
     Button,
@@ -10,7 +10,7 @@ import {
     IconButton,
     Stack,
 } from '@mui/material';
-import { Settings as SettingsIcon, Palette as PaletteIcon } from '@mui/icons-material';
+import { Settings as SettingsIcon, Palette as PaletteIcon, AddCircle } from '@mui/icons-material';
 import PanelLayout from '@/Layouts/PanelLayout';
 
 const SocieteCard = ({ societe }) => (
@@ -48,6 +48,12 @@ const SocieteCard = ({ societe }) => (
 );
 
 const Index = ({ auth, societes }) => {
+
+    const handleClickOpen = () => {
+
+        router.get(route("superAdmin.societe.create",auth.user.id),{onSuccess:()=>reset()})
+    };
+
     return (
         <PanelLayout user={auth.user} auth={auth} active="configuration">
             <Head title="Gestion des sociétés" />
@@ -56,6 +62,17 @@ const Index = ({ auth, societes }) => {
                 <Typography variant="h4" component="h1" sx={{ mb: 3 }}>
                     Gestion des sociétés
                 </Typography>
+
+                <div className={'flex justify-end'}>
+                    {
+                        auth?.permissions?.some(permission=>permission==='create-societes') ?
+                            <Button color={'warning'} variant={'contained'} onClick={handleClickOpen} >
+                                <AddCircle className={'mr-1'}></AddCircle> Ajout société
+                            </Button>
+                            :
+                            ""
+                    }
+                </div>
 
                 <Grid container spacing={3}>
                     {societes.map((societe) => (

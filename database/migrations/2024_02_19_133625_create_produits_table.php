@@ -24,6 +24,8 @@ return new class extends Migration
             $table->string('image')->nullable();
             $table->integer('notes')->nullable();
             $table->enum('etat',['ACTIF','HORS STOCK','EN PROMOTION'])->default("ACTIF")->nullable();
+            $table->enum('type',['UNITE','ENSEMBLE'])->default("UNITE")->nullable();
+            $table->integer('quantite')->nullable();
             $table->boolean('status')->default(true)->nullable();
             $table->foreignId('categorie_id')->nullable()->constrained('categories')->cascadeOnDelete();
             $table->foreignId('type_produit_id')->nullable()->constrained('type_produits')->cascadeOnDelete();

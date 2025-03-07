@@ -14,14 +14,14 @@ import { MaterialReactTable, useMaterialReactTable } from 'material-react-table'
 
 import { MRT_Localization_FR } from 'material-react-table/locales/fr';
 import {router, useForm} from "@inertiajs/react";
-import {Alert, AlertTitle, Autocomplete, Button, Snackbar, TextareaAutosize} from "@mui/material";
+import {Alert, AlertTitle, Autocomplete, Button, Snackbar} from "@mui/material";
 import {Add, AddCircle, AddOutlined, Check, Close, Delete, Edit, Visibility} from "@mui/icons-material";
 import InputError from "@/Components/InputError.jsx";
 
-function Index({auth,errors,referentiels,societes,typeSocietes,error,success}) {
+function Index({auth,errors,produits,typeProduits,categories,error,success}) {
     //PAGINATION
 
-    const [societesSt, setSocietesSt] = useState([]);
+    const [produitsSt, setProduitsSt] = useState([]);
     const [isError, setIsError] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isRefetching, setIsRefetching] = useState(false);
@@ -33,29 +33,23 @@ function Index({auth,errors,referentiels,societes,typeSocietes,error,success}) {
     const [globalFilter, setGlobalFilter] = useState('');
     const [sorting, setSorting] = useState([]);
     const [pagination, setPagination] = useState({
-        pageIndex:societes.current_page-1,
-        pageSize:societes.per_page,
+        pageIndex:produits.current_page-1,
+        pageSize:produits.per_page,
     });
 
     useEffect(()=>{
-        setRowCount(societes.total)
-        setSocietesSt(societes.data)
+        setRowCount(produits.total)
+        setProduitsSt(produits.data)
         setIsRefetching(false)
-    },[societes])
+    },[produits])
 
-    //if you want to avoid useEffect, look at the React Query example instead
     useEffect(() => {
 
-        /*if (!societesSt.length) {
-            setIsLoading(true);
-        } else {
-            setIsRefetching(true);
-        }*/
 
         setIsRefetching(true);
         setIsLoading(true);
 
-        axios.post(route('superAdmin.societe.paginationFiltre',auth.user.id),
+        axios.post(route('admin.produit.paginationFiltre'),
             {
                 'start': pagination.pageIndex * pagination.pageSize,
                 "size": pagination.pageSize,
@@ -64,7 +58,7 @@ function Index({auth,errors,referentiels,societes,typeSocietes,error,success}) {
                 'sorting': sorting ?? []
             })
             .then(response => {
-                setSocietesSt(response.data.data);
+                setProduitsSt(response.data.data);
                 setRowCount(response.data.rowCount);
 
                 setIsLoading(false)
@@ -75,9 +69,9 @@ function Index({auth,errors,referentiels,societes,typeSocietes,error,success}) {
                 console.error(error);
             })
 
-            setIsError(false);
-            setIsLoading(false);
-            setIsRefetching(false);
+        setIsError(false);
+        setIsLoading(false);
+        setIsRefetching(false);
 
     }, [
         columnFilters,
@@ -95,12 +89,8 @@ function Index({auth,errors,referentiels,societes,typeSocietes,error,success}) {
         {
             'id':'',
             'nom':'',
-            'telephone1':'',
-            'telephone2':'',
-            'adresseMail':'',
-            'description':'',
-            'logo':'',
-            'typeSociete':null,
+            'typeProduit':null,
+            'categorie':null,
         }
     )
 
@@ -111,13 +101,13 @@ function Index({auth,errors,referentiels,societes,typeSocietes,error,success}) {
 
     const handleClickOpen = () => {
 
-        router.get(route("superAdmin.societe.create",auth.user.id),{onSuccess:()=>reset()})
+        router.get(route("admin.produit.create",auth.user.id),{onSuccess:()=>reset()})
+
         //reset()
         //setOpen(true);
     };
 
     const handleClose = () => {
-
         setOpen(false);
     };
 
@@ -137,14 +127,14 @@ function Index({auth,errors,referentiels,societes,typeSocietes,error,success}) {
 
     const handleChange = (e) => {
         e.target.type === 'checkbox'
-        ?
-        setData(e.target.name,e.target.checked)
-        :
-        setData(e.target.name,e.target.value);
+            ?
+            setData(e.target.name,e.target.checked)
+            :
+            setData(e.target.name,e.target.value);
     };
 
     const handleSubmit = () => {
-        post(route('superAdmin.societe.store',{userId:auth.user.id}),{
+        post(route('admin.produit.store'),{
             onSuccess:()=> {
                 reset()
                 setOpen(false);
@@ -153,33 +143,15 @@ function Index({auth,errors,referentiels,societes,typeSocietes,error,success}) {
     };
 
     const handleEdit = (  el ) => {
-        setData({
-            'id' : el.id,
-            'nom': el.nom || '',
-            'adresse':el.adresse || '',
-            'telephone1':el.telephone1 || '',
-            'telephone2':el.telephone2 || '',
-            'adresseMail':el.adresseMail || '',
-            'description':el.description || '',
-            'logo':el.logo || '',
-            'slug': el.slug || '',
-            'typeSociete':el.type_societe || null,
-        })
-
-        setOpenEdit(true);
+        router.get(route("admin.produit.edit",[auth.user.id,el.id]),{preserveScroll:true})
     };
 
     const handleShow = (  el ) => {
         setData({
             'id' : el.id,
             'nom': el.nom || '',
-            'telephone1':el.telephone1 || '',
-            'telephone2':el.telephone2 || '',
-            'adresseMail':el.adresseMail || '',
-            'description':el.description || '',
-            'logo':el.logo || '',
-            'slug': el.slug || '',
-            'typeSociete':el.type_societe || null,
+            'typeProduit':el.type_souscripteur || null,
+            'categorie':el.categorie_souscripteur ||null,
         })
 
         setOpenShow(true);
@@ -192,11 +164,10 @@ function Index({auth,errors,referentiels,societes,typeSocietes,error,success}) {
         })
 
         setOpenDelete(true);
-        
     };
 
     const handleUpdate = () => {
-        put(route('superAdmin.societe.update',{userId:auth.user.id,id:data.id}),{
+        put(route('admin.produit.update',data.id),{
             onSuccess:()=> {
                 reset()
                 setOpenEdit(false);
@@ -206,35 +177,9 @@ function Index({auth,errors,referentiels,societes,typeSocietes,error,success}) {
     };
 
     const handleSuspend = () => {
-        router.delete(route('superAdmin.societe.destroy',[auth.user.slug,data.id]),{onSuccess:()=>setOpenDelete(false)})
+        setOpen(false);
+        router.delete(route('admin.produit.destroy',{id:data.id}))
     };
-
-    const societesActions = [
-        {
-            permission: 'show-societes',
-            condition: (row) => true, // toujours afficher
-            title: 'Détails',
-            color: 'secondary',
-            icon: <Visibility />,
-            onClick: (row) => handleShow(row.original.slug),
-        },
-        {
-            permission: 'edit-societes',
-            condition: (row) => true, // toujours afficher si l'édition est autorisée
-            title: 'Modifier',
-            color: 'info',
-            icon: <Edit />,
-            onClick: (row) => handleEdit(row.original.slug),
-        },
-        {
-            permission: 'delete-societes',
-            condition: (row) => true, // afficher si 'delete-societes' est permis
-            title: (row) => row.original.status ? 'Suspendre' : 'Activer',
-            color: (row) => row.original.status ? 'error' : 'success',
-            icon: (row) => row.original.status ? <Delete /> : <Check />,
-            onClick: (row) => handleDelete(row.original.slug, row.original.status ? 'delete' : 'check'),
-        }
-    ];
 
     const columns = useMemo(
         () => [
@@ -244,27 +189,39 @@ function Index({auth,errors,referentiels,societes,typeSocietes,error,success}) {
                 //size: 10,
             },
             {
-                accessorKey: 'typeSociete',
-                header: 'Type societe',
+                accessorKey: 'prixAchat', //access nested data with dot notation
+                header: 'Prix de vente',
+                //size: 10,
+            },
+            {
+                accessorKey: 'prixVente', //access nested data with dot notation
+                header: "Prix d'achat",
+                //size: 10,
+            },
+            {
+                accessorKey: 'typeProduit',
+                header: 'Type',
                 //size: 50,
                 Cell: ({ row }) =>(
-                    row.original.type_societe?.nom
+                    row.original.type_produit?.libelle
+                )
+            },
+
+            {
+                accessorKey: 'categorie',
+                header: 'Categorie',
+                //size: 50,
+                Cell: ({ row }) =>(
+                    row.original.categorie?.libelle
                 )
             },
             {
-                accessorKey: 'adresse', //access nested data with dot notation
-                header: 'Adresse',
-                //size: 10,
-            },
-            {
-                accessorKey: 'description', //access nested data with dot notation
-                header: 'Description',
-                //size: 10,
-            },
-            {
-                accessorKey: 'logo', //access nested data with dot notation
-                header: 'Logo',
-                //size: 10,
+                accessorKey: 'fournisseurPrincipal',
+                header: 'Fournisseur principal',
+                //size: 50,
+                Cell: ({ row }) =>(
+                    row.original.fournisseur_principal?.nom
+                )
             },
             {
                 accessorKey: 'status',
@@ -272,39 +229,44 @@ function Index({auth,errors,referentiels,societes,typeSocietes,error,success}) {
                 //size: 50,
                 Cell: ({ row }) =>(
                     row.original.status
-                    ?
-                    <div className={'p-2 font-bold bg-green-500 text-white w-fit h-fit rounded'}>
-                        Actif
-                    </div>
+                        ?
+                        <div className={'p-2 font-bold bg-green-500 text-white w-fit h-fit rounded'}>
+                            Actif
+                        </div>
                         :
-                    <div className={'p-2 font-bold bg-red-500 text-white w-fit h-fit rounded'}>
-                        Inactif
-                    </div>
+                        <div className={'p-2 font-bold bg-red-500 text-white w-fit h-fit rounded'}>
+                            Inactif
+                        </div>
                 )
             },
             {
                 accessorKey: 'action',
                 header: 'Action',
-                enableColumnFilter: false,
-                Cell: ({ row }) => (
+                Cell: ({ row }) =>(
                     <div className={'flex gap-2'} key={row.original.id}>
-                        {societesActions.map(action =>
-                                auth?.permissions?.includes(action.permission) && action.condition(row) && (
-                                    <Button
-                                        key={action.permission}
-                                        title={typeof action.title === 'function' ? action.title(row) : action.title}
-                                        onClick={() => action.onClick(row)}
-                                        variant={'outlined'}
-                                        size={'small'}
-                                        color={typeof action.color === 'function' ? action.color(row) : action.color}
-                                    >
-                                        {typeof action.icon === 'function' ? action.icon(row) : action.icon}
-                                    </Button>
-                                )
-                        )}
+                        <Button onClick={()=>handleShow(row.original)} variant={'contained'} size={'small'} color={'info'}>
+                            <Visibility></Visibility>
+                        </Button>
+
+                        <Button onClick={()=>handleEdit(row.original)} variant={'contained'} size={'small'} color={'secondary'}>
+                            <Edit></Edit>
+                        </Button>
+
+                        {
+                            row.original.status
+                                ?
+                                <Button onClick={()=>handleDelete(row.original.id,"delete")} variant={'contained'} size={'small'} color={'error'}>
+                                    <Delete></Delete>
+                                </Button>
+                                :
+                                <Button onClick={()=>handleDelete(row.original.id,'check')} variant={'contained'} size={'small'} color={'success'}>
+                                    <Check></Check>
+                                </Button>
+                        }
                     </div>
                 )
-            }
+
+            },
         ],
         [],
     );
@@ -312,7 +274,7 @@ function Index({auth,errors,referentiels,societes,typeSocietes,error,success}) {
 
     const table = useMaterialReactTable({
         columns,
-        data:societesSt,
+        data:produitsSt,
         //enableRowSelection: true,
         getRowId: (row) => row.id,
         initialState: { showColumnFilters: false },
@@ -347,27 +309,35 @@ function Index({auth,errors,referentiels,societes,typeSocietes,error,success}) {
             auth={auth}
             success={success}
             error={error}
-            active={'societe'}
+            errors={errors}
+            active={'stock'}
+            sousActive={'produit'}
+            breadcrumbs={[
+                {
+                    text:"Produit",
+                    href:route("admin.produit.index",[auth.user.id]),
+                    active:false
+                },
+                /*{
+                    text:"Création",
+                    href:route("superAdmin.produit.create",[auth.user.id]),
+                    active:true
+                }*/
+            ]}
         >
             <div className={'grid gap-5 bg-gray-200 p-2 rounded border'}>
 
 
                 <div className={'flex justify-end'}>
-                    {
-                        auth?.permissions?.some(permission=>permission==='create-societes') ?
-                            <Button color={'warning'} variant={'contained'} onClick={handleClickOpen} >
-                                <AddCircle className={'mr-1'}></AddCircle> Ajout société
-                            </Button>
-                            :
-                            ""
-                    }
+                    <Button color={'warning'} variant={'contained'} onClick={handleClickOpen} >
+                        <AddCircle className={'mr-1'}></AddCircle> Ajout produit
+                    </Button>
 
                     {
-                        /////// EDIT DIALOG
+                        ///////ADD DIALOG
                     }
-
-                    <Dialog open={openEdit} onClose={handleCloseEdit}>
-                        <DialogTitle className={'bg-orange-600 text-white'}>Modification de la société</DialogTitle>
+                    <Dialog open={open} onClose={handleClose}>
+                        <DialogTitle className={'bg-orange-600 text-white'}>Ajout du produit</DialogTitle>
                         <DialogContent className={'space-y-5'}>
                             {/*<DialogContentText>
                                 To subscribe to this website, please enter your email address here. We
@@ -387,91 +357,103 @@ function Index({auth,errors,referentiels,societes,typeSocietes,error,success}) {
                                     />
                                     <InputError message={errors.nom} className="mt-2" />
                                 </div>
+
                                 <div
                                     className={"w-full"}
                                 >
                                     <Autocomplete
-                                        value={data.typeSociete}
                                         className={"w-full"}
-                                        onChange={(e,val)=>setData("typeSociete",val)}
+                                        onChange={(e,val)=>setData("typeProduit",val)}
                                         disablePortal={true}
-                                        options={typeSocietes}
+                                        options={typeProduits}
                                         getOptionLabel={(option)=>option.nom}
                                         isOptionEqualToValue={(option, value) => option.id === value.id}
-                                        renderInput={(params)=><TextField  fullWidth {...params} placeholder={"Type de societe"} label={params.nom}/>}
+                                        renderInput={(params)=><TextField  fullWidth {...params} placeholder={"Type de produit"} label={params.nom}/>}
                                     />
-                                    <InputError message={errors["data.typeSociete"]}/>
+                                    <InputError message={errors["data.typeProduit"]}/>
                                 </div>
 
+                                <div
+                                    className={"w-full"}
+                                >
+                                    <Autocomplete
+                                        className={"w-full"}
+                                        onChange={(e,val)=>setData("categorie",val)}
+                                        disablePortal={true}
+                                        options={categories}
+                                        groupBy={(option) => option.categorie.libelle}
+                                        getOptionLabel={(option)=>option.nom}
+                                        isOptionEqualToValue={(option, value) => option.id === value.id}
+                                        renderInput={(params)=><TextField  fullWidth {...params} placeholder={"Catégorie de produit"} label={params.nom}/>}
+                                    />
+                                    <InputError message={errors["data.categorie"]}/>
+                                </div>
+
+                            </div>
+                        </DialogContent>
+                        <DialogActions>
+                            <Button variant={'contained'} color={'error'} onClick={handleClose}>Annuler</Button>
+                            <Button variant={'contained'} color={'success'} onClick={handleSubmit}>Enregistrer</Button>
+                        </DialogActions>
+                    </Dialog>
+
+                    {
+                        /////// EDIT DIALOG
+                    }
+
+                    <Dialog open={openEdit} onClose={handleCloseEdit}>
+                        <DialogTitle className={'bg-orange-600 text-white'}>Modification du produit</DialogTitle>
+                        <DialogContent className={'space-y-5'}>
+                            {/*<DialogContentText>
+                                To subscribe to this website, please enter your email address here. We
+                                will send updates occasionally.
+                            </DialogContentText>*/}
+                            <div className={'grid sm:grid-cols-2 grid-cols-1 bg-gray-50 gap-5 p-2 m-2 rounded'}>
                                 <div>
                                     <TextField
-                                        value={data.adresse}
-                                        id="adresse"
-                                        name="adresse"
-                                        label="Adresse"
+                                        value={data.nom}
+                                        autoFocus
+                                        id="nom"
+                                        name="nom"
+                                        label="Nom"
                                         className={'bg-white'}
                                         fullWidth
                                         onChange={handleChange}
                                     />
-                                    <InputError message={errors.adresse} className="mt-2" />
+                                    <InputError message={errors.nom} className="mt-2" />
                                 </div>
 
-                                <div>
-                                    <TextField
-                                        value={data.telephone1}
-                                        id="telephone1"
-                                        name="telephone1"
-                                        label="Tel"
-                                        className={'bg-white'}
-                                        fullWidth
-                                        onChange={handleChange}
+                                <div
+                                    className={"w-full"}
+                                >
+                                    <Autocomplete
+                                        value={data.typeProduit}
+                                        className={"w-full"}
+                                        onChange={(e,val)=>setData("typeProduit",val)}
+                                        disablePortal={true}
+                                        options={typeProduits}
+                                        getOptionLabel={(option)=>option.nom}
+                                        isOptionEqualToValue={(option, value) => option.id === value.id}
+                                        renderInput={(params)=><TextField  fullWidth {...params} placeholder={"Type de produit"} label={params.nom}/>}
                                     />
-                                    <InputError message={errors.telephone1} className="mt-2" />
+                                    <InputError message={errors["data.typeProduit"]}/>
                                 </div>
 
-                                <div>
-                                    <TextField
-                                        value={data.telephone2}
-                                        id="telephone2"
-                                        name="telephone2"
-                                        label="Tel 2"
-                                        className={'bg-white'}
-                                        fullWidth
-                                        onChange={handleChange}
+                                <div
+                                    className={"w-full"}
+                                >
+                                    <Autocomplete
+                                        value={data.categorie}
+                                        className={"w-full"}
+                                        onChange={(e,val)=>setData("categorie",val)}
+                                        disablePortal={true}
+                                        options={categories}
+                                        groupBy={(option) => option.categorie.libelle}
+                                        getOptionLabel={(option)=>option.nom}
+                                        isOptionEqualToValue={(option, value) => option.id === value.id}
+                                        renderInput={(params)=><TextField  fullWidth {...params} placeholder={"Catégorie de produit"} label={params.nom}/>}
                                     />
-                                    <InputError message={errors.telephone2} className="mt-2" />
-                                </div>
-
-                                <div>
-                                    <TextField
-                                        value={data.adresseMail}
-                                        type="mail"
-                                        id="adresseMail"
-                                        name="adresseMail"
-                                        label="Adresse mail"
-                                        className={'bg-white'}
-                                        fullWidth
-                                        onChange={handleChange}
-                                    />
-                                    <InputError message={errors.adresseMail} className="mt-2" />
-                                </div>
-
-                                <div className={"col-span-2 mt-8"}>
-                                    <TextareaAutosize value={data.description} className={"w-full"} name={"description"} placeholder={"Description"} style={{height:100}} onChange={handleChange} autoComplete="description"/>
-                                    <InputError message={errors["data.description"]}/>
-                                </div>
-
-                                <div>
-                                    <TextField
-                                        value={data.logo}
-                                        id="logo"
-                                        name="logo"
-                                        label="logo"
-                                        className={'bg-white'}
-                                        fullWidth
-                                        onChange={handleChange}
-                                    />
-                                    <InputError message={errors.logo} className="mt-2" />
+                                    <InputError message={errors["data.categorie"]}/>
                                 </div>
                             </div>
                         </DialogContent>
@@ -486,7 +468,7 @@ function Index({auth,errors,referentiels,societes,typeSocietes,error,success}) {
                     }
 
                     <Dialog open={openShow} onClose={handleCloseShow}>
-                        <DialogTitle className={'bg-orange-600 text-white'}>Details du societe</DialogTitle>
+                        <DialogTitle className={'bg-orange-600 text-white'}>Details du produit</DialogTitle>
                         <DialogContent className={'space-y-5'}>
                             {/*<DialogContentText>
                                 To subscribe to this website, please enter your email address here. We
@@ -505,19 +487,19 @@ function Index({auth,errors,referentiels,societes,typeSocietes,error,success}) {
 
                                     <>
                                         <div className={'font-bold py-2 px-2'}>
-                                            SLUG
+                                            TYPE
                                         </div>
                                         <div className={'py-2 px-2'}>
-                                            {data.slug}
+                                            {data.typeProduit?.nom}
                                         </div>
                                     </>
 
                                     <>
                                         <div className={'font-bold py-2 px-2'}>
-                                            TYPE
+                                            CATEGORIE
                                         </div>
                                         <div className={'py-2 px-2'}>
-                                            {data.typeSociete?.nom}
+                                            {data.categorie?.nom}
                                         </div>
                                     </>
 
@@ -535,25 +517,25 @@ function Index({auth,errors,referentiels,societes,typeSocietes,error,success}) {
                     }
 
                     <Dialog open={openDelete} onClose={handleCloseDelete}>
-                        <DialogTitle className={'bg-orange-600 text-white'}>Suppression du societe</DialogTitle>
+                        <DialogTitle className={'bg-orange-600 text-white'}>Suppression du produit</DialogTitle>
                         <DialogContent className={'space-y-5'}>
                             <div className={'mt-5'}>
                                 {
-                                    data.message === 'delete' && 'Voulez-vous vraiment supprimer cette societe'
+                                    data.message === 'delete' && 'Voulez-vous vraiment suspendre ce produit'
                                 }
 
                                 {
-                                    data.message === 'check' && 'Voulez-vous vraiment restaurer cette societe'
+                                    data.message === 'check' && 'Voulez-vous vraiment débloquer ce produit'
                                 }
                             </div>
 
                         </DialogContent>
                         <DialogActions>
                             <Button variant={'contained'} color={'error'} onClick={handleCloseDelete}>
-                              <Close></Close>  Non
+                                <Close></Close>  Non
                             </Button>
                             <Button variant={'contained'} color={'success'} onClick={handleSuspend}>
-                               <Check></Check> Oui
+                                <Check></Check> Oui
                             </Button>
                         </DialogActions>
                     </Dialog>

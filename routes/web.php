@@ -93,48 +93,11 @@ Route::middleware(['auth',"userIsSuperAdmin","profilActif"])->group(function () 
     Route::resource('superAdmin.parametre', \App\Http\Controllers\SuperAdmin\ParametreController::class);
     Route::resource('superAdmin.devise', \App\Http\Controllers\SuperAdmin\DeviseController::class);
 
-    Route::resource('superAdmin/{superAdmin}/societe', \App\Http\Controllers\SuperAdmin\SocieteController::class)->names('superAdmin.societe');
+    Route::resource('superAdmin.societe', \App\Http\Controllers\SuperAdmin\SocieteController::class);
     Route::post('superAdmin/{superAdmin}/societe/paginationFiltre',[\App\Http\Controllers\SuperAdmin\SocieteController::class,'paginationFiltre'])->name('superAdmin.societe.paginationFiltre');
 
     Route::resource('superAdmin.typeSociete', \App\Http\Controllers\SuperAdmin\TypeSocieteController::class);
     Route::post('superAdmin/typeSociete/paginationFiltre',[\App\Http\Controllers\SuperAdmin\TypeSocieteController::class,'paginationFiltre'])->name('superAdmin.typeSociete.paginationFiltre');
-
-    // Route::get("superAdmin/{id}/dashboard/",function(){
-    //     return Inertia::render('SuperAdmin/Dashboard');
-    // })->name("superAdmin.dashboard");
-
-    // Routes de configuration société
-    // Route::middleware(['auth', 'role:SuperAdmin'])->group(function () {
-    //     Route::prefix('superAdmin/societe/{societe}')->name('superAdmin.societe.')->group(function () {
-    //         // Configuration
-    //         Route::get('/configuration', [SocieteConfigurationController::class, 'index'])
-    //             ->name('configuration.index')
-    //             ->middleware('permission:display-societe-configuration');
-    //         Route::put('/configuration', [SocieteConfigurationController::class, 'update'])
-    //             ->name('configuration.update')
-    //             ->middleware('permission:edit-societe-configuration');
-
-    //         // Thèmes
-    //         Route::get('/themes', [ThemeController::class, 'index'])
-    //             ->name('themes.index')
-    //             ->middleware('permission:display-societe-themes');
-    //         Route::get('/themes/create', [ThemeController::class, 'create'])
-    //             ->name('themes.create')
-    //             ->middleware('permission:create-societe-themes');
-    //         Route::post('/themes', [ThemeController::class, 'store'])
-    //             ->name('themes.store')
-    //             ->middleware('permission:create-societe-themes');
-    //         Route::get('/themes/{theme}/edit', [ThemeController::class, 'edit'])
-    //             ->name('themes.edit')
-    //             ->middleware('permission:edit-societe-themes');
-    //         Route::put('/themes/{theme}', [ThemeController::class, 'update'])
-    //             ->name('themes.update')
-    //             ->middleware('permission:edit-societe-themes');
-    //         Route::delete('/themes/{theme}', [ThemeController::class, 'destroy'])
-    //             ->name('themes.destroy')
-    //             ->middleware('permission:delete-societe-themes');
-    //     });
-    // });
 });
 
 ////////////////////////////////
@@ -153,6 +116,10 @@ Route::middleware(['auth',"userIsAdmin","profilActif"])->group(function () {
     Route::post('admin/produit/paginationFiltre',[\App\Http\Controllers\Admin\ProduitController::class,'paginationFiltre'])->name('admin.produit.paginationFiltre');
 
     ///STOCK
+
+    Route::resource('admin.entreeSortie', \App\Http\Controllers\Admin\Stock\EntreeSortieController::class);
+
+
     Route::resource('admin.stockInventaire', \App\Http\Controllers\Admin\Stock\InventaireController::class);
     Route::post('admin/stockInventaire/paginationFiltre',[\App\Http\Controllers\Admin\Stock\InventaireController::class,'paginationFiltre'])->name('admin.stockInventaire.paginationFiltre');
 

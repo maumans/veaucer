@@ -21,9 +21,9 @@ class SocieteSeeder extends Seeder
     public function run(): void
     {
 
-        $typeSociete=TypeSociete::where('nom','duplex')->first();
+        $typeSociete = TypeSociete::where('nom', 'duplex')->first();
 
-        $societe=Societe::create([
+        $societe = Societe::create([
             "nom" => "Les îles Maurice",
             "adresse" => 'Kountia CBA',
             "description" => "Plein air - Restaurant - Bar en bordure de mer",
@@ -44,12 +44,12 @@ class SocieteSeeder extends Seeder
             "telephone" => "621993863",
         ]);
 
-        $userPierre=User::create([
-            'prenom' =>'Pierre',
-            'nom' =>'Mansaré',
-            'login' =>'pimans',
-            'email' =>'piman75@gmail.com',
-            'password' =>Hash::make("12345678"),
+        $userPierre = User::create([
+            'prenom' => 'Pierre',
+            'nom' => 'Mansaré',
+            'login' => 'pimans',
+            'email' => 'piman75@gmail.com',
+            'password' => Hash::make("12345678"),
             "adresse" => "Kountia CBA",
             "telephone" => "623150482",
         ]);
@@ -63,31 +63,30 @@ class SocieteSeeder extends Seeder
             "role_id" => $role->id
         ]);
 
-        $caissePrincipale=Caisse::create([
-            "solde" =>15000000,
-            "user_id"=>$user->id,
-            "type"=>'PRINCIPAL',
-            "societe_id"=>$societe->id
+        $caissePrincipale = Caisse::create([
+            "solde" => 15000000,
+            "user_id" => $user->id,
+            "type" => 'PRINCIPAL',
+            "societe_id" => $societe->id
         ]);
 
-        $departementPrincipal=Departement::create([
-            "nom" =>'principal',
-            "description" =>'Département principal',
-            "user_id"=>$user->id,
-            "type"=>'PRINCIPAL',
+        $departementPrincipal = Departement::create([
+            "nom" => 'principal',
+            "description" => 'Département principal',
+            "user_id" => $user->id,
+            "type" => 'PRINCIPAL',
             "telephone" => '621993863',
-            "societe_id"=>$societe->id,
+            "societe_id" => $societe->id,
         ]);
 
-        $caissePrincipale->departement_id=$departementPrincipal->id;
-        $societe->caisse_principale_id=$caissePrincipale->id;
-        $societe->departement_principal_id=$departementPrincipal->id;
+        $caissePrincipale->departement_id = $departementPrincipal->id;
+        $societe->caisse_principale_id = $caissePrincipale->id;
+        $societe->departement_principal_id = $departementPrincipal->id;
 
         $caissePrincipale->save();
         $societe->save();
 
         $user->societeAdmin()->associate($societe)->save();
         $userPierre->societeAdmin()->associate($societe)->save();
-
     }
 }

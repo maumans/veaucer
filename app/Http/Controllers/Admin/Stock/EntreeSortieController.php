@@ -3,12 +3,11 @@
 namespace App\Http\Controllers\Admin\Stock;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use App\Models\Caisse;
-use App\Models\Categorie;
 use App\Models\Departement;
 use App\Models\Depense;
 use App\Models\Fournisseur;
-use App\Models\Location;
 use App\Models\Motif;
 use App\Models\Operation;
 use App\Models\OperationProduit;
@@ -16,14 +15,12 @@ use App\Models\Produit;
 use App\Models\Societe;
 use App\Models\Stock;
 use App\Models\TypeOperation;
-use App\Models\TypeProduit;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
-class ApproController extends Controller
+class EntreeSortieController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -64,7 +61,7 @@ class ApproController extends Controller
             });
 
 
-        return Inertia::render('Admin/Stock/Appro/Index',[
+        return Inertia::render('Admin/Stock/EntreeSortie/Index',[
             'appros' => $query->paginate($request->size??10),
             /*'typeProduits' => $typeProduits,
             'categorieProduits' => $categorieProduits,*/
@@ -93,8 +90,14 @@ class ApproController extends Controller
         $caisses=Caisse::where('societe_id', session('societe')['id'])->where('status', true)->with('departement')->get();
         $societe= Societe::where('id',session('societe')['id'])->first();
         $societe && $caissePrincipale=$societe->caissePrincipale;
+        $typeOperations=TypeOperation::where('status', true)->get();
+        $typeOperation=TypeOperation::where('status', true)->where('nom', "entree")->first();
 
-        return Inertia::render("Admin/Stock/Appro/Create",[
+        $produits = Produit::where('status', true)->where(function ($query){
+            $query->where("societe_id",session('societe')['id'])->orWhere("societe_id",null);
+        })->orderBy('nom')->get();
+
+        return Inertia::render("Admin/Stock/EntreeSortie/Create",[
             'produits' => $produits,
             'motifs' => $motifs,
             'fournisseurs' => $fournisseurs,
@@ -103,6 +106,9 @@ class ApproController extends Controller
             'departementPrincipal' => $departementPrincipal,
             'caisses' => $caisses,
             'caissePrincipale' => $caissePrincipale,
+            'typeOperations' => $typeOperations,
+            'typeOperation' => $typeOperation,
+            'produits' => $produits
         ]);
     }
 
@@ -113,10 +119,13 @@ class ApproController extends Controller
     {
 
         $request->validate([
+            "date" => 'required',
+            "typeOperation" => 'required',
             "fournisseur" => 'required',
             "departement" => 'required',
-            "commandes" => 'required',
-            "caisse" => !$request->enregistrer ?'required':'',
+            "caisse" => 'required',
+            "operations" => 'required',
+            "depenses" => 'nullable',
         ]);
 
         DB::beginTransaction();
@@ -125,18 +134,18 @@ class ApproController extends Controller
 
             $operation=Operation::create([
                 "date" => Carbon::make($request->date),
-                "total" => $request->totalCommande + $request->totalDepense,
                 "montant" => $request->totalCommande + $request->totalDepense,
-                "type_operation_id" => TypeOperation::where('nom','approvisionnement')->first()->id,
+                "type_operation_id" => $request->typeOperationId,
                 "auteur_id" => Auth::id(),
                 "societe_id" => session('societe')['id'],
-                "fournisseur_id" => $request->fournisseur['id'],
+                "fournisseur_id" => $request->fournisseurId,
+                "caisse_id" => $request->caisseId,
                 "status" => $request->enregistrer ? 'COMMANDE' : 'LIVRE',
             ]);
 
             if(!$request->enregistrer)
             {
-                $caisse=Caisse::where('id',$request->caisse['id'])->where('status',true)->first();
+                $caisse=Caisse::where('id',$request->caisseId)->where('status',true)->first();
 
                 if($caisse)
                 {
@@ -206,7 +215,7 @@ class ApproController extends Controller
 
             DB::commit();
 
-            return redirect()->action([\App\Http\Controllers\Admin\Stock\ApproController::class, 'index'], Auth::id())->with("success", "Commande effectué avec succés");
+            return redirect()->action([\App\Http\Controllers\Admin\Stock\EntreeSortieController::class, 'index'], Auth::id())->with("success", "Commande effectué avec succés");
 
         }
         catch (\Exception $e) {
@@ -473,5 +482,4 @@ class ApproController extends Controller
 
         return response()->json( ['data'=>$produits,'rowCount'=>$rowCount]);
     }
-
 }

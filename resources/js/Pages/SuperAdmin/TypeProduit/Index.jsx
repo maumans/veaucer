@@ -290,13 +290,13 @@ function Index({auth,errors,referentiels,typeSouscripteurs,error,success}) {
            auth={auth}
            errors={errors}
            referentiels={referentiels}
-           referentiel={'Types souscripteurs'}
+           referentiel={'Types produits'}
            active={'referentiel'}
-           sousActive={'superAdmin.typeSouscripteur.index'}
+           sousActive={'superAdmin.typeProduit.index'}
            breadcrumbs={[
                {
-                   text:"Type souscripteur",
-                   href:route("superAdmin.typeSouscripteur.index",[auth.user.id]),
+                   text:"Type produit",
+                   href:route("superAdmin.typeProduit.index",[auth.user.id]),
                    active:false
                },
                /*{

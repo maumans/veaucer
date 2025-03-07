@@ -154,26 +154,6 @@ const Show = ({ auth, societe, configuration, options }) => {
                                                 ))}
                                             </TextField>
                                         </Grid>
-                                        <Grid item xs={12} md={4}>
-                                            <TextField
-                                                select
-                                                fullWidth
-                                                label="Fuseau horaire"
-                                                value={data.general.timezone || ''}
-                                                onChange={(e) =>
-                                                    setData('general', {
-                                                        ...data.general,
-                                                        timezone: e.target.value,
-                                                    })
-                                                }
-                                            >
-                                                {options.fuseaux_horaires.map((timezone) => (
-                                                    <MenuItem key={timezone} value={timezone}>
-                                                        {timezone}
-                                                    </MenuItem>
-                                                ))}
-                                            </TextField>
-                                        </Grid>
                                     </Grid>
                                 </CardContent>
                             </Card>

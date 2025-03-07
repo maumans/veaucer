@@ -14,10 +14,8 @@ return new class extends Migration
         Schema::create('operations', function (Blueprint $table) {
             $table->id();
             $table->date("date")->nullable();
-            $table->double('total')->nullable();
-            $table->double("totalApresRemise")->nullable();
             $table->double('montant')->nullable();
-            $table->double('montantRemise')->nullable();
+            $table->double('montantApresRemise')->nullable();
             $table->double('soldeProgressif')->nullable();
             $table->string('pieceJustificative')->nullable();
             $table->string('reference')->nullable();
@@ -34,7 +32,7 @@ return new class extends Migration
             $table->foreignId('caisse_destinataire_id')->nullable()->constrained('caisses')->cascadeOnDelete();
             $table->foreignId('stock_id')->nullable()->constrained('stocks')->cascadeOnDelete();
             $table->foreignId('stock_destinataire_id')->nullable()->constrained('stocks')->cascadeOnDelete();
-            $table->enum('etat',['EN ATTENTE','COMMANDE','LIVRE',"ANNULE"])->default("EN ATTENTE")->nullable();
+            $table->enum('etat',['EN ATTENTE','ENREGISTRE','ARCHIVER',"ANNULE"])->default("ENREGISTRE")->nullable();
             $table->boolean('status')->default(true)->nullable();
             $table->timestamps();
         });

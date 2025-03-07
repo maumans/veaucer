@@ -44,7 +44,7 @@ class ReferentielSeeder extends Seeder
 
         Referentiel::create([
             "nom" => 'Inventaire',
-            "route" => 'superAdmin.produit.index',
+            "route" => 'admin.produit.index',
         ]);
 
 
@@ -55,73 +55,43 @@ class ReferentielSeeder extends Seeder
 
         Referentiel::create([
             "nom" => 'Caisse',
-            "route" => 'superAdmin.caisse.index',
+            "route" => 'admin.caisse.index',
         ]);
 
         Referentiel::create([
             "nom" => 'Stock',
-            "route" => 'superAdmin.stock.index',
+            "route" => 'admin.stock.index',
         ]);
 
         Referentiel::create([
             "nom" => 'Unité de mesure',
-            "route" => 'superAdmin.uniteMesure.index',
+            "route" => 'admin.uniteMesure.index',
         ]);
 
         Referentiel::create([
             "nom" => 'Employé',
-            "route" => 'superAdmin.employe.index',
+            "route" => 'admin.employe.index',
         ]);
 
         Referentiel::create([
             "nom" => 'Type de prix',
-            "route" => 'superAdmin.typePrix.index',
+            "route" => 'admin.typePrix.index',
         ]);
 
         Referentiel::create([
             "nom" => 'Type de produit',
-            "route" => 'superAdmin.typeProduit.index',
-        ]);
-
-        Referentiel::create([
-            "nom" => 'Types souscripteurs',
-            "route" => 'superAdmin.typeSouscripteur.index',
-        ]);
-
-        Referentiel::create([
-            "nom" => 'Catégories souscripteurs',
-            "route" => 'superAdmin.categorieSouscripteur.index',
-        ]);
-
-        Referentiel::create([
-            "nom" => 'Souscripteurs',
-            "route" => 'superAdmin.souscripteur.index',
-        ]);
-
-        Referentiel::create([
-            "nom" => 'Garanties',
-            "route" => 'superAdmin.garantie.index',
-        ]);
-
-        Referentiel::create([
-            "nom" => 'Affections',
-            "route" => 'superAdmin.affection.index',
+            "route" => 'admin.typeProduit.index',
         ]);
 
 
         Referentiel::create([
             "nom" => 'Produits',
-            "route" => 'superAdmin.produit.index',
+            "route" => 'admin.produit.index',
         ]);
 
         Referentiel::create([
             "nom" => 'Paramètres',
-            "route" => 'superAdmin.parametre.index',
-        ]);
-
-        Referentiel::create([
-            "nom" => 'Devises',
-            "route" => 'superAdmin.devise.index',
+            "route" => 'parametre.index',
         ]);
 
     }

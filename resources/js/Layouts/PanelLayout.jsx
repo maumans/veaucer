@@ -145,8 +145,18 @@ export default function PanelLayout(props) {
                         {routeLink:"admin.dashboard",text:'Tableau de bord',active:"adminDashboard",icon:<DashboardIcon/>,collapse:false},
                          {
                              routeLinks:[
+                                {
+                                    sousActive:"produit",
+                                    route:"admin.produit.index",
+                                    text:'Produit'
+                                },
+                                {
+                                    sousActive:"entreeSortie",
+                                    route:"admin.entreeSortie.index",
+                                    text:'Entree/Sortie'
+                                },
                                  {
-                                     sousActive:"produit",
+                                     sousActive:"inventaire",
                                      route:"admin.stockInventaire.index",
                                      text:'Inventaire'
                                  },
@@ -172,7 +182,7 @@ export default function PanelLayout(props) {
                                     text:'Paiement'
                                 },
                             ],
-                            active:'vente',text:'Ventes',icon:<ListAlt/>,collapse:true
+                            active:'vente',text:'Comptabilite',icon:<ListAlt/>,collapse:true
                         },
 
                         {
@@ -225,11 +235,11 @@ export default function PanelLayout(props) {
 
                         {
                             routeLinks:[
-                                {
+                                /* {
                                     sousActive:"produit",
                                     route:"admin.produit.index",
                                     text:'Produits'
-                                },
+                                }, */
                                 {
                                     sousActive:"service",
                                     route:"admin.service.index",

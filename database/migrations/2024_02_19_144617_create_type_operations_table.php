@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string("nom")->nullable();
             $table->string("libelle")->nullable();
             $table->string("slug")->nullable();
+            $table->boolean('status')->default(true)->nullable();
             $table->timestamps();
         });
     }
