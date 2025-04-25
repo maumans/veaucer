@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\SuperAdmin\SocieteConfigurationController;
 use App\Http\Controllers\SuperAdmin\ThemeController;
+use App\Http\Controllers\Admin\PosteController;
 
 /*
 |--------------------------------------------------------------------------
@@ -159,6 +160,15 @@ Route::middleware(['auth',"userIsAdmin","profilActif"])->group(function () {
     Route::resource('admin.client', \App\Http\Controllers\Admin\ClientController::class);
     Route::post('admin/client/paginationFiltre',[\App\Http\Controllers\Admin\ClientController::class,'paginationFiltre'])->name('admin.client.paginationFiltre');
 
+    // Routes pour les postes
+    Route::middleware(['auth', 'verified'])->group(function () {
+        Route::get('/admin/poste', [PosteController::class, 'index'])->name('admin.poste.index');
+        Route::get('/admin/poste/create', [PosteController::class, 'create'])->name('admin.poste.create');
+        Route::post('/admin/poste', [PosteController::class, 'store'])->name('admin.poste.store');
+        Route::get('/admin/poste/{poste}/edit', [PosteController::class, 'edit'])->name('admin.poste.edit');
+        Route::put('/admin/poste/{poste}', [PosteController::class, 'update'])->name('admin.poste.update');
+        Route::delete('/admin/poste/{poste}', [PosteController::class, 'destroy'])->name('admin.poste.destroy');
+    });
 });
 
 ///CLIENT

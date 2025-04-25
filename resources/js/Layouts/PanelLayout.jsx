@@ -160,11 +160,6 @@ export default function PanelLayout(props) {
                                      route:"admin.stockInventaire.index",
                                      text:'Inventaire'
                                  },
-                                 {
-                                     sousActive:"appro",
-                                     route:"admin.stockAppro.index",
-                                     text:'Appro'
-                                 },
                              ],
                              active:'stock',text:'Stocks',icon:<Widgets/>,collapse:true
                          },
@@ -256,6 +251,11 @@ export default function PanelLayout(props) {
                                     text:'Fournisseurs'
                                 },
                                 {
+                                    sousActive:"poste",
+                                    route:"admin.poste.index",
+                                    text:'Postes'
+                                },
+                                {
                                     sousActive:"employe",
                                     route:"admin.employe.index",
                                     text:'Employés'
@@ -270,7 +270,7 @@ export default function PanelLayout(props) {
                                 {
                                     sousActive:"caisse",
                                     route:"admin.caisse.index",
-                                    text:'Caisse'
+                                    text:'Caisses'
                                 },
 
                                 {
@@ -278,8 +278,9 @@ export default function PanelLayout(props) {
                                     route:"admin.client.index",
                                     text:'Clients'
                                 },
+                                
                             ],
-                            active:'catalogue',text:'Catalogue',icon:<ListAlt/>,collapse:true
+                            active:'parametrage',text:'Paramétrage',icon:<ListAlt/>,collapse:true
                         },
 
                     ].map(({routeLink,text,active,icon,collapse,routeLinks}, index) => (
@@ -399,12 +400,11 @@ export default function PanelLayout(props) {
                                             </IconButton>
                                             <div className="text-orange-500 text-xl font-bold cursor-default">
                                                 {[
-                                                    {text:"Tableau de bord",active:"superAdminDashboard",lien:'superAdmin.dashboard'},
-                                                    {text:"Tableau de bord",active:"adminDashboard",lien:'admin.dashboard'},
-                                                    {text:"Référentiel",active:"referentiel",lien:'superAdmin.referentiel.index'},
-                                                    //{text:"Référentiel",active:"referentiel",sousActive:"typeSouscripteur.index"},
-                                                ].map(({text,active,sousActive,lien}, index) => (
-                                                    <Link key={index} color={'text.primary'} underline="hover" aria-current="page" href={route(lien,props.auth.user.id)}>
+                                                    {text:"Tableau de bord",active:"superAdminDashboard",lien:'superAdmin.dashboard',params:[props.auth.user.id]},
+                                                    {text:"Tableau de bord",active:"adminDashboard",lien:'admin.dashboard',params:[props.auth.user.id]},
+                                                    {text:"Référentiel",active:"referentiel",lien:'superAdmin.referentiel.index',params:[props.auth.user.id]},
+                                                ].map(({text,active,sousActive,lien,params}, index) => (
+                                                    <Link key={index} color={'text.primary'} underline="hover" aria-current="page" href={route(lien,params)}>
                                                         {
                                                             //(props.active===active && props.sousActive===sousActive ) && (props.titre || text)
                                                         }

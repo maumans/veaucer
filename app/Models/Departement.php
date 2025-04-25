@@ -18,6 +18,11 @@ class Departement extends Model
 
     public function stocks()
     {
-        return $this->hasMany(Caisse::class);
+        return $this->hasMany(Stock::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }

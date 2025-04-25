@@ -15,4 +15,14 @@ class Categorie extends Model
     {
         return $this->hasMany(Produit::class);
     }
+
+    public function societe()
+    {
+        return $this->belongsTo(Societe::class);
+    }
+
+    public function categorie()
+    {
+        return $this->belongsTo(Categorie::class);
+    }
 }

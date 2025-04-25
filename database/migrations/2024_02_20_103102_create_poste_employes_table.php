@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->boolean('status')->default(true)->nullable();
             $table->foreignId('poste_id')->nullable()->constrained('postes')->cascadeOnDelete();
+            $table->foreignId('departement_id')->nullable()->constrained('departements')->cascadeOnDelete();
             $table->foreignId('employe_id')->nullable()->constrained('users')->cascadeOnDelete();
             $table->foreignId('societe_id')->nullable()->constrained('societes')->cascadeOnDelete();
             $table->timestamps();

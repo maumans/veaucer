@@ -5,23 +5,21 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Caisse extends Model
+class Client extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'nom',
-        'slug',
-        'type',
-        'solde',
+        'prenom',
+        'email',
+        'telephone',
+        'adresse',
         'status',
-        'departement_id',
-        'user_id',
         'societe_id'
     ];
 
     protected $casts = [
-        'solde' => 'double',
         'status' => 'boolean'
     ];
 
@@ -30,18 +28,13 @@ class Caisse extends Model
         return $this->belongsTo(Societe::class);
     }
 
-    public function departement()
+    public function ventes()
     {
-        return $this->belongsTo(Departement::class);
-    }
-
-    public function user()
-    {
-        return $this->belongsTo(User::class);
+        return $this->hasMany(Vente::class);
     }
 
     public function paiements()
     {
         return $this->hasMany(Paiement::class);
     }
-}
+} 

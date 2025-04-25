@@ -13,10 +13,9 @@ return new class extends Migration
     {
         Schema::create('postes', function (Blueprint $table) {
             $table->id();
-            $table->string('nom')->nullable();
-            $table->string('libelle')->nullable();
-            $table->string('slug')->nullable();
-            $table->boolean('status')->default(true)->nullable();
+            $table->string('libelle');
+            $table->text('description')->nullable();
+            $table->foreignId('societe_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });
     }
