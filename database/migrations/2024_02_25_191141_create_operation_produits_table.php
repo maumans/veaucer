@@ -13,13 +13,23 @@ return new class extends Migration
     {
         Schema::create('operation_produits', function (Blueprint $table) {
             $table->id();
-            $table->double("quantite")->nullable();
+            
+            $table->foreignId('type_produit_achat_id')->nullable()->constrained('type_produits')->cascadeOnDelete();
+            $table->integer('quantiteAchat')->nullable();
+            $table->double('prixAchat')->nullable();
+
+            $table->foreignId('type_produit_vente_id')->nullable()->constrained('type_produits')->cascadeOnDelete();
+            $table->integer('quantiteVente')->nullable();
+            $table->double('prixVente')->nullable();
+
             $table->double('quantiteLivree')->nullable();
-            $table->double("prixAchat")->nullable();
-            $table->double("prixVente")->nullable();
+
+            $table->foreignId('stock_source_id')->nullable()->constrained('stocks')->cascadeOnDelete();
+            $table->foreignId('stock_destination_id')->nullable()->constrained('stocks')->cascadeOnDelete();
+
             $table->double("tva")->nullable();
             $table->double("remise")->nullable();
-            $table->enum('etat', ['COMMANDE', 'LIVRE', 'ANNULE'])->default("COMMANDE")->nullable();
+            $table->enum('etat', ['EN ATTENTE', 'LIVREE', 'ANNULE'])->default("EN ATTENTE")->nullable();
             $table->boolean('status')->default(true)->nullable();
             $table->foreignId('stock_id')->nullable()->constrained('stocks')->cascadeOnDelete();
             $table->foreignId("operation_id")->nullable()->constrained("operations")->cascadeOnDelete();

@@ -77,7 +77,7 @@ export default function Index({ employes, auth, success, error, errors }) {
             Cell: ({ cell }) => (
                 <div className="flex items-center gap-2">
                     <WorkIcon className="text-red-500" />
-                    <span>{cell.getValue()?.titre || 'Non assigné'}</span>
+                    <span>{cell.getValue()?.libelle || 'Non assigné'}</span>
                 </div>
             )
         },
@@ -193,8 +193,8 @@ export default function Index({ employes, auth, success, error, errors }) {
             success={success}
             error={error}
             errors={errors}
-            active={'parametrage'}
-            sousActive={'employe'}
+            active={'employe'}
+            sousActive={'listeEmployes'}
             breadcrumbs={[
                 {
                     text: "Employé",

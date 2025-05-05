@@ -26,5 +26,15 @@ class TypeOperationSeeder extends Seeder
             "nom"=>'sortie',
             'libelle'=>"Sortie"
         ]);
+
+        TypeOperation::create([
+            "nom"=>'transfert',
+            'libelle'=>"Transfert"
+        ]);
+
+        TypeOperation::create([
+            "nom"=>'ajustement',
+            'libelle'=>"Ajustement"
+        ]);
     }
 }

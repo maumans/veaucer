@@ -39,9 +39,9 @@ class InventaireController extends Controller
 
             foreach ($request->filters as $filter)
             {
-                if ($filter['id'] == 'typeProduit')
+                if ($filter['id'] == 'typeProduitAchat')
                 {
-                    $query->whereRelation('typeProduit','nom','like',"%".$filter['value']."%");
+                    $query->whereRelation('typeProduitAchat','nom','like',"%".$filter['value']."%");
                 }
                 else if($filter['id'] == 'categorie')
                 {
@@ -59,7 +59,7 @@ class InventaireController extends Controller
 
             if($request->globalFilter)
             {
-                $query->whereRelation('typeProduit','nom','like', "%".$request->globalFilter."%")->orWhereRelation('categorie','nom','like', "%".$request->globalFilter."%")->orWhereRelation('fournisseurPrincipal','nom','like', "%".$request->globalFilter."%")->orWhere('nom','like', "%".$request->globalFilter."%")->orWhere('stockGlobal','like', "%".$request->globalFilter."%")->orWhere('stockMinimal','like', "%".$request->globalFilter."%");
+                $query->whereRelation('typeProduitAchat','nom','like', "%".$request->globalFilter."%")->orWhereRelation('categorie','nom','like', "%".$request->globalFilter."%")->orWhereRelation('fournisseurPrincipal','nom','like', "%".$request->globalFilter."%")->orWhere('nom','like', "%".$request->globalFilter."%")->orWhere('stockGlobal','like', "%".$request->globalFilter."%")->orWhere('seuilMinimal','like', "%".$request->globalFilter."%");
 
                 /*$colonnes = Schema::getColumnListing('produits'); // Obtient la liste des colonnes de la table 'produits'
 
@@ -68,7 +68,7 @@ class InventaireController extends Controller
                 }*/
             }
 
-        })->with('typeProduit','categorie',"fournisseurPrincipal")/*->where('status', true)*/->skip($request->start)->take($request->size);
+        })->with('typeProduitAchat','categorie',"fournisseurPrincipal")/*->where('status', true)*/->skip($request->start)->take($request->size);
 
         foreach ($request->sorting as $sort)
         {

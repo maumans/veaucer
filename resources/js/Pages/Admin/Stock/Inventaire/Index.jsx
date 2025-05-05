@@ -107,7 +107,7 @@ function Index({auth,errors,produits,typeProduits,categories,error,success}) {
 
     const handleClickOpen = () => {
 
-        router.get(route("admin.stockAppro.create",auth.user.id),{onSuccess:()=>reset()})
+        router.get(route("admin.inventaire.create",auth.user.id),{onSuccess:()=>reset()})
 
         //reset()
         //setOpen(true);
@@ -140,7 +140,7 @@ function Index({auth,errors,produits,typeProduits,categories,error,success}) {
     };
 
     const handleSubmit = () => {
-        post(route('admin.stockInventaire.store'),{
+        post(route('admin.inventaire.store'),{
             onSuccess:()=> {
                 reset()
                 setOpen(false);
@@ -209,8 +209,8 @@ function Index({auth,errors,produits,typeProduits,categories,error,success}) {
                 //size: 10,
             },
             {
-                accessorKey: 'stockMinimal', //access nested data with dot notation
-                header: "Stock Minimal",
+                accessorKey: 'seuilMinimal', //access nested data with dot notation
+                header: "Seuil minimal",
                 //size: 10,
             },
 

@@ -17,7 +17,7 @@ function Create({auth,typeProduits,typeProduit,categories,fournisseurs,devises,u
         'prixAchat':'',
         'prixVente':'',
         'stockGlobal':'',
-        'stockMinimal':'',
+        'seuilMinimal':'',
         'image':'',
         'typeProduit':typeProduit,
         'categorie':null,
@@ -128,7 +128,7 @@ function Create({auth,typeProduits,typeProduit,categories,fournisseurs,devises,u
                                 <div className={"md:col-span-2 font-bold text-orange-500"}>
                                     Fixation du prix
                                 </div>
-                                <div className={"w-full"}>
+                                {/* <div className={"w-full"}>
                                     <TextField
                                         InputProps={{
                                             inputComponent: NumberFormatCustomUtils,
@@ -141,7 +141,7 @@ function Create({auth,typeProduits,typeProduit,categories,fournisseurs,devises,u
                                         }}
                                         className={"w-full"} label="Prix d'achat" name="prixAchat" onChange={onHandleChange}/>
                                     <InputError message={errors.prixAchat}/>
-                                </div>
+                                </div> */}
 
                                 <div className={"w-full"}>
                                     <TextField
@@ -184,11 +184,11 @@ function Create({auth,typeProduits,typeProduit,categories,fournisseurs,devises,u
                                             inputProps:{
                                                 max:100000000000,
                                                 min:-1000000000000,
-                                                name:"stockMinimal",
+                                                name:"seuilMinimal",
                                             },
                                         }}
-                                        className={"w-full"} label="Stock minimal" name="stockMinimal" onChange={onHandleChange}/>
-                                    <InputError message={errors.stockMinimal}/>
+                                        className={"w-full"} label="Seuil minimal" name="seuilMinimal" onChange={onHandleChange}/>
+                                    <InputError message={errors.seuilMinimal}/>
                                 </div>
 
                             </div>

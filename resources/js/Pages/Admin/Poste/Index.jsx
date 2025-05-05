@@ -26,7 +26,7 @@ export default function Index({ postes, auth, success, error, errors }) {
             enableColumnFilter: false
         },
         {
-            accessorKey: 'titre',
+            accessorKey: 'libelle',
             header: 'Titre du poste',
             size: 200,
             Cell: ({ cell }) => (

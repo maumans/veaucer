@@ -26,7 +26,7 @@ class ProduitController extends Controller
     {
         $produits = Produit::where('status', true)->orderBy('nom')->where(function ($query){
             $query->where("societe_id",session('societe')['id'])->orWhere("societe_id",null);
-        })->with('typeProduit','categorie')->paginate(10);
+        })->with('typeProduitAchat','typeProduitVente','categorie')->paginate(10);
 
 
         $typeProduits = TypeProduit::where('status', true)->where(function ($query){
@@ -53,7 +53,8 @@ class ProduitController extends Controller
             $query->where("societe_id",session('societe')['id'])->orWhere("societe_id",null);
         })->orderBy('nom')->get();
 
-        $typeProduit = TypeProduit::where('status', true)->where('nom', 'unité')->first();
+        $typeProduitAchat = TypeProduit::where('status', true)->where('nom', 'ensemble')->first();
+        $typeProduitVente = TypeProduit::where('status', true)->where('nom', 'unité')->first();
 
         $categories = Categorie::where('status', true)->where(function ($query){
             $query->where("societe_id",session('societe')['id'])->orWhere("societe_id",null);
@@ -68,7 +69,8 @@ class ProduitController extends Controller
 
         return Inertia::render("Admin/Stock/Produit/Create",[
             'typeProduits' => $typeProduits,
-            'typeProduit' => $typeProduit,
+            'typeProduitAchat' => $typeProduitAchat,
+            'typeProduitVente' => $typeProduitVente,
             'categories' => $categories,
             'fournisseurs' => $fournisseurs,
             'departements' => $departements,
@@ -83,9 +85,15 @@ class ProduitController extends Controller
     {
         $request->validate([
             'nom' => 'required',
-            "typeProduit" => 'required',
+            "typeProduitAchat" => 'required',
+            "typeProduitVente" => 'required',
+            "prixAchat" => 'required',
+            "prixVente" => 'required',
+            "stockGlobal" => 'required',
+            "seuilMinimal" => 'required',
+            "quantiteAchat" => 'required',
+            "quantiteVente" => 'required',
             "categorie" => 'required',
-            "quantite" => 'nullable',
         ]);
 
         DB::beginTransaction();
@@ -95,13 +103,18 @@ class ProduitController extends Controller
             $produit=Produit::create([
                 "nom" => $request->nom,
                 "description" => $request->description,
-                "prixAchat" => $request->prixAchat,
-                "prixVente" => $request->prixVente,
-                "stockMinimal" => $request->stockMinimal,
+                "seuilMinimal" => $request->seuilMinimal,
                 "stockGlobal" => $request->stockGlobal,
-                "quantite" => $request->quantite,
                 "image" => $request->image,
-                "type_produit_id" => $request->typeProduit['id'],
+
+                "type_produit_achat_id" => $request->typeProduitAchat['id'],
+                "quantiteAchat" => $request->quantiteAchat,
+                "prixAchat" => $request->prixAchat,
+
+                "type_produit_vente_id" => $request->typeProduitVente['id'],
+                "quantiteVente" => $request->quantiteVente,
+                "prixVente" => $request->prixVente,
+
                 "categorie_id" => $request->categorie['id'],
                 "fournisseur_principal_id" => $request->fournisseur? $request->fournisseur['id'] : null,
                 "societe_id" => session('societe')['id'],
@@ -141,7 +154,7 @@ class ProduitController extends Controller
      */
     public function edit($userId,$produitId)
     {
-        $produit=Produit::where("id",$produitId)->with('fournisseurPrincipal','categorie','typeProduit')->first();
+        $produit=Produit::where("id",$produitId)->with('fournisseurPrincipal','categorie','typeProduitAchat','typeProduitVente')->first();
 
         $typeProduits=TypeProduit::where("status",true)->where(function ($query){
             $query->where("societe_id",session('societe')['id'])->orWhere("societe_id",null);
@@ -169,6 +182,18 @@ class ProduitController extends Controller
             "typeProduit" => 'required',
             "categorie" => 'required',
             "quantite" => 'nullable',
+            "seuilMinimal" => 'required',
+            "stockGlobal" => 'required',
+            "image" => 'nullable',
+            "prixAchat" => 'required',
+            "prixVente" => 'required',
+            "quantiteAchat" => 'required',
+            "quantiteVente" => 'required',
+            "typeProduitAchat" => 'required',
+            "typeProduitVente" => 'required',
+            "fournisseur" => 'nullable',
+            "uniteMesure" => 'required',
+            "devise" => 'required',
 
         ]);
 
@@ -179,16 +204,23 @@ class ProduitController extends Controller
             $produit->update([
                 "nom" => $request->nom,
                 "description" => $request->description,
-                "prixAchat" => $request->prixAchat,
-                "prixVente" => $request->prixVente,
                 "stockGlobal" => $request->stockGlobal,
-                "stockMinimal" => $request->stockMinimal,
+                "seuilMinimal" => $request->seuilMinimal,
                 "image" => $request->image,
                 "quantite" => $request->quantite,
-                "type_produit_id" => $request->typeProduit['id'],
+                "type_produit_achat_id" => $request->typeProduitAchat['id'],
+                "quantiteAchat" => $request->quantiteAchat,
+                "prixAchat" => $request->prixAchat,
+                "type_produit_vente_id" => $request->typeProduitVente['id'],
+                "quantiteVente" => $request->quantiteVente,
+                "prixVente" => $request->prixVente,
                 "categorie_id" => $request->categorie['id'],
                 "fournisseur_principal_id" => $request->fournisseur['id'],
                 "societe_id" => session('societe')['id'],
+            ]);
+
+            Stock::where('produit_id', $produit->id)->update([
+                "quantite" => $request->stockGlobal,
             ]);
 
             DB::commit();
@@ -245,6 +277,14 @@ class ProduitController extends Controller
                 {
                     $query->whereRelation('fournisseurPrincipal','nom','like',"%".$filter['value']."%");
                 }
+                else if($filter['id'] == 'quantiteAchat')
+                {
+                    $query->whereRelation('quantiteAchat','like',"%".$filter['value']."%");
+                }
+                else if($filter['id'] == 'quantiteVente')
+                {
+                    $query->whereRelation('quantiteVente','like',"%".$filter['value']."%");
+                }
                 else
                 {
                     $query->where($filter['id'],'like', "%".$filter['value']."%");
@@ -253,7 +293,7 @@ class ProduitController extends Controller
 
             if($request->globalFilter)
             {
-                $query->whereRelation('typeProduit','nom','like', "%".$request->globalFilter."%")->orWhereRelation('categorie','nom','like', "%".$request->globalFilter."%")->orWhereRelation('fournisseurPrincipal','nom','like', "%".$request->globalFilter."%")->orWhere('nom','like', "%".$request->globalFilter."%")->orWhere('prixAchat','like', "%".$request->globalFilter."%")->orWhere('prixVente','like', "%".$request->globalFilter."%");
+                $query->whereRelation('typeProduitAchat','typeProduitVente','nom','like', "%".$request->globalFilter."%")->orWhereRelation('categorie','nom','like', "%".$request->globalFilter."%")->orWhereRelation('fournisseurPrincipal','nom','like', "%".$request->globalFilter."%")->orWhere('nom','like', "%".$request->globalFilter."%")->orWhere('prixAchat','like', "%".$request->globalFilter."%")->orWhere('prixVente','like', "%".$request->globalFilter."%");
 
                 /*$colonnes = Schema::getColumnListing('produits'); // Obtient la liste des colonnes de la table 'produits'
 
@@ -262,7 +302,7 @@ class ProduitController extends Controller
                 }*/
             }
 
-        })->with('typeProduit','categorie',"fournisseurPrincipal")/*->where('status', true)*/->skip($request->start)->take($request->size);
+        })->with('typeProduitAchat','typeProduitVente','categorie',"fournisseurPrincipal")/*->where('status', true)*/->skip($request->start)->take($request->size);
 
         foreach ($request->sorting as $sort)
         {

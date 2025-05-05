@@ -1,43 +1,64 @@
-import React, {useEffect} from 'react';
-import {Autocomplete, Button, TextareaAutosize, TextField} from "@mui/material";
-import {motion} from "framer-motion";
+import React, { useEffect } from 'react';
+import { Autocomplete, Button, TextareaAutosize, TextField } from "@mui/material";
+import { motion } from "framer-motion";
 
 import InputError from "@/Components/InputError";
-import {useForm} from "@inertiajs/react";
+import { useForm } from "@inertiajs/react";
 import Divider from "@mui/material/Divider";
 import ReferentielLayout from "@/Layouts/ReferentielLayout.jsx";
 import NumberFormatCustomUtils from "@/Pages/Utils/NumberFormatCustomUtils.jsx";
 import PanelLayout from "@/Layouts/PanelLayout.jsx";
 
-function Create({auth,typeProduits,categories,fournisseurs,devises,uniteMesures,errors,success,error,produit}) {
+function Create({ auth, typeProduits, typeProduitAchat, typeProduitVente, categories, fournisseurs, devises, uniteMesures, errors, success, error, produit }) {
 
-    const {data,setData, post, processing}=useForm({
-        'id':produit.id,
-        'nom':produit.nom,
-        'prixAchat':produit.prixAchat,
-        'prixVente':produit.prixVente,
-        'stockGlobal':produit.stockGlobal,
-        'stockMinimal':produit.stockMinimal,
-        'image':produit.image,
-        'typeProduit':produit.type_produit,
-        'categorie':produit.categorie,
-        'fournisseur':produit.fournisseur_principal,
-        'uniteMesure':produit.unite_mesure,
-        'devise':produit.devise,
+    const { data, setData, post, processing } = useForm({
+        'id': produit.id,
+        'nom': produit.nom,
+        'stockGlobal': produit.stockGlobal,
+        'seuilMinimal': produit.seuilMinimal,
+        //'image': produit.image,
+        'typeProduitAchat': produit.type_produit_achat,
+        'prixAchat': produit.prixAchat,
+        "quantiteAchat": produit.quantiteAchat,
+        'typeProduitVente': produit.type_produit_vente,
+        'prixVente': produit.prixVente,
+        "quantiteVente": produit.quantiteVente,
+        'categorie': produit.categorie,
+        'fournisseur': produit.fournisseur_principal,
+        'uniteMesure': produit.unite_mesure,
+        'devise': produit.devise,
+        'description': produit.description,
     });
+
+    useEffect(() => {
+        if (typeProduitAchat?.nom === "unité") {
+            setData("quantiteAchat", 1);
+        }
+    }, [typeProduitAchat])
+
+    useEffect(() => {
+        if (typeProduitVente?.nom === "unité") {
+            setData("quantiteVente", 1);
+        }
+    }, [typeProduitVente])
 
     const onHandleChange = (e) => {
         e.target.type === 'checkbox'
             ?
-            setData(e.target.name,e.target.checked)
+            setData(e.target.name, e.target.checked)
             :
-            setData(e.target.name,e.target.value);
+            setData(e.target.name, e.target.value);
+    };
+
+    const onHandleChangeNumber = (e) => {
+        setData(e.target.name, formatNumber(e.target.value));
+
     };
 
 
     function handleSubmit(e) {
         e.preventDefault();
-        post(route("admin.produit.store",auth.user.id),{preserveScroll:true})
+        post(route("admin.produit.store", auth.user.id), { preserveScroll: true })
     }
 
     return (
@@ -47,28 +68,28 @@ function Create({auth,typeProduits,categories,fournisseurs,devises,uniteMesures,
             sousActive={'produit'}
             breadcrumbs={[
                 {
-                    text:"Société",
-                    href:route("admin.produit.index",auth.user.id),
-                    active:false
+                    text: "Société",
+                    href: route("admin.produit.index", auth.user.id),
+                    active: false
                 },
                 {
-                    text:"Modification",
-                    href:route("admin.produit.edit",[auth.user.id,produit.id]),
-                    active:true
+                    text: "Modification",
+                    href: route("admin.produit.edit", [auth.user.id, produit.id]),
+                    active: true
                 }
             ]}
         >
             <div>
                 <div className="w-full">
                     <motion.div
-                        initial={{y:-10,opacity:0}}
-                        animate={{y:0,opacity:1}}
+                        initial={{ y: -10, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
                         transition={{
-                            duration:0.5,
-                            type:"spring",
+                            duration: 0.5,
+                            type: "spring",
                         }}
 
-                        style={{width: '100%' }}
+                        style={{ width: '100%' }}
                     >
                         <form onSubmit={handleSubmit} className={"w-full space-y-5 gap-5 rounded bg-white p-5"}>
                             <div className={"grid grid-cols-1 md:grid-cols-2 gap-5 border p-3 rounded"}>
@@ -85,81 +106,139 @@ function Create({auth,typeProduits,categories,fournisseurs,devises,uniteMesures,
                                         className={'bg-white'}
                                         fullWidth
                                         onChange={onHandleChange}
+                                        size='small'
                                     />
                                     <InputError message={errors.nom} className="mt-2" />
                                 </div>
 
                                 <div>
                                     <Autocomplete
-                                        value={data.typeProduit}
-                                        className={"w-full"}
-                                        onChange={(e,val)=>setData("typeProduit",val)}
-                                        disablePortal={true}
-                                        options={typeProduits}
-                                        getOptionLabel={(option)=>option.nom}
-                                        isOptionEqualToValue={(option, value) => option.id === value.id}
-                                        renderInput={(params)=><TextField  fullWidth {...params} placeholder={"Type de produit"} label={params.nom}/>}
-                                    />
-                                    <InputError message={errors["data.typeProduit"]}/>
-                                </div>
-
-                                <div>
-                                    <Autocomplete
                                         value={data.categorie}
                                         className={"w-full"}
-                                        onChange={(e,val)=>setData("categorie",val)}
+                                        onChange={(e, val) => setData("categorie", val)}
                                         disablePortal={true}
                                         options={categories}
-                                        groupBy={(option) => option.categorie.libelle}
-                                        getOptionLabel={(option)=>option.nom}
+                                        getOptionLabel={(option) => option.libelle}
                                         isOptionEqualToValue={(option, value) => option.id === value.id}
-                                        renderInput={(params)=><TextField  fullWidth {...params} placeholder={"Categorie de produit"} label={params.nom}/>}
+                                        renderInput={(params) => <TextField fullWidth {...params} placeholder={"Categorie de produit"} label={params.libelle} size='small' />}
                                     />
-                                    <InputError message={errors["data.categorie"]}/>
+                                    <InputError message={errors["data.categorie"]} />
                                 </div>
 
-
                                 <div className={"md:col-span-2 mt-8"}>
-                                    <TextareaAutosize className={"w-full"} name={"description"} placeholder={"Description"} style={{height:100}} onChange={onHandleChange} autoComplete="description"/>
-                                    <InputError message={errors["data.description"]}/>
+                                    <TextareaAutosize value={data.description} className={"w-full"} name={"description"} placeholder={"Description"} style={{ height: 100 }} onChange={onHandleChange} autoComplete="description" size='small' />
+                                    <InputError message={errors["data.description"]} />
                                 </div>
 
                             </div>
 
                             <div className={"grid grid-cols-1 md:grid-cols-2 gap-5 border p-3 rounded"}>
                                 <div className={"md:col-span-2 font-bold text-orange-500"}>
-                                    Fixation du prix
+                                    Options d'achat
                                 </div>
-                                <div className={"w-full"}>
-                                    <TextField
-                                        value={data.prixAchat}
-                                        InputProps={{
-                                            inputComponent: NumberFormatCustomUtils,
-                                            endAdornment:"GNF",
-                                            inputProps:{
-                                                max:100000000000,
-                                                min:-1000000000000,
-                                                name:"prixAchat",
-                                            },
-                                        }}
-                                        className={"w-full"} label="Prix d'achat" name="prixAchat" onChange={onHandleChange}/>
-                                    <InputError message={errors.prixAchat}/>
+
+                                <div>
+                                    <Autocomplete
+                                        value={data.typeProduitAchat}
+                                        className={"w-full"}
+                                        onChange={(e, val) => setData("typeProduitAchat", val)}
+                                        disablePortal={true}
+                                        options={typeProduits}
+                                        getOptionLabel={(option) => option.nom}
+                                        isOptionEqualToValue={(option, value) => option.id === value.id}
+                                        renderInput={(params) => <TextField fullWidth {...params} placeholder={"Type de produit"} label={params.nom} size="small" />}
+                                    />
+                                    <InputError message={errors["data.typeProduitAchat"]} />
                                 </div>
+
+                                {
+                                    data.typeProduitAchat?.nom === "ensemble" ?
+                                        <div>
+                                            <TextField
+                                                value={data.quantiteAchat}
+                                                id="quantiteAchat"
+                                                name="quantiteAchat"
+                                                label="Quantité"
+                                                className={'bg-white'}
+                                                fullWidth
+                                                onChange={onHandleChangeNumber}
+                                                size="small"
+                                            />
+                                            <InputError message={errors.quantiteAchat} className="mt-2" />
+                                        </div>
+                                        :
+                                        null
+                                }
 
                                 <div className={"w-full"}>
                                     <TextField
-                                        value={data.prixVente}
                                         InputProps={{
                                             inputComponent: NumberFormatCustomUtils,
-                                            endAdornment:"GNF",
-                                            inputProps:{
-                                                max:100000000000,
-                                                min:-1000000000000,
-                                                name:"prixVente",
+                                            endAdornment: "GNF",
+                                            inputProps: {
+                                                value: data.prixAchat,
+                                                max: 100000000000,
+                                                min: -1000000000000,
+                                                name: "prixAchat",
                                             },
                                         }}
-                                        className={"w-full"} label="Prix de vente" name="prixVente" onChange={onHandleChange}/>
-                                    <InputError message={errors.prixVente}/>
+                                        className={"w-full"} label={`Prix d'achat ${data.typeProduitAchat?.nom === "unité" ? "unitaire" : "total"}`} name="prixAchat" onChange={onHandleChange} size='small' />
+                                    <InputError message={errors.prixAchat} />
+                                </div>
+                            </div>
+
+                            <div className={"grid grid-cols-1 md:grid-cols-2 gap-5 border p-3 rounded"}>
+                                <div className={"md:col-span-2 font-bold text-orange-500"}>
+                                    Options de vente
+                                </div>
+
+                                <div>
+                                    <Autocomplete
+                                        value={data.typeProduitVente}
+                                        className={"w-full"}
+                                        onChange={(e, val) => setData("typeProduitVente", val)}
+                                        disablePortal={true}
+                                        options={typeProduits}
+                                        getOptionLabel={(option) => option.nom}
+                                        isOptionEqualToValue={(option, value) => option.id === value.id}
+                                        renderInput={(params) => <TextField fullWidth {...params} placeholder={"Type de produit"} label={params.nom} size="small" />}
+                                    />
+                                    <InputError message={errors["data.typeProduitVente"]} />
+                                </div>
+
+                                {
+                                    data.typeProduitVente?.nom === "ensemble" ?
+                                        <div>
+                                            <TextField
+                                                value={data.quantiteVente}
+                                                id="quantiteVente"
+                                                name="quantiteVente"
+                                                label="Quantité"
+                                                className={'bg-white'}
+                                                fullWidth
+                                                onChange={onHandleChangeNumber}
+                                                size="small"
+                                            />
+                                            <InputError message={errors.quantiteVente} className="mt-2" />
+                                        </div>
+                                        :
+                                        null
+                                }
+
+                                <div className={"w-full"}>
+                                    <TextField
+                                        InputProps={{
+                                            inputComponent: NumberFormatCustomUtils,
+                                            endAdornment: "GNF",
+                                            inputProps: {
+                                                value: data.prixVente,
+                                                max: 100000000000,
+                                                min: -1000000000000,
+                                                name: "prixVente",
+                                            },
+                                        }}
+                                        className={"w-full"} label={`Prix de vente ${data.typeProduitVente?.nom === "unité" ? "unitaire" : "total"}`} name="prixVente" onChange={onHandleChange} size='small' />
+                                    <InputError message={errors.prixVente} />
                                 </div>
                             </div>
 
@@ -169,46 +248,46 @@ function Create({auth,typeProduits,categories,fournisseurs,devises,uniteMesures,
                                 </div>
                                 <div className={"w-full"}>
                                     <TextField
-                                        value={data.stockGlobal}
                                         InputProps={{
                                             inputComponent: NumberFormatCustomUtils,
-                                            inputProps:{
-                                                max:100000000000,
-                                                min:-1000000000000,
-                                                name:"stockGlobal",
+                                            inputProps: {
+                                                value: data.stockGlobal,
+                                                max: 100000000000,
+                                                min: -1000000000000,
+                                                name: "stockGlobal",
                                             },
                                         }}
-                                        className={"w-full"} label="Stock global" name="stockGlobal" onChange={onHandleChange}/>
-                                    <InputError message={errors.stockGlobal}/>
+                                        className={"w-full"} label="Stock global" name="stockGlobal" onChange={onHandleChange} size="small" />
+                                    <InputError message={errors.stockGlobal} />
                                 </div>
 
                                 <div className={"w-full"}>
                                     <TextField
-                                        value={data.stockMinimal}
                                         InputProps={{
                                             inputComponent: NumberFormatCustomUtils,
-                                            inputProps:{
-                                                max:100000000000,
-                                                min:-1000000000000,
-                                                name:"stockMinimal",
+                                            inputProps: {
+                                                value: data.seuilMinimal,
+                                                max: 100000000000,
+                                                min: -1000000000000,
+                                                name: "seuilMinimal",
                                             },
                                         }}
-                                        className={"w-full"} label="Stock minimal" name="stockMinimal" onChange={onHandleChange}/>
-                                    <InputError message={errors.stockMinimal}/>
+                                        className={"w-full"} label="Seuil minimal" name="seuilMinimal" onChange={onHandleChange} size="small" />
+                                    <InputError message={errors.seuilMinimal} />
                                 </div>
 
                             </div>
 
-                            <div className={"grid grid-cols-1 md:grid-cols-2 gap-5 border p-3 rounded"}>
+                            {/* <div className={"grid grid-cols-1 md:grid-cols-2 gap-5 border p-3 rounded"}>
                                 <div className={"md:col-span-2 text-orange-500 font-bold"}>
                                     Image
                                 </div>
                                 <div className={"w-full"}>
-                                    <TextField className={"w-full"} label="Image" name="image" onChange={onHandleChange}/>
-                                    <InputError message={errors.image}/>
+                                    <TextField className={"w-full"} label="Image" name="image" onChange={onHandleChange} />
+                                    <InputError message={errors.image} />
                                 </div>
 
-                            </div>
+                            </div> */}
 
                             <div className={"grid grid-cols-1 md:grid-cols-2 gap-5 border p-3 rounded"}>
                                 <div className={"md:col-span-2 text-orange-500 font-bold"}>
@@ -218,20 +297,21 @@ function Create({auth,typeProduits,categories,fournisseurs,devises,uniteMesures,
                                     <Autocomplete
                                         value={data.fournisseur}
                                         className={"w-full"}
-                                        onChange={(e,val)=>setData("fournisseur",val)}
+                                        onChange={(e, val) => setData("fournisseur", val)}
                                         disablePortal={true}
                                         options={fournisseurs}
-                                        getOptionLabel={(option)=>option.nom}
+                                        getOptionLabel={(option) => option.nom}
                                         isOptionEqualToValue={(option, value) => option.id === value.id}
-                                        renderInput={(params)=><TextField  fullWidth {...params} placeholder={"Fournisseur principal"} label={params.nom}/>}
+                                        renderInput={(params) => <TextField fullWidth {...params} placeholder={"Fournisseur principal"} label={params.nom} size="small" />}
                                     />
-                                    <InputError message={errors["data.fournisseur"]}/>
+                                    <InputError message={errors["data.fournisseur"]} />
                                 </div>
 
                             </div>
 
                             <div className={"w-full md:col-span-2 flex gap-2 justify-end"}>
-                                <Button variant={'contained'} color={'success'} type={"submit"}>                                    Valider
+                                <Button variant={'contained'} color={'success'} type={"submit"} size="small">
+                                    Valider
                                 </Button>
                             </div>
 

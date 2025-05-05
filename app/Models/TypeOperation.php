@@ -10,4 +10,9 @@ class TypeOperation extends Model
     use HasFactory;
 
     protected $guarded =[];
+
+    public function operations()
+    {
+        return $this->hasMany(Operation::class);
+    }
 }

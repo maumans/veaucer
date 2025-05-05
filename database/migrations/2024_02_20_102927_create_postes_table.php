@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('libelle');
             $table->text('description')->nullable();
+            $table->boolean('status')->default(true)->nullable();
             $table->foreignId('societe_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });

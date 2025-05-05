@@ -27,5 +27,11 @@ class MotifSeeder extends Seeder
             "libelle"=>'Taxe',
             'description'=>"Taxes",
         ]);
+
+        Motif::create([
+            "nom"=>'autres',
+            "libelle"=>'Autres',
+            'description'=>"Autres frais",
+        ]);
     }
 }

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->date("date")->nullable();
             $table->double('total')->nullable();
-            $table->longText("motif")->nullable();
+            $table->longText("commentaire")->nullable();
             $table->string('slug')->nullable();
 
             $table->foreignId('societe_id')->nullable()->constrained('societes')->cascadeOnDelete();
@@ -36,7 +36,7 @@ return new class extends Migration
 
             $table->foreignId('operation_id')->nullable()->constrained('operations')->cascadeOnDelete();
 
-            $table->enum('etat', ['EN ATTENTE', 'LIVRE', 'ANNULE'])->default("EN ATTENTE")->nullable();
+            $table->enum('etat', ['EN ATTENTE', 'LIVREE', 'ANNULE'])->default("EN ATTENTE")->nullable();
 
             $table->boolean("status")->default(true)->nullable();
 

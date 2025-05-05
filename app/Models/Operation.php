@@ -35,4 +35,24 @@ class Operation extends Model
     {
         return $this->belongsTo(Fournisseur::class);
     }
+
+    public function departementSource()
+    {
+        return $this->belongsTo(Departement::class,'departement_source_id');
+    }
+
+    public function departementDestination()
+    {
+        return $this->belongsTo(Departement::class,'departement_destination_id');
+    }
+
+    public function caisseSource()
+    {
+        return $this->belongsTo(Caisse::class,'caisse_source_id');
+    }
+
+    public function caisseDestination()
+    {
+        return $this->belongsTo(Caisse::class,'caisse_destination_id');
+    }
 }

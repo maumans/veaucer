@@ -73,7 +73,7 @@ export default function Show({ poste, auth }) {
                                 <WorkIcon className="text-gray-400" />
                                 <Typography variant="subtitle1" className="font-semibold">Titre du poste</Typography>
                             </div>
-                            <Typography variant="body1" className="ml-8">{poste.titre}</Typography>
+                            <Typography variant="body1" className="ml-8">{poste.libelle}</Typography>
                         </Grid>
 
                         <Grid item xs={12}>

@@ -118,13 +118,12 @@ Route::middleware(['auth',"userIsAdmin","profilActif"])->group(function () {
 
     ///STOCK
 
-    Route::resource('admin.entreeSortie', \App\Http\Controllers\Admin\Stock\EntreeSortieController::class);
+    Route::resource('admin.mouvement', \App\Http\Controllers\Admin\Stock\mouvementController::class);
 
 
     Route::resource('admin.stockInventaire', \App\Http\Controllers\Admin\Stock\InventaireController::class);
     Route::post('admin/stockInventaire/paginationFiltre',[\App\Http\Controllers\Admin\Stock\InventaireController::class,'paginationFiltre'])->name('admin.stockInventaire.paginationFiltre');
 
-    Route::resource('admin.stockAppro', \App\Http\Controllers\Admin\Stock\ApproController::class);
 
     Route::resource('admin.fournisseur', \App\Http\Controllers\Admin\FournisseurController::class);
     Route::post('admin/fournisseur/paginationFiltre',[\App\Http\Controllers\Admin\FournisseurController::class,'paginationFiltre'])->name('admin.fournisseur.paginationFiltre');

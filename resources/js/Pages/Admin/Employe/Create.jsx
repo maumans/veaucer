@@ -30,8 +30,8 @@ export default function Create({ auth, postes, departements }) {
     return (
         <PanelLayout
             auth={auth}
-            active={'parametrage'}
-            sousActive={'employe'}
+            active={'employe'}
+            sousActive={'listeEmployes'}
             breadcrumbs={[
                 {
                     text: "Employé",
@@ -163,7 +163,7 @@ export default function Create({ auth, postes, departements }) {
                                 >
                                     {postes.map((poste) => (
                                         <MenuItem key={poste.id} value={poste.id}>
-                                            {poste.titre}
+                                            {poste.libelle}
                                         </MenuItem>
                                     ))}
                                 </TextField>

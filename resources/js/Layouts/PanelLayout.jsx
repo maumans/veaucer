@@ -28,7 +28,8 @@ import {
     ListAlt,
     Person,
     Storage,
-    Widgets
+    Widgets,
+    Work
 } from "@mui/icons-material";
 import {Breadcrumbs, Collapse} from "@mui/material";
 import {createTheme, ThemeProvider} from '@mui/material/styles';
@@ -148,17 +149,17 @@ export default function PanelLayout(props) {
                                 {
                                     sousActive:"produit",
                                     route:"admin.produit.index",
-                                    text:'Produit'
+                                    text:'Produits'
                                 },
                                 {
-                                    sousActive:"entreeSortie",
-                                    route:"admin.entreeSortie.index",
-                                    text:'Entree/Sortie'
+                                    sousActive:"mouvement",
+                                    route:"admin.mouvement.index",
+                                    text:'Mouvements'
                                 },
                                  {
                                      sousActive:"inventaire",
                                      route:"admin.stockInventaire.index",
-                                     text:'Inventaire'
+                                     text:'Inventaires'
                                  },
                              ],
                              active:'stock',text:'Stocks',icon:<Widgets/>,collapse:true
@@ -215,17 +216,17 @@ export default function PanelLayout(props) {
                         {
                             routeLinks:[
                                 {
-                                    sousActive:"Vente",
-                                    route:"admin.vente.index",
-                                    text:'Ventes'
+                                    sousActive:"listeEmployes",
+                                    route:"admin.employe.index",
+                                    text:'Liste'
                                 },
                                 {
-                                    sousActive:"Paiement",
+                                    sousActive:"Horaires",
                                     route:"admin.paiement.index",
                                     text:'Paiements'
                                 },
                             ],
-                            active:'employe',text:'Employés',icon:<ListAlt/>,collapse:true
+                            active:'employe',text:'Employés',icon:<Work/>,collapse:true
                         },
 
                         {
@@ -235,6 +236,11 @@ export default function PanelLayout(props) {
                                     route:"admin.produit.index",
                                     text:'Produits'
                                 }, */
+                                {
+                                    sousActive:"produit",
+                                    route:"admin.produit.index",
+                                    text:'Produits'
+                                },
                                 {
                                     sousActive:"service",
                                     route:"admin.service.index",
@@ -254,11 +260,6 @@ export default function PanelLayout(props) {
                                     sousActive:"poste",
                                     route:"admin.poste.index",
                                     text:'Postes'
-                                },
-                                {
-                                    sousActive:"employe",
-                                    route:"admin.employe.index",
-                                    text:'Employés'
                                 },
 
                                 {

@@ -18,8 +18,8 @@ export default function Show({ employe, auth }) {
     return (
         <PanelLayout
             auth={auth}
-            active={'parametrage'}
-            sousActive={'employe'}
+            active={'employe'}
+            sousActive={'listeEmployes'}
             breadcrumbs={[
                 {
                     text: "Employé",
@@ -124,7 +124,7 @@ export default function Show({ employe, auth }) {
                                 <WorkIcon className="text-gray-400" />
                                 <Typography variant="subtitle1" className="font-semibold">Poste</Typography>
                             </div>
-                            <Typography variant="body1" className="ml-8">{employe.poste?.titre || 'Non assigné'}</Typography>
+                            <Typography variant="body1" className="ml-8">{employe.poste?.libelle || 'Non assigné'}</Typography>
                         </Grid>
 
                         <Grid item xs={12} md={6}>

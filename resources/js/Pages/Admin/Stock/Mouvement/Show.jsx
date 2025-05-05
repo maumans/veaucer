@@ -54,16 +54,16 @@ const Show = ({ auth, appro }) => {
         <PanelLayout
             auth={auth}
             active="stock"
-            sousActive="appro"
+            sousActive="mouvement"
             breadcrumbs={[
                 {
-                    text: 'Appro',
-                    href: route('admin.stockAppro.index', auth.user.id),
+                    text: 'Mouvement',
+                    href: route('admin.mouvement.index', auth.user.id),
                     active: false,
                 },
                 {
                     text: 'Détail',
-                    href: route('admin.stockAppro.show', [auth.user.id, appro.id]),
+                    href: route('admin.mouvement.show', [auth.user.id, appro.id]),
                     active: true,
                 },
             ]}

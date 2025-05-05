@@ -17,6 +17,7 @@ import {router, useForm} from "@inertiajs/react";
 import {Alert, AlertTitle, Autocomplete, Button, Snackbar} from "@mui/material";
 import {Add, AddCircle, AddOutlined, Check, Close, Delete, Edit, Visibility} from "@mui/icons-material";
 import InputError from "@/Components/InputError.jsx";
+import { formatNumber } from 'chart.js/helpers';
 
 function Index({auth,errors,produits,typeProduits,categories,error,success}) {
     //PAGINATION
@@ -188,22 +189,54 @@ function Index({auth,errors,produits,typeProduits,categories,error,success}) {
                 header: 'Nom',
                 //size: 10,
             },
+            
+            {
+                accessorKey: 'typeProduitAchat',
+                header: 'Option d\'achat',
+                //size: 50,
+                Cell: ({ row }) =>(
+                    row.original.type_produit_achat?.libelle
+                )
+            },
             {
                 accessorKey: 'prixAchat', //access nested data with dot notation
-                header: 'Prix de vente',
+                header: 'Prix d\'achat (GNF)',
                 //size: 10,
+                Cell: ({ row }) =>(
+                    formatNumber(row.original.prixAchat ?? 0)
+                )
+            },
+            {
+                accessorKey: 'quantiteAchat',
+                header: 'Quantité à l\'achat',
+                //size: 50,
+                Cell: ({ row }) =>(
+                    formatNumber(row.original.quantiteAchat ?? 0)
+                )
+            },
+
+            {
+                accessorKey: 'typeProduitVente',
+                header: 'Option de vente',
+                //size: 50,
+                Cell: ({ row }) =>(
+                    row.original.type_produit_vente?.libelle
+                )
             },
             {
                 accessorKey: 'prixVente', //access nested data with dot notation
-                header: "Prix d'achat",
+                header: "Prix d'achat (GNF)",
                 //size: 10,
+                Cell: ({ row }) =>(
+                    formatNumber(row.original.prixVente ?? 0)
+                )
             },
             {
-                accessorKey: 'typeProduit',
-                header: 'Type',
+                accessorKey: 'quantiteVente',
+                header: 'Quantité à la vente',
                 //size: 50,
                 Cell: ({ row }) =>(
-                    row.original.type_produit?.libelle
+                    formatNumber(row.original.quantiteVente ?? 0)
                 )
             },
 

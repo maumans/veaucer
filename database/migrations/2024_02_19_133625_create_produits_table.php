@@ -16,19 +16,25 @@ return new class extends Migration
             $table->string('slug')->nullable();
             $table->string('nom')->nullable();
             $table->longText('description')->nullable();
-            $table->double('prixUnitaire')->nullable();
-            $table->double('prixAchat')->nullable();
-            $table->double('prixVente')->nullable();
+            
+            
             $table->double('stockGlobal')->nullable();
-            $table->double('stockMinimal')->nullable();
+            $table->double('seuilMinimal')->nullable();
+            $table->double('seuilMaximal')->nullable();
             $table->string('image')->nullable();
             $table->integer('notes')->nullable();
             $table->enum('etat',['ACTIF','HORS STOCK','EN PROMOTION'])->default("ACTIF")->nullable();
-            $table->enum('type',['UNITE','ENSEMBLE'])->default("UNITE")->nullable();
-            $table->integer('quantite')->nullable();
+
+            $table->foreignId('type_produit_achat_id')->nullable()->constrained('type_produits')->cascadeOnDelete();
+            $table->integer('quantiteAchat')->nullable();
+            $table->double('prixAchat')->nullable();
+
+            $table->foreignId('type_produit_vente_id')->nullable()->constrained('type_produits')->cascadeOnDelete();
+            $table->integer('quantiteVente')->nullable();
+            $table->double('prixVente')->nullable();
+            
             $table->boolean('status')->default(true)->nullable();
             $table->foreignId('categorie_id')->nullable()->constrained('categories')->cascadeOnDelete();
-            $table->foreignId('type_produit_id')->nullable()->constrained('type_produits')->cascadeOnDelete();
             $table->foreignId("fournisseur_principal_id")->nullable()->constrained("fournisseurs")->cascadeOnDelete();
             $table->foreignId("unite_mesure_id")->nullable()->constrained("unite_mesures")->cascadeOnDelete();
             $table->foreignId("devise_id")->nullable()->constrained("devises")->cascadeOnDelete();

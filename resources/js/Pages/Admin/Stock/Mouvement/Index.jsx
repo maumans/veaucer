@@ -15,13 +15,13 @@ import { MaterialReactTable, useMaterialReactTable } from 'material-react-table'
 import { MRT_Localization_FR } from 'material-react-table/locales/fr';
 import { router, useForm } from "@inertiajs/react";
 import { Alert, AlertTitle, Autocomplete, Button, Snackbar } from "@mui/material";
-import { Add, AddCircle, AddOutlined, Check, Close, Delete, Edit, Visibility } from "@mui/icons-material";
+import { Add, AddCircle,Remove, AddOutlined, Check, Close, Delete, Edit, Visibility, SwapHoriz } from "@mui/icons-material";
 import InputError from "@/Components/InputError.jsx";
 import { formatNumber } from "chart.js/helpers";
 import useDidUpdate from "@/Fonctions/useDidUpadte.jsx";
 import dayjs from "dayjs";
 
-function Index({ auth, errors, appros, typeProduits, categorieProduits, error, success }) {
+function Index({ auth, errors, operations, typeProduits, categorieProduits, error, success }) {
     //PAGINATION
 
     const [isError, setIsError] = useState(false);
@@ -35,14 +35,14 @@ function Index({ auth, errors, appros, typeProduits, categorieProduits, error, s
     const [globalFilter, setGlobalFilter] = useState('');
     const [sorting, setSorting] = useState([]);
     const [pagination, setPagination] = useState({
-        pageIndex: appros.current_page - 1,
-        pageSize: appros.per_page,
+        pageIndex: operations.current_page - 1,
+        pageSize: operations.per_page,
     });
 
 
     useDidUpdate(() => {
 
-        router.get(route('admin.entreeSortie.index', [auth.user.id]),
+        router.get(route('admin.mouvement.index', [auth.user.id]),
             {
                 'start': pagination.pageIndex * pagination.pageSize,
                 "size": pagination.pageSize,
@@ -80,9 +80,9 @@ function Index({ auth, errors, appros, typeProduits, categorieProduits, error, s
     const [openShow, setOpenShow] = useState(false);
     const [openDelete, setOpenDelete] = useState(false);
 
-    const handleClickOpen = () => {
+    const handleClickOpen = (mouvement) => {
 
-        router.get(route("admin.entreeSortie.create", auth.user.id), { onSuccess: () => reset() })
+        router.get(route("admin.mouvement.create", auth.user.id),{mouvement}, { onSuccess: () => reset() })
 
         //reset()
         //setOpen(true);
@@ -116,14 +116,14 @@ function Index({ auth, errors, appros, typeProduits, categorieProduits, error, s
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route('admin.entreeSortie.store'), {
+        post(route('admin.mouvement.store'), {
             ...data,
             preserveScroll: true
         })
     };
 
     const handleEdit = (el) => {
-        router.get(route("admin.entreeSortie.edit", [auth.user.id, el.id]), { preserveScroll: true })
+        router.get(route("admin.mouvement.edit", [auth.user.id, el.id]), { preserveScroll: true })
 
 
         /*setData({
@@ -138,7 +138,7 @@ function Index({ auth, errors, appros, typeProduits, categorieProduits, error, s
 
     const handleShow = (id) => {
         alert(id);
-        router.get(route('admin.entreeSortie.show', [auth.user.id, id]))
+        router.get(route('admin.mouvement.show', [auth.user.id, id]))
     };
 
     const handleDelete = (id, message) => {
@@ -151,7 +151,7 @@ function Index({ auth, errors, appros, typeProduits, categorieProduits, error, s
     };
 
     const handleUpdate = () => {
-        put(route('admin.entreeSortie.update', data.id), {
+        put(route('admin.mouvement.update', data.id), {
             onSuccess: () => {
                 reset()
                 setOpenEdit(false);
@@ -162,7 +162,7 @@ function Index({ auth, errors, appros, typeProduits, categorieProduits, error, s
 
     const handleSuspend = () => {
         setOpen(false);
-        router.delete(route('admin.entreeSortie.destroy', { id: data.id }))
+        router.delete(route('admin.mouvement.destroy', { id: data.id }))
     };
 
     const columns = useMemo(
@@ -176,10 +176,39 @@ function Index({ auth, errors, appros, typeProduits, categorieProduits, error, s
                 )
             },
             {
-                accessorKey: 'total', //access nested data with dot notation
-                header: 'Total',
+                accessorKey: 'type_operation', //access nested data with dot notation
+                header: 'Type',
                 Cell: ({ row }) => (
-                    formatNumber(row.original.total) + ' GNF'
+                    row.original.type_operation?.libelle?.toLowerCase()=="entrée"?
+                    <div className={'p-2 font-bold bg-green-500 text-white w-fit h-fit rounded'}>
+                        {row.original.type_operation?.libelle}
+                    </div>
+                    :
+                    row.original.type_operation?.libelle?.toLowerCase()=="sortie"?
+                    <div className={'p-2 font-bold bg-red-500 text-white w-fit h-fit rounded'}>
+                        {row.original.type_operation?.libelle}
+                    </div>
+                    :
+                    <div className={'p-2 font-bold bg-orange-500 text-white w-fit h-fit rounded'}>
+                        {row.original.type_operation?.libelle}
+                    </div>
+                )
+                //size: 10,
+            },
+           
+            {
+                accessorKey: 'departement_destination_id', //access nested data with dot notation
+                header: 'Departement destination',
+                Cell: ({ row }) => (
+                    row.original.departement_destination?.nom
+                )
+                //size: 10,
+            },
+            {
+                accessorKey: 'montant', //access nested data with dot notation
+                header: 'Montant total',
+                Cell: ({ row }) => (
+                    formatNumber(row.original.montant) + ' GNF'
                 )
                 //size: 10,
             },
@@ -254,7 +283,7 @@ function Index({ auth, errors, appros, typeProduits, categorieProduits, error, s
 
     const table = useMaterialReactTable({
         columns,
-        data: appros.data,
+        data: operations.data,
         //enableRowSelection: true,
         getRowId: (row) => row.id,
         initialState: { showColumnFilters: false },
@@ -290,11 +319,11 @@ function Index({ auth, errors, appros, typeProduits, categorieProduits, error, s
             error={error}
             errors={errors}
             active={'stock'}
-            sousActive={'entreeSortie'}
+            sousActive={'mouvement'}
             breadcrumbs={[
                 {
-                    text: "Entree/Sortie",
-                    href: route("admin.entreeSortie.index", [auth.user.id]),
+                    text: "Mouvement",
+                    href: route("admin.mouvement.index", [auth.user.id]),
                     active: false
                 },
                 /*{
@@ -308,9 +337,17 @@ function Index({ auth, errors, appros, typeProduits, categorieProduits, error, s
 
 
                 <div className={'flex justify-end'}>
-                    <Button color={'warning'} variant={'contained'} onClick={handleClickOpen} >
-                        <AddCircle className={'mr-1'}></AddCircle> Entrée/Sortie
-                    </Button>
+                    <div className='flex gap-5'>
+                        <Button color={'success'} variant={'contained'} onClick={()=>handleClickOpen('Entrée')} >
+                            <AddCircle className={'mr-1'}></AddCircle> Entrée
+                        </Button>
+                        <Button color={'warning'} variant={'contained'} onClick={()=>handleClickOpen('Transfert')} >
+                            <SwapHoriz className={'mr-1'}></SwapHoriz> Transfert
+                        </Button>
+                        <Button color={'error'} variant={'contained'} onClick={()=>handleClickOpen('Sortie')} >
+                            <Remove className={'mr-1'}></Remove> Sortie
+                        </Button>
+                    </div>
 
                     {
                         ///////ADD DIALOG

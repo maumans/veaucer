@@ -11,9 +11,14 @@ class Produit extends Model
 
     protected $guarded=[];
 
-    public function typeProduit()
+    public function typeProduitAchat()
     {
-        return $this->belongsTo(TypeProduit::class);
+        return $this->belongsTo(TypeProduit::class,'type_produit_achat_id');
+    }
+
+    public function typeProduitVente()
+    {
+        return $this->belongsTo(TypeProduit::class,'type_produit_vente_id');
     }
 
     public function categorie()
@@ -36,5 +41,14 @@ class Produit extends Model
         return $this->hasMany(Produit::class);
     }
 
+    public function stocks()
+    {
+        return $this->hasMany(Stock::class);
+    }
+
+    public function societe()
+    {
+        return $this->belongsTo(Societe::class);
+    }
 
 }

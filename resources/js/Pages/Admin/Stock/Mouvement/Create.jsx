@@ -12,15 +12,14 @@ import {MRT_Localization_FR} from "material-react-table/locales/fr/index.js";
 import {formatNumber} from "chart.js/helpers";
 import {DatePicker} from "@mui/x-date-pickers";
 import dayjs from 'dayjs';
-function Create({auth,produits,departements,departementPrincipal,caisses,caissePrincipale,motifs,fournisseurs,fournisseurPrincipal,devises,uniteMesures,errors,success,error,referentiels,typeOperations,typeOperation}) {
+function Create({auth,produits,departements,departementPrincipal,caisses,caissePrincipale,motifs,fournisseurs,fournisseurPrincipal,devises,uniteMesures,errors,success,error,referentiels,typeOperations,typeOperation,mouvement}) {
 
-    const {data,setData, post, processing}=useForm({
+    const {data,setData, processing}=useForm({
         "date":dayjs(),
         'nom':'',
         'prixAchat':'',
         'prixVente':'',
-        'quantite':'',
-        'image':'',
+        'quantiteAchat':'',
         'produit':null,
         'motif':null,
         'fournisseur':fournisseurPrincipal,
@@ -78,14 +77,16 @@ function Create({auth,produits,departements,departementPrincipal,caisses,caisseP
         let operationData = []
         // Initialiser les valeurs par défaut pour chaque `row` si elles n'existent pas
         data.operations.forEach((op) => {
-            if(data[`quantite.${op.id}`] && data[`prixAchat.${op.id}`])
+            if(data[`quantiteAchat.${op.id}`] && data[`prixAchat.${op.id}`])
             {
-                totalOperation+=data[`quantite.${op.id}`]*data[`prixAchat.${op.id}`]
+                totalOperation+=data[`quantiteAchat.${op.id}`]*data[`prixAchat.${op.id}`]
 
                 operationData.push({
                     id: op.id,
                     prixAchat: parseInt(data[`prixAchat.${op.id}`]),
-                    quantite: parseInt(data[`quantite.${op.id}`]),
+                    quantiteAchat: parseInt(data[`quantiteAchat.${op.id}`]),
+                    produit_id: op.produit_id,
+                    type_produit_achat_id: op.type_produit_achat_id,
                 })
             }
 
@@ -110,13 +111,16 @@ function Create({auth,produits,departements,departementPrincipal,caisses,caisseP
         let depenseData=[]
         let totalDepense=0
         // Initialiser les valeurs par défaut pour chaque `row` si elles n'existent pas
-        data.depenses.forEach((op) => {
-            if(data[`montantDepense.${op.id}`])
+        data.depenses.forEach((dep) => {
+            if(data[`montantDepense.${dep.id}`])
             {
-                totalDepense+=parseInt(data[`montantDepense.${op.id}`])
+                totalDepense+=parseInt(data[`montantDepense.${dep.id}`])
                 depenseData.push({
-                    id: op.id,
-                    montant: parseInt(data[`montantDepense.${op.id}`])
+                    id: dep.id,
+                    montant: parseInt(data[`montantDepense.${dep.id}`]),
+                    motif: dep.motif,
+                    motif_id: dep.motif_id,
+                    commentaire: data[`commentaire.${dep.id}`]
                 })
             }
         });
@@ -132,8 +136,11 @@ function Create({auth,produits,departements,departementPrincipal,caisses,caisseP
     const columns = useMemo(
         () => [
             {
-                accessorKey: 'id', //access nested data with dot notationid', //access nested data with dot notation
-                header: 'ID',
+                accessorKey: 'N°', //access nested data with dot notationid', //access nested data with dot notation
+                header: 'N°',
+                Cell: ({ row }) =>(
+                    row.index + 1
+                )
             },
             {
                 accessorKey: 'nom', //access nested data with dot notation
@@ -143,6 +150,14 @@ function Create({auth,produits,departements,departementPrincipal,caisses,caisseP
                     row.original.produit?.nom
                 )
             },
+            {
+                accessorKey: 'typeProduitAchat',
+                header: "Type d'achat",
+                Cell: ({ row }) =>(
+                    row.original.type_produit_achat?.toLowerCase() =='ensemble' ? 'Engros': 'Unité'
+                )
+            },
+
             {
                 accessorKey: 'prixAchat',
                 header: "Prix d'achat (GNF)",
@@ -164,12 +179,12 @@ function Create({auth,produits,departements,departementPrincipal,caisses,caisseP
                 )
             },
             {
-                accessorKey: 'quantite',
+                accessorKey: 'quantiteAchat',
                 header: "Quantité",
                 Cell: ({ row }) => (
                     <TextField
-                        name={`quantite.${row.original.id}`}
-                        value={data[`quantite.${row.original.id}`] || ''}
+                        name={`quantiteAchat.${row.original.id}`}
+                        value={data[`quantiteAchat.${row.original.id}`] || ''}
                         InputProps={{
                             inputComponent: NumberFormatCustomUtils,
                             inputProps: {
@@ -188,8 +203,8 @@ function Create({auth,produits,departements,departementPrincipal,caisses,caisseP
                 header: "Montant (GNF)",
                 Cell: ({ row }) => {
                     const prixAchat = parseFloat(data[`prixAchat.${row.original.id}`] || 0);
-                    const quantite = parseFloat(data[`quantite.${row.original.id}`] || 0);
-                    const montant = prixAchat * quantite;
+                    const quantiteAchat = parseFloat(data[`quantiteAchat.${row.original.id}`] || 0);
+                    const montant = prixAchat * quantiteAchat;
                     
                     return montant > 0 
                         ? `${formatNumber(montant)} GNF` 
@@ -243,6 +258,24 @@ function Create({auth,produits,departements,departementPrincipal,caisses,caisseP
             },
 
             {
+                accessorKey: 'commentaire', //access nested data with dot notation
+                header: 'Commentaire',
+                //size: 10,
+                Cell: ({ row }) =>(
+                    <TextareaAutosize
+                        name={`commentaire.${row.original.id}`}
+                        value={data[`commentaire.${row.original.id}`] || ''}
+                        className="w-full"
+                        onChange={onHandleChangeDepense}
+                        size="small"
+                        multiline
+                        minRows={1}
+                        required={row?.original?.motif?.nom === 'autres'}
+                    />
+                )
+            },
+
+            {
                 accessorKey: 'action', //access nested data with dot notation
                 header: "Action",
                 //size: 10,
@@ -267,12 +300,12 @@ function Create({auth,produits,departements,departementPrincipal,caisses,caisseP
 
     function handleSubmit(e) {
         e.preventDefault();
-        post(route("admin.entreeSortie.store",auth.user.id),{
+        router.post(route("admin.mouvement.store",auth.user.id),{
             date:data.date,
-            typeOperation:data.typeOperationId,
-            fournisseur:data.fournisseurId,
-            departement:data.departementId,
-            caisse:data.caisseId,
+            typeOperation:data.typeOperation?.id,
+            fournisseur:data.fournisseur?.id,
+            departement:data.departement?.id,
+            caisse:data.caisse?.id,
             operations:data.operationData,
             depenses:data.depenseData,
             totalOperation:data.totalOperation,
@@ -286,10 +319,14 @@ function Create({auth,produits,departements,departementPrincipal,caisses,caisseP
             operations.push({
                 id: p.id,
                 produit: p,
+                produit_id:p?.id,
+                type_produit_achat:p?.type_produit_achat?.nom,
+                type_produit_achat_id:p?.type_produit_achat?.id,
                 prixAchat: p.prixAchat,
-                quantite: '',
+                quantiteAchat: '',
                 montant: '',
             })
+
         })
         
         setData(prevData=>({
@@ -309,7 +346,7 @@ function Create({auth,produits,departements,departementPrincipal,caisses,caisseP
         setData((prevData)=>({
             ...prevData,
             ["prixAchat."+id]: '',
-            ["quantite."+id]: '',
+            ["quantiteAchat."+id]: '',
         }))
 
         setSuccessSt('Produit retiré avec succès')
@@ -317,11 +354,13 @@ function Create({auth,produits,departements,departementPrincipal,caisses,caisseP
 
     useEffect(()=> {
         let depenses= []
-        data.motifs.map((p)=>{
+        data.motifs.map((m)=>{
             depenses.push({
-                id: p.id,
-                motif: p,
+                id: m.id,
+                motif: m,
+                motif_id:m?.id,
                 montant: '',
+                commentaire: '',
             })
         })
         
@@ -332,56 +371,6 @@ function Create({auth,produits,departements,departementPrincipal,caisses,caisseP
 
     },[data.motifs])
 
-
-    /* function handleAddToDepense()
-    {
-        if(data.motif && data.montantDepense)
-        {
-            let d={
-                id: Date.now(),
-                motifId: data.motif.id,
-                motif: data.motif,
-                montant: data.montantDepense,
-            }
-
-            let trouve=false
-            let depenses= []
-
-            data.depenses.map((c)=>{
-                if(c.id === d.id)
-                {
-                    c.montant=d.montant
-                    trouve=true
-                }
-                depenses.push(c)
-            })
-
-            if (!trouve)
-            {
-                depenses.push(d)
-            }
-
-            setData((prevData)=>({
-                ...prevData,
-                depenses,
-                motif: null,
-                montantDepense: '',
-            }))
-
-            setSuccessSt('Dépense ajoutée avec succès')
-            setTimeout(()=>(
-                setSuccessSt(false)
-            ),3000)
-        }
-        else
-        {
-            setErrorSt('Veuillez remplir les champs de la dépense')
-            setTimeout(()=>(
-                setErrorSt(false)
-            ),3000)
-        }
-
-    } */
 
     function handleRemoveToDepense(id)
     {
@@ -479,16 +468,16 @@ function Create({auth,produits,departements,departementPrincipal,caisses,caisseP
             success={successSt}
             error={errorSt}
             active={'stock'}
-            sousActive={'entreeSortie'}
+            sousActive={'mouvement'}
             breadcrumbs={[
                 {
-                    text:"Entree/Sortie",
-                    href:route("admin.entreeSortie.index",auth.user.id),
+                    text:"Mouvement",
+                    href:route("admin.mouvement.index",auth.user.id),
                     active:false
                 },
                 {
                     text:"Nouveau",
-                    href:route("admin.entreeSortie.create",auth.user.id),
+                    href:route("admin.mouvement.create",auth.user.id),
                     active:true
                 }
             ]}
@@ -641,54 +630,6 @@ function Create({auth,produits,departements,departementPrincipal,caisses,caisseP
                                         ""
                                 }
 
-                                {/* <div>
-                                    <Autocomplete
-                                        value={data.produit}
-                                        className={"w-full"}
-                                        onChange={(e,val)=>setData("produit",val)}
-                                        disablePortal={true}
-                                        options={produits}
-                                        getOptionLabel={(option)=>option.nom}
-                                        isOptionEqualToValue={(option, value) => option.id === value.id}
-                                        renderInput={(params)=><TextField  fullWidth {...params} placeholder={"Produit"} label={params.nom}/>}
-                                    />
-                                    <InputError message={errors["data.produit"]}/>
-                                </div>
-                                <div className={"w-full"}>
-                                    <TextField
-                                        value={data.prixAchat}
-                                        InputProps={{
-                                            inputComponent: NumberFormatCustomUtils,
-                                            endAdornment:"GNF",
-                                            inputProps:{
-                                                max:100000000000,
-                                                min:-1000000000000,
-                                                name:"prixAchat",
-                                            },
-                                        }}
-                                        className={"w-full"} label="Prix d'achat" name="prixAchat" onChange={onHandleChange}/>
-                                    <InputError message={errors.prixAchat}/>
-                                </div>
-                                <div className={"w-full"}>
-                                    <TextField
-                                        value={data.quantite}
-                                        InputProps={{
-                                            inputComponent: NumberFormatCustomUtils,
-                                            inputProps:{
-                                                max:100000000000,
-                                                min:-1000000000000,
-                                                name:"quantite",
-                                            },
-                                        }}
-                                        className={"w-full"} label="Quantité" name="quantite" onChange={onHandleChange}/>
-                                    <InputError message={errors.quantite}/>
-                                </div>
-                                <div className={"md:col-span-2 w-fit"}>
-                                    <Button onClick={handleAddToProduitTab} variant={'contained'} sx={{color:"white"}} color={'primary'} type={"button"}>
-                                        Ajouter
-                                    </Button>
-                                </div> */}
-
                             </div>
 
                             <div className={"grid grid-cols-1 md:grid-cols-2 gap-5 border p-3 rounded"}>
@@ -732,45 +673,6 @@ function Create({auth,produits,departements,departementPrincipal,caisses,caisseP
                                         :
                                         ""
                                 }
-
-                                {/* <div>
-                                    <Autocomplete
-                                        value={data.motif}
-                                        className={"w-full"}
-                                        onChange={(e,val)=>setData("motif",val)}
-                                        disablePortal={true}
-                                        options={motifs}
-                                        getOptionLabel={(option)=>option.nom}
-                                        isOptionEqualToValue={(option, value) => option.id === value.id}
-                                        renderInput={(params)=><TextField  fullWidth {...params} placeholder={"Motif"} label={params.nom}/>}
-                                        size="small"
-                                    />
-                                    <InputError message={errors["data.motif"]}/>
-                                </div>
-
-                                <div className={"w-full"}>
-                                    <TextField
-                                        value={data.montantDepense}
-                                        InputProps={{
-                                            inputComponent: NumberFormatCustomUtils,
-                                            endAdornment:"GNF",
-                                            inputProps:{
-                                                max:100000000000,
-                                                min:-1000000000000,
-                                                name:"montantDepense",
-                                            },
-                                        }}
-                                        className={"w-full"} label="montant" name="montantDepense" onChange={onHandleChange}
-                                        size="small"    
-                                    />
-                                    <InputError message={errors.montantDepense}/>
-                                </div>
-
-                                <div className={"md:col-span-2 w-fit"}>
-                                    <Button onClick={handleAddToDepense} variant={'contained'} sx={{color:"white"}} color={'primary'} type={"button"}>
-                                        Ajouter
-                                    </Button>
-                                </div> */}
 
                             </div>
 

@@ -28,11 +28,13 @@ return new class extends Migration
             $table->foreignId('client_id')->nullable()->constrained('users')->cascadeOnDelete();
             $table->foreignId('admin_id')->nullable()->constrained('users')->cascadeOnDelete();
             $table->foreignId('fournisseur_id')->nullable()->constrained('fournisseurs')->cascadeOnDelete();
-            $table->foreignId('caisse_id')->nullable()->constrained('caisses')->cascadeOnDelete();
-            $table->foreignId('caisse_destinataire_id')->nullable()->constrained('caisses')->cascadeOnDelete();
-            $table->foreignId('stock_id')->nullable()->constrained('stocks')->cascadeOnDelete();
-            $table->foreignId('stock_destinataire_id')->nullable()->constrained('stocks')->cascadeOnDelete();
-            $table->enum('etat',['EN ATTENTE','ENREGISTRE','ARCHIVER',"ANNULE"])->default("ENREGISTRE")->nullable();
+            
+            $table->foreignId('departement_source_id')->nullable()->constrained('departements')->cascadeOnDelete();
+            $table->foreignId('departement_destination_id')->nullable()->constrained('departements')->cascadeOnDelete();
+
+            $table->foreignId('caisse_source_id')->nullable()->constrained('caisses')->cascadeOnDelete();
+            $table->foreignId('caisse_destination_id')->nullable()->constrained('caisses')->cascadeOnDelete();
+            $table->enum('etat',['EN ATTENTE','LIVREE','ARCHIVEE','ANNULE'])->default("EN ATTENTE")->nullable();
             $table->boolean('status')->default(true)->nullable();
             $table->timestamps();
         });

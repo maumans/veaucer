@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
-class EntreeSortieController extends Controller
+class MouvementController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -30,12 +30,11 @@ class EntreeSortieController extends Controller
 
         $query = Operation::query()->where('status', true)
             ->orderByDesc("created_at")
-            ->with("fournisseur")
-            ->whereRelation('typeOperation','libelle', "approvisionnement")
+            ->with("fournisseur",'typeOperation','departementSource','departementDestination','caisseSource','caisseDestination')
             ->when($request->get("globalFilter"),function ($query,$value) use ($request){
                 $query->where(function ($q) use ($request,$value) {
-                    $q->where('nom', 'like', "%" . $value . "%")
-                        ->orWhere('total', 'like', "%" .$value . "%");
+                    $q->where('date', 'like', "%" . $value . "%")
+                        ->orWhere('montant', 'like', "%" .$value . "%");
                 });
             })->when($request->get("filters"),function ($query,$filters){
                 foreach ($filters as $key => $value) {
@@ -61,8 +60,8 @@ class EntreeSortieController extends Controller
             });
 
 
-        return Inertia::render('Admin/Stock/EntreeSortie/Index',[
-            'appros' => $query->paginate($request->size??10),
+        return Inertia::render('Admin/Stock/Mouvement/Index',[
+            'operations' => $query->paginate($request->size??10),
             /*'typeProduits' => $typeProduits,
             'categorieProduits' => $categorieProduits,*/
         ]);
@@ -71,11 +70,9 @@ class EntreeSortieController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
-        $produits = Produit::where('status', true)->where(function ($query){
-            $query->where("societe_id",session('societe')['id'])->orWhere("societe_id",null);
-        })->orderBy('nom')->get();
+
         $motifs = Motif::where('status', true)->where(function ($query){
             $query->where("societe_id",session('societe')['id'])->orWhere("societe_id",null);
         })->orderBy('nom')->get();
@@ -91,13 +88,13 @@ class EntreeSortieController extends Controller
         $societe= Societe::where('id',session('societe')['id'])->first();
         $societe && $caissePrincipale=$societe->caissePrincipale;
         $typeOperations=TypeOperation::where('status', true)->get();
-        $typeOperation=TypeOperation::where('status', true)->where('nom', "entree")->first();
+        $typeOperation=TypeOperation::where('status', true)->where('nom', $request->mouvement)->first();
 
         $produits = Produit::where('status', true)->where(function ($query){
             $query->where("societe_id",session('societe')['id'])->orWhere("societe_id",null);
-        })->orderBy('nom')->get();
+        })->orderBy('nom')->with('typeProduitAchat')->get();
 
-        return Inertia::render("Admin/Stock/EntreeSortie/Create",[
+        return Inertia::render("Admin/Stock/Mouvement/Create",[
             'produits' => $produits,
             'motifs' => $motifs,
             'fournisseurs' => $fournisseurs,
@@ -108,7 +105,6 @@ class EntreeSortieController extends Controller
             'caissePrincipale' => $caissePrincipale,
             'typeOperations' => $typeOperations,
             'typeOperation' => $typeOperation,
-            'produits' => $produits
         ]);
     }
 
@@ -118,6 +114,7 @@ class EntreeSortieController extends Controller
     public function store($id,Request $request)
     {
 
+
         $request->validate([
             "date" => 'required',
             "typeOperation" => 'required',
@@ -126,6 +123,8 @@ class EntreeSortieController extends Controller
             "caisse" => 'required',
             "operations" => 'required',
             "depenses" => 'nullable',
+            "totalOperation" => 'required',
+            
         ]);
 
         DB::beginTransaction();
@@ -135,17 +134,19 @@ class EntreeSortieController extends Controller
             $operation=Operation::create([
                 "date" => Carbon::make($request->date),
                 "montant" => $request->totalCommande + $request->totalDepense,
-                "type_operation_id" => $request->typeOperationId,
-                "auteur_id" => Auth::id(),
+                "type_operation_id" => $request->typeOperation,
                 "societe_id" => session('societe')['id'],
-                "fournisseur_id" => $request->fournisseurId,
-                "caisse_id" => $request->caisseId,
-                "status" => $request->enregistrer ? 'COMMANDE' : 'LIVRE',
+                "fournisseur_id" => $request->fournisseur,
+                "departement_destination_id" => $request->departement,
+                "caisse_source_id" => $request->caisse,
+                "etat" => $request->enregistrer ? 'EN ATTENTE' : 'LIVREE',
             ]);
+
 
             if(!$request->enregistrer)
             {
-                $caisse=Caisse::where('id',$request->caisseId)->where('status',true)->first();
+
+                $caisse=Caisse::where('id',$request->caisse)->where('status',true)->first();
 
                 if($caisse)
                 {
@@ -158,29 +159,32 @@ class EntreeSortieController extends Controller
                 {
                     return redirect()->back()->with('error','Caisse inexistante');
                 }
+
             }
 
-            foreach ($request->commandes as $commande)
+            
+            foreach ($request->operations as $operationProduit)
             {
-                $stock=Stock::where('departement_id', $request->departement['id'])->where('status', true)->where('produit_id', $commande['produit']['id'])->where('societe_id', session('societe')['id'])->first();
+                $stock=Stock::where('departement_id', $request->departement)->where('status', true)->where('produit_id', $operationProduit['produit_id'])->where('societe_id', session('societe')['id'])->first();
 
                 OperationProduit::create([
-                    'quantite' =>  $commande['quantite'],
-                    'prixAchat' =>  $commande['prixAchat'],
-                    'stock_id' => $stock->id,
-                    'produit_id' => $commande['produit']['id'],
+                    'type_produit_achat_id' => $operationProduit['type_produit_achat_id'],
+                    'quantiteAchat' => $operationProduit['quantiteAchat'],
+                    'prixAchat' => $operationProduit['prixAchat'],
+                    'produit_id' => $operationProduit['produit_id'],
+                    'stock_destination_id' => $stock->id,
                     'operation_id' => $operation->id,
                     "societe_id" => session('societe')['id'],
-                    "etat" => $request->enregistrer ? 'COMMANDE' : 'LIVRE',
+                    "etat" => $request->enregistrer ? 'EN ATTENTE' : 'LIVREE',
                 ]);
                 if(!$request->enregistrer)
                 {
-                    $stock->quantite += $commande['quantite'];
+                    $stock->quantite += $operationProduit['quantiteAchat'];
                     $stock->save();
 
                     if($caisse)
                     {
-                        $caisse->solde -= $commande['prixAchat']*$commande['quantite'];
+                        $caisse->solde -= $operationProduit['prixAchat']*$operationProduit['quantiteAchat'];
                         $caisse->save();
                     }
                     else
@@ -197,12 +201,13 @@ class EntreeSortieController extends Controller
             {
                 Depense::create([
                     "total" => $depense['montant'],
-                    "motif_id" => $depense['motif']['id'],
+                    "motif_id" => $depense['motif_id'],
+                    "commentaire" => $depense['commentaire'] ?? "",
                     "auteur_id" => Auth::id(),
                     'operation_id' => $operation->id,
                     "societe_id" => session('societe')['id'],
-                    "fournisseur_id" => $request->fournisseur['id'],
-                    "etat" => $request->enregistrer ? 'EN ATTENTE' : 'LIVRE',
+                    "fournisseur_id" => $request->fournisseur,
+                    "etat" => $request->enregistrer ? 'EN ATTENTE' : 'LIVREE',
                 ]);
 
                 if(!$request->enregistrer)
@@ -215,7 +220,7 @@ class EntreeSortieController extends Controller
 
             DB::commit();
 
-            return redirect()->action([\App\Http\Controllers\Admin\Stock\EntreeSortieController::class, 'index'], Auth::id())->with("success", "Commande effectué avec succés");
+            return redirect()->route('admin.mouvement.index', Auth::id())->with("success", "Commande effectué avec succés");
 
         }
         catch (\Exception $e) {
@@ -231,10 +236,11 @@ class EntreeSortieController extends Controller
     public function show($userId,$id)
     {
         // Récupérer l'approvisionnement avec ses relations (fournisseur, produits, et dépenses)
-        $appro = Operation::where('id', $id)
+        $operation = Operation::where('id', $id)
             ->with(['fournisseur', 'produits' => function ($query) {
                     $query->where('operation_produits.status', true);
             },
+            'typeProduitAchat',
             'depenses' => function ($query) {
                 $query->with('motif');
             },
@@ -243,41 +249,32 @@ class EntreeSortieController extends Controller
         ->firstOrFail();
 
         // Formater les données des commandes et des dépenses pour la vue
-        $commandes = $appro->produits->map(function ($op) {
+        $produits = $operation->produits->map(function ($op) {
             return [
                 'produit' => $op->produit,
-                'quantite' => $op->quantite,
+                'type_produit_achat' => $op->type_produit_achat,
+                'quantiteAchat' => $op->quantiteAchat,
                 'prixAchat' => $op->prixAchat,
             ];
         });
 
-        $depenses = $appro->depenses->map(function ($depense) {
+        $depenses = $operation->depenses->map(function ($depense) {
             return [
                 'motif' => $depense->motif,
                 'montant' => $depense->total,
+                'commentaire' => $depense->commentaire,
             ];
         });
 
-        /*dd([
-            'appro' => [
-                'id' => $appro->id,
-                'fournisseur' => $appro->fournisseur,
-                'date' => Carbon::make($appro->date)->format('Y-m-d'),
-                'totalCommande' => $appro->montant ?? 0,
-                'totalDepense' => $appro->depenses->sum('total'),
-                'commandes' => $commandes,
-                'depenses' => $depenses,
-            ]]);*/
-
-        // Renvoyer les données à la vue Inertia
-        return Inertia::render('Admin/Stock/Appro/Show', [
-            'appro' => [
-                'id' => $appro->id,
-                'fournisseur' => $appro->fournisseur,
-                'date' => Carbon::make($appro->date)->format('Y-m-d'),
-                'totalCommande' => $appro->montant ?? 0,
-                'totalDepense' => $appro->depenses->sum('total'),
-                'commandes' => $commandes,
+       
+        return Inertia::render('Admin/Stock/Mouvement/Show', [
+            'operation' => [
+                'id' => $operation->id,
+                'fournisseur' => $operation->fournisseur,
+                'date' => Carbon::make($operation->date)->format('Y-m-d'),
+                'totalCommande' => $operation->montant ?? 0,
+                'totalDepense' => $operation->depenses->sum('total'),
+                'produits' => $produits,
                 'depenses' => $depenses,
             ]
         ]);
@@ -289,7 +286,7 @@ class EntreeSortieController extends Controller
     public function edit($userId,$id)
     {
         // Récupérer l'approvisionnement à modifier avec ses relations
-        $appro = Operation::with('produits', 'depenses', 'fournisseur')
+        $operation = Operation::with('produits', 'depenses', 'fournisseur')
             ->where('id', $id)
             ->where('status', '!=', 'annulé')
             ->firstOrFail();
@@ -323,8 +320,8 @@ class EntreeSortieController extends Controller
         $caisses = Caisse::where('societe_id', session('societe')['id'])->where('status', true)->with('departement')->get();
         $caissePrincipale = Societe::where('id', session('societe')['id'])->first()->caissePrincipale;
 
-        return Inertia::render('Admin/Stock/Appro/Edit', [
-            'appro' => $appro,
+        return Inertia::render('Admin/Stock/Mouvement/Edit', [
+            'operation' => $operation,
             'produits' => $produits,
             'motifs' => $motifs,
             'fournisseurs' => $fournisseurs,
@@ -400,7 +397,7 @@ class EntreeSortieController extends Controller
             }
 
             DB::commit();
-            return redirect()->action([ApproController::class, 'index'])
+            return redirect()->action([MouvementController::class, 'index'])
                 ->with('success', 'Approvisionnement mis à jour avec succès.');
         } catch (\Exception $e) {
             DB::rollBack();

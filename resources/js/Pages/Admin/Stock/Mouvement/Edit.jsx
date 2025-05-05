@@ -38,7 +38,7 @@ const Edit = ({auth, errors, successSt, errorSt,appro}) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route("admin.stockAppro.store"), { preserveScroll: true });
+        post(route("admin.mouvement.store"), { preserveScroll: true });
     };
 
     const handleAddToCommande = () => {
@@ -126,16 +126,16 @@ const Edit = ({auth, errors, successSt, errorSt,appro}) => {
             success={successSt}
             error={errorSt}
             active={'stock'}
-            sousActive={'appro'}
+            sousActive={'mouvement'}
             breadcrumbs={[
                 {
-                    text: "Appro",
-                    href: route("admin.stockAppro.index", auth.user.id),
+                    text: "Mouvement",
+                    href: route("admin.mouvement.index", auth.user.id),
                     active: false,
                 },
                 {
-                    text: "Création",
-                    href: route("admin.stockAppro.create", [auth.user.id]),
+                    text: "Modifier",
+                    href: route("admin.mouvement.edit", [auth.user.id,appro.id]),
                     active: true,
                 }
             ]}
@@ -167,7 +167,7 @@ const Edit = ({auth, errors, successSt, errorSt,appro}) => {
                                 </div>
 
                                 <div>
-                                    <div className="md:col-span-2 font-bold text-orange-500">Stock à approvisionner</div>
+                                    <div className="md:col-span-2 font-bold text-orange-500">Stock</div>
                                     <Autocomplete
                                         value={data.departement}
                                         className="w-full"

@@ -8,7 +8,7 @@ import { router } from '@inertiajs/react';
 
 export default function Create({ auth }) {
     const { data, setData, post, processing, errors } = useForm({
-        titre: '',
+        libelle: '',
         description: '',
         status: true
     });
@@ -59,10 +59,10 @@ export default function Create({ auth }) {
                                 <TextField
                                     fullWidth
                                     label="Titre du poste"
-                                    value={data.titre}
-                                    onChange={e => setData('titre', e.target.value)}
-                                    error={errors.titre}
-                                    helperText={errors.titre}
+                                    value={data.libelle}
+                                    onChange={e => setData('libelle', e.target.value)}
+                                    error={errors.libelle}
+                                    helperText={errors.libelle}
                                     required
                                     InputProps={{
                                         startAdornment: <WorkIcon className="text-gray-400 mr-2" />
