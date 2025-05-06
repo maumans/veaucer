@@ -24,7 +24,7 @@ export default function SnackBar(props) {
         <>
             {
                 props.success &&
-                <Snackbar color={"success"} open={open} autoHideDuration={3000} onClose={handleClose}>
+                <Snackbar color={"success"} open={open} autoHideDuration={6000} onClose={handleClose}>
                     <Alert onClose={handleClose} severity="success" sx={{ width: '100%' }}>
                         {props.success}
                     </Alert>
@@ -34,7 +34,7 @@ export default function SnackBar(props) {
 
             {
                 props.error &&
-                <Snackbar color={"error"} open={open} onClose={handleClose}>
+                <Snackbar color={"error"} open={open} autoHideDuration={6000} onClose={handleClose}>
                     <Alert onClose={handleClose} severity="error" sx={{ width: '100%' }}>{props.error}</Alert>
                 </Snackbar>
 
@@ -42,7 +42,7 @@ export default function SnackBar(props) {
 
             {
                 props.warning &&
-                <Snackbar color={"warning"} open={open} autoHideDuration={3000} onClose={handleClose}>
+                <Snackbar color={"warning"} open={open} autoHideDuration={6000} onClose={handleClose}>
                    <Alert onClose={handleClose} severity="warning" sx={{ width: '100%' }}>{props.warning}</Alert>
                 </Snackbar>
 
@@ -50,7 +50,7 @@ export default function SnackBar(props) {
 
             {
                 props.info &&
-                <Snackbar color={"info"} open={open} autoHideDuration={3000} onClose={handleClose}>
+                <Snackbar color={"info"} open={open} autoHideDuration={6000} onClose={handleClose}>
                     <Alert onClose={handleClose} severity="info" sx={{ width: '100%' }}>{props.info}</Alert>
                 </Snackbar>
             }

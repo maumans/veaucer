@@ -11,6 +11,11 @@ class Motif extends Model
 
     protected $guarded=[];
 
+    public function typeOperation()
+    {
+        return $this->belongsTo(TypeOperation::class);
+    }
+
     public function depenses()
     {
         return $this->hasMany(Depense::class);

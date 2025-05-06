@@ -16,6 +16,8 @@ return new class extends Migration
             $table->string('nom')->nullable();
             $table->string('libelle')->nullable();
             $table->longText('description')->nullable();
+            $table->enum('type',['DEPENSE','OPERATION'])->default("DEPENSE")->nullable();
+            $table->foreignId('type_operation_id')->nullable()->constrained('type_operations')->cascadeOnDelete();
             $table->string('slug')->nullable();
             $table->boolean('status')->default(true)->nullable();
             $table->foreignId('societe_id')->nullable()->constrained('societes')->cascadeOnDelete();

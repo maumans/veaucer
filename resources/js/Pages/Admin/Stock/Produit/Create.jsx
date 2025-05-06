@@ -284,7 +284,7 @@ function Create({ auth, typeProduits, typeProduitAchat, typeProduitVente, catego
 
                             </div> */}
 
-                            <div className={"grid grid-cols-1 md:grid-cols-2 gap-5 border p-3 rounded"}>
+                            {/* <div className={"grid grid-cols-1 md:grid-cols-2 gap-5 border p-3 rounded"}>
                                 <div className={"md:col-span-2 text-orange-500 font-bold"}>
                                     Fournisseur principal
                                 </div>
@@ -301,7 +301,7 @@ function Create({ auth, typeProduits, typeProduitAchat, typeProduitVente, catego
                                     <InputError message={errors["data.fournisseur"]} />
                                 </div>
 
-                            </div>
+                            </div> */}
 
 
 

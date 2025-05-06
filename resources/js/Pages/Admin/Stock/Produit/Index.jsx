@@ -248,14 +248,14 @@ function Index({auth,errors,produits,typeProduits,categories,error,success}) {
                     row.original.categorie?.libelle
                 )
             },
-            {
+            /* {
                 accessorKey: 'fournisseurPrincipal',
                 header: 'Fournisseur principal',
                 //size: 50,
                 Cell: ({ row }) =>(
                     row.original.fournisseur_principal?.nom
                 )
-            },
+            }, */
             {
                 accessorKey: 'status',
                 header: 'Status',

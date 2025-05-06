@@ -206,9 +206,9 @@ function Index({ auth, errors, operations, typeProduits, categorieProduits, erro
             },
             {
                 accessorKey: 'montant', //access nested data with dot notation
-                header: 'Montant total',
+                header: 'Total',
                 Cell: ({ row }) => (
-                    formatNumber(row.original.montant) + ' GNF'
+                    row.original.montant ? formatNumber(row.original.montant) + ' GNF' : ""
                 )
                 //size: 10,
             },

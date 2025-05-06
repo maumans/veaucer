@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('reference')->nullable();
             $table->string('slug')->nullable();
             $table->longText('commentaire')->nullable();
+            $table->foreignId('motif_id')->nullable()->constrained('motifs')->cascadeOnDelete();
             $table->foreignId('societe_id')->nullable()->constrained('societes')->cascadeOnDelete();
             $table->foreignId('type_operation_id')->nullable()->constrained('type_operations')->cascadeOnDelete();
             $table->foreignId('super_admin_id')->nullable()->constrained('users')->cascadeOnDelete();
