@@ -118,11 +118,42 @@ Route::middleware(['auth',"userIsAdmin","profilActif"])->group(function () {
 
     ///STOCK
 
-    Route::resource('admin.mouvement', \App\Http\Controllers\Admin\Stock\mouvementController::class);
+    // Routes pour les mouvements de stock
+    Route::resource('admin.mouvement', \App\Http\Controllers\Admin\Stock\MouvementController::class);
+    Route::get('admin/{userId}/mouvement/{id}/cancel', [\App\Http\Controllers\Admin\Stock\MouvementController::class, 'cancel'])->name('admin.mouvement.cancel');
+    Route::get('admin/{userId}/mouvement-dashboard', [\App\Http\Controllers\Admin\Stock\MouvementController::class, 'dashboard'])->name('admin.mouvement.dashboard');
 
 
+    // Routes pour l'inventaire standard
     Route::resource('admin.stockInventaire', \App\Http\Controllers\Admin\Stock\InventaireController::class);
     Route::post('admin/stockInventaire/paginationFiltre',[\App\Http\Controllers\Admin\Stock\InventaireController::class,'paginationFiltre'])->name('admin.stockInventaire.paginationFiltre');
+    
+    // Routes pour l'inventaire physique
+    Route::prefix('admin/{userId}/inventaire')->name('admin.inventaire.')->group(function () {
+        // Inventaire physique
+        Route::get('/physique', [\App\Http\Controllers\Admin\Stock\InventairePhysiqueController::class, 'index'])->name('physique.index');
+        Route::get('/physique/create', [\App\Http\Controllers\Admin\Stock\InventairePhysiqueController::class, 'create'])->name('physique.create');
+        Route::post('/physique', [\App\Http\Controllers\Admin\Stock\InventairePhysiqueController::class, 'store'])->name('physique.store');
+        Route::get('/physique/{id}', [\App\Http\Controllers\Admin\Stock\InventairePhysiqueController::class, 'show'])->name('physique.show');
+        Route::get('/physique/{id}/edit', [\App\Http\Controllers\Admin\Stock\InventairePhysiqueController::class, 'edit'])->name('physique.edit');
+        Route::put('/physique/{id}', [\App\Http\Controllers\Admin\Stock\InventairePhysiqueController::class, 'update'])->name('physique.update');
+        
+        // Actions spécifiques pour l'inventaire physique
+        Route::get('/physique/{id}/demarrer', [\App\Http\Controllers\Admin\Stock\InventairePhysiqueController::class, 'demarrer'])->name('physique.demarrer');
+        Route::get('/physique/{id}/terminer', [\App\Http\Controllers\Admin\Stock\InventairePhysiqueController::class, 'terminer'])->name('physique.terminer');
+        Route::get('/physique/{id}/annuler', [\App\Http\Controllers\Admin\Stock\InventairePhysiqueController::class, 'annuler'])->name('physique.annuler');
+        Route::post('/physique/{inventaireId}/detail/{detailId}/compter', [\App\Http\Controllers\Admin\Stock\InventairePhysiqueController::class, 'compterProduit'])->name('physique.compter');
+        Route::post('/physique/{inventaireId}/detail/{detailId}/valider', [\App\Http\Controllers\Admin\Stock\InventairePhysiqueController::class, 'validerProduit'])->name('physique.valider');
+        Route::get('/physique/{id}/generer-ajustements', [\App\Http\Controllers\Admin\Stock\InventairePhysiqueController::class, 'genererAjustements'])->name('physique.generer-ajustements');
+        
+        // Ajustements d'inventaire
+        Route::get('/ajustement', [\App\Http\Controllers\Admin\Stock\AjustementInventaireController::class, 'index'])->name('ajustement.index');
+        Route::get('/ajustement/create', [\App\Http\Controllers\Admin\Stock\AjustementInventaireController::class, 'create'])->name('ajustement.create');
+        Route::post('/ajustement', [\App\Http\Controllers\Admin\Stock\AjustementInventaireController::class, 'store'])->name('ajustement.store');
+        Route::get('/ajustement/{id}', [\App\Http\Controllers\Admin\Stock\AjustementInventaireController::class, 'show'])->name('ajustement.show');
+        Route::get('/ajustement/{id}/valider', [\App\Http\Controllers\Admin\Stock\AjustementInventaireController::class, 'valider'])->name('ajustement.valider');
+        Route::post('/ajustement/{id}/rejeter', [\App\Http\Controllers\Admin\Stock\AjustementInventaireController::class, 'rejeter'])->name('ajustement.rejeter');
+    });
 
 
     Route::resource('admin.fournisseur', \App\Http\Controllers\Admin\FournisseurController::class);

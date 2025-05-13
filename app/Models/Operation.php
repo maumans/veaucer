@@ -16,6 +16,7 @@ class Operation extends Model
         return $this->belongsTo(TypeOperation::class);
     }
 
+
     public function depenses()
     {
         return $this->hasMany(Depense::class);

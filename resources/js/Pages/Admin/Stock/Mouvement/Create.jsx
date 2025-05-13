@@ -172,6 +172,14 @@ function Create({ auth, produits, departements, departementPrincipal, caisses, c
         typeProduitAchat: data.typeOperation?.nom === "entrée"
     });
 
+    useEffect(() => {
+        setData((prevData) => ({
+            ...prevData,
+            total: (data.totalOperation || 0) + (data.totalDepense || 0)
+        }));
+
+    }, [data.totalOperation,data.totalDepense]);
+
     const columns = useMemo(
         () => [
             {
@@ -359,7 +367,7 @@ function Create({ auth, produits, departements, departementPrincipal, caisses, c
     useEffect(() => {
         let operations = []
 
-        if (data.typeOperation?.nom === "entree") {
+        if (data.typeOperation?.nom === "entrée") {
             data.produits.map((p) => {
                 operations.push({
                     id: p.id,
@@ -774,13 +782,14 @@ function Create({ auth, produits, departements, departementPrincipal, caisses, c
                                     <InputError message={errors["produits"]} />
                                 </div>
 
+
                                 <div className={"md:col-span-2"}>
                                     <MaterialReactTable table={table} />
                                 </div>
                                 {
                                     data.totalOperation ?
                                         <div className={"md:col-span-2 w-fit p-2 rounded bg-black text-white"}>
-                                            {"Total: " + formatNumber(data.totalOperation) + ' GNF'}
+                                            {"Total des produits : " + formatNumber(data.totalOperation) + ' GNF'}
                                         </div>
                                         :
                                         ""
@@ -825,7 +834,7 @@ function Create({ auth, produits, departements, departementPrincipal, caisses, c
                                     {
                                         data.totalDepense ?
                                             <div className={"md:col-span-2 w-fit p-2 rounded bg-black text-white"}>
-                                                {"Total: " + formatNumber(data.totalDepense) + ' GNF'}
+                                                {"Total des dépenses: " + formatNumber(data.totalDepense) + ' GNF'}
                                             </div>
                                             :
                                             ""
@@ -833,7 +842,15 @@ function Create({ auth, produits, departements, departementPrincipal, caisses, c
 
                                 </div>
                             }
-
+                            {
+                                data.total ?
+                                    <div className={"md:col-span-2 w-fit p-2 rounded bg-black text-white"}>
+                                        {"Total: " + formatNumber(data.total) + ' GNF'}
+                                    </div>
+                                    :
+                                    ""
+                            }
+                            
                             <div className={"w-full md:col-span-2 flex gap-4 mt-10 py-2 px-1 bg-gray-100 rounded"}>
                                 <Button variant={'contained'} color={'success'} type={"submit"}>
                                     Enregistrer
