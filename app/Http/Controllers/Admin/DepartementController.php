@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Departement;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -14,9 +15,10 @@ class DepartementController extends Controller
      */
     public function index()
     {
-        $departements = Departement::where('societe_id', auth()->user()->societe_id)
-                                 ->with(['user'])
-                                 ->paginate(10);
+        $departements = Departement::where('societe_id', session('societe')['id'])
+            ->with(['user'])
+            ->paginate(10);
+
 
         return Inertia::render('Admin/Departement/Index', [
             'departements' => $departements
@@ -26,7 +28,7 @@ class DepartementController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(User $user)
     {
         return Inertia::render('Admin/Departement/Create');
     }
@@ -39,7 +41,7 @@ class DepartementController extends Controller
         $validated = $request->validate([
             'nom' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'type' => 'required|in:PRINCIPAL,SECONDAIRE',
+            //'type' => 'required|in:PRINCIPAL,SECONDAIRE',
             'telephone' => 'nullable|string|max:20',
             'status' => 'required|boolean',
         ]);
@@ -50,8 +52,8 @@ class DepartementController extends Controller
             'user_id' => auth()->id()
         ]);
 
-        return redirect()->route('admin.departement.index')
-                        ->with('success', 'Département créé avec succès');
+        return redirect()->route('admin.departement.index', auth()->id())
+            ->with('success', 'Département créé avec succès');
     }
 
     /**
@@ -65,8 +67,10 @@ class DepartementController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Departement $departement)
+    public function edit($userId, $departementId)
     {
+        $departement = Departement::findOrFail($departementId);
+
         return Inertia::render('Admin/Departement/Edit', [
             'departement' => $departement
         ]);
@@ -75,30 +79,33 @@ class DepartementController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Departement $departement)
+    public function update(Request $request, $userId, $departementId)
     {
+        $departement = Departement::findOrFail($departementId);
         $validated = $request->validate([
             'nom' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'type' => 'required|in:PRINCIPAL,SECONDAIRE',
+            //'type' => 'required|in:PRINCIPAL,SECONDAIRE',
             'telephone' => 'nullable|string|max:20',
             'status' => 'required|boolean',
         ]);
 
         $departement->update($validated);
 
-        return redirect()->route('admin.departement.index')
-                        ->with('success', 'Département mis à jour avec succès');
+        return redirect()->route('admin.departement.index', $userId)
+            ->with('success', 'Département mis à jour avec succès');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Departement $departement)
+    public function destroy($userId, $departementId)
     {
+        $departement = Departement::findOrFail($departementId);
+
         $departement->delete();
 
         return redirect()->route('admin.departement.index')
-                        ->with('success', 'Département supprimé avec succès');
+            ->with('success', 'Département supprimé avec succès');
     }
 }

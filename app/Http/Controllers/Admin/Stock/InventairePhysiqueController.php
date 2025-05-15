@@ -7,8 +7,10 @@ use App\Models\AjustementInventaire;
 use App\Models\Departement;
 use App\Models\InventairePhysique;
 use App\Models\InventairePhysiqueDetail;
+use App\Models\Operation;
 use App\Models\Produit;
 use App\Models\Stock;
+use App\Services\StockMovementService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -89,18 +91,34 @@ class InventairePhysiqueController extends Controller
 
             // Si un département est spécifié, filtrer les produits par département
             if ($request->departement_id) {
-                // Logique pour filtrer par département si nécessaire
-                // Cette partie dépend de la structure de votre base de données
+                $query->whereHas('stocks', function($q) use ($request) {
+                    $q->where('departement_id', $request->departement_id);
+                });
             }
 
             $produits = $query->get();
 
             // Créer les détails d'inventaire pour chaque produit
             foreach ($produits as $produit) {
+                // Déterminer la quantité théorique en fonction du département
+                $quantiteTheorique = 0;
+                
+                if ($request->departement_id) {
+                    // Récupérer le stock spécifique au département
+                    $stock = Stock::where('produit_id', $produit->id)
+                        ->where('departement_id', $request->departement_id)
+                        ->first();
+                        
+                    $quantiteTheorique = $stock ? $stock->quantite : 0;
+                } else {
+                    // Si pas de département spécifié, utiliser le stock global
+                    $quantiteTheorique = $produit->stockGlobal ?? 0;
+                }
+                
                 InventairePhysiqueDetail::create([
                     'inventaire_physique_id' => $inventaire->id,
                     'produit_id' => $produit->id,
-                    'quantite_theorique' => $produit->stockGlobal ?? 0,
+                    'quantite_theorique' => $quantiteTheorique,
                     'status' => 'en_attente',
                 ]);
             }
@@ -326,9 +344,27 @@ class InventairePhysiqueController extends Controller
                 ->whereRaw('ABS(difference) > 0')
                 ->get();
 
+            // Initialiser le service de gestion des mouvements de stock
+            $stockMovementService = new StockMovementService();
+            
+            // Créer une opération principale pour l'inventaire
+            $operation = Operation::create([
+                'date' => now(),
+                'description' => 'Inventaire physique #' . $id,
+                'status' => 'VALIDE',
+                'societe_id' => session('societe')['id'],
+                'auteur_id' => auth()->id(),
+                'status' => true,
+                'departement_source_id' => $inventaire->departement_id,
+                'departement_destination_id' => $inventaire->departement_id,
+                'reference_externe' => 'INV-' . $id,
+                'type_mouvement' => 'AJUSTEMENT',
+                'inventaire_physique_id' => $id
+            ]);
+
             foreach ($details as $detail) {
                 // Créer un ajustement pour chaque détail
-                AjustementInventaire::create([
+                $ajustement = AjustementInventaire::create([
                     'inventaire_physique_id' => $id,
                     'produit_id' => $detail->produit_id,
                     'quantite_avant' => $detail->quantite_theorique,

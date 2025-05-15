@@ -50,6 +50,7 @@ import {
 } from "@mui/icons-material";
 import InputError from "@/Components/InputError.jsx";
 import dayjs from 'dayjs';
+import { formatNumber } from 'chart.js/helpers';
 
 function Index({ auth, errors, produits, typeProduits, categories, error, success, departements }) {
     //PAGINATION
@@ -69,6 +70,15 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
         pageIndex: produits.current_page - 1,
         pageSize: produits.per_page,
     });
+    
+    // État pour les filtres avancés - déplacé ici pour éviter l'erreur d'initialisation
+    const [filtresAvances, setFiltresAvances] = useState({
+        categorie: '',
+        typeProduit: '',
+        departement: '',
+        statut: '',
+        searchTerm: ''
+    });
 
     useEffect(() => {
         setRowCount(produits.total)
@@ -81,29 +91,61 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
         setIsRefetching(true);
         setIsLoading(true);
 
-        axios.post(route('admin.stockInventaire.paginationFiltre'),
-            {
-                'start': pagination.pageIndex * pagination.pageSize,
-                "size": pagination.pageSize,
-                'filters': columnFilters ?? [],
-                'globalFilter': globalFilter ?? '',
-                'sorting': sorting ?? []
-            })
-            .then(response => {
-                setProduitsSt(response.data.data);
-                setRowCount(response.data.rowCount);
+        // Préparation des données à envoyer au backend
+        const requestData = {
+            'start': pagination.pageIndex * pagination.pageSize,
+            "size": pagination.pageSize,
+            'filters': columnFilters ?? [],
+            'globalFilter': globalFilter ?? '',
+            'sorting': sorting ?? []
+        };
+        
+        // Ajout du filtre de département si nécessaire
+        if (filtresAvances.departement) {
+            requestData.departement_id = filtresAvances.departement;
+        }
 
-                setIsLoading(false)
-                setIsRefetching(false);
-            })
-            .catch(err => {
-                setIsError(true);
-                console.error(err);
-            })
+        try {
+            axios.post(route('admin.stockInventaire.paginationFiltre'), requestData)
+                .then(response => {
+                    if (response.data && Array.isArray(response.data.data)) {
+                        setProduitsSt(response.data.data);
+                        setRowCount(response.data.rowCount || response.data.data.length);
+                        
+                        // Mettre à jour le filtre de département actif dans l'interface
+                        if (response.data.departement_id) {
+                            // Trouver le nom du département sélectionné
+                            const deptName = departements.find(d => d.id == response.data.departement_id)?.nom || 'Sélectionné';
+                            console.log(`Affichage des stocks pour le département: ${deptName}`);
+                        }
+                        
+                        setIsError(false);
+                    } else {
+                        setProduitsSt([]);
+                        setRowCount(0);
+                        console.warn('Réponse inattendue du serveur:', response);
+                        setIsError(false); // Ne pas afficher d'erreur pour un résultat vide
+                    }
 
-        setIsError(false);
-        setIsLoading(false);
-        setIsRefetching(false);
+                    setIsLoading(false);
+                    setIsRefetching(false);
+                })
+                .catch(err => {
+                    console.error('Erreur lors de la récupération des données:', err);
+                    setProduitsSt([]);
+                    setRowCount(0);
+                    setIsLoading(false);
+                    setIsRefetching(false);
+                    setIsError(true);
+                });
+        } catch (error) {
+            console.error('Erreur lors de l\'exécution de la requête:', error);
+            setProduitsSt([]);
+            setRowCount(0);
+            setIsLoading(false);
+            setIsRefetching(false);
+            setIsError(true);
+        }
 
     }, [
         columnFilters,
@@ -111,6 +153,7 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
         pagination.pageIndex,
         pagination.pageSize,
         sorting,
+        filtresAvances.departement // Ajout du département comme dépendance
     ]);
 
     //PAGINATION
@@ -217,11 +260,6 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
                 size: 150,
             },
             {
-                accessorKey: 'typeProduit.nom',
-                header: 'Type',
-                size: 150,
-            },
-            {
                 accessorKey: 'stockGlobal',
                 header: 'Stock',
                 size: 100,
@@ -239,7 +277,7 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
                     
                     return (
                         <Typography sx={{ color }}>
-                            {stock}
+                            {formatNumber(stock)}
                         </Typography>
                     );
                 },
@@ -249,7 +287,7 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
                 header: 'Seuil Min',
                 size: 100,
                 Cell: ({ row }) => (
-                    <Typography>{row.original.seuilMinimal || 0}</Typography>
+                    <Typography>{formatNumber(row.original.seuilMinimal || 0)}</Typography>
                 ),
             },
             {
@@ -257,7 +295,7 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
                 header: 'Prix Achat',
                 size: 120,
                 Cell: ({ row }) => (
-                    <Typography>{row.original.prixAchat ? `${row.original.prixAchat} €` : '0 €'}</Typography>
+                    <Typography>{row.original.prixAchat ? formatNumber(row.original.prixAchat) + ' GNF' : '0 GNF'}</Typography>
                 ),
             },
             {
@@ -266,7 +304,7 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
                 size: 120,
                 Cell: ({ row }) => {
                     const valeur = (row.original.stockGlobal || 0) * (row.original.prixAchat || 0);
-                    return <Typography>{valeur.toFixed(2)} €</Typography>;
+                    return <Typography>{formatNumber(valeur)} GNF</Typography>;
                 },
             },
             {
@@ -345,7 +383,7 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
         muiToolbarAlertBannerProps: isError
             ? {
                 color: 'error',
-                children: 'Error loading data',
+                children: 'Erreur lors du chargement des données. Veuillez réessayer ou contacter l\'administrateur.',
             }
             : undefined,
         onColumnFiltersChange: setColumnFilters,
@@ -380,14 +418,7 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
         };
     }, [produitsSt]);
 
-    // État pour les filtres avancés
-    const [filtresAvances, setFiltresAvances] = useState({
-        categorie: '',
-        typeProduit: '',
-        departement: '',
-        statut: '',
-        searchTerm: ''
-    });
+    // Les filtres avancés sont maintenant définis plus haut dans le composant
 
     // Gestion des changements de filtres
     const handleFiltreChange = (e) => {
@@ -400,10 +431,54 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
 
     // Fonction pour appliquer les filtres avancés
     const appliquerFiltres = () => {
-        // Ici, vous pourriez implémenter une logique pour filtrer les données
-        // en fonction des valeurs dans filtresAvances
-        // Pour l'instant, nous allons simplement afficher les filtres dans la console
-        console.log('Filtres appliqués:', filtresAvances);
+        // Convertir les filtres avancés en format compatible avec le backend
+        const newColumnFilters = [];
+        
+        if (filtresAvances.categorie) {
+            newColumnFilters.push({
+                id: 'categorie',
+                value: filtresAvances.categorie
+            });
+        }
+        
+        if (filtresAvances.typeProduit) {
+            newColumnFilters.push({
+                id: 'typeProduit',
+                value: filtresAvances.typeProduit
+            });
+        }
+        
+        if (filtresAvances.statut) {
+            if (filtresAvances.statut === 'rupture') {
+                // Filtre pour les produits en rupture de stock
+                newColumnFilters.push({
+                    id: 'stockGlobal',
+                    value: '0'
+                });
+            } else if (filtresAvances.statut === 'seuil') {
+                // Ce filtre sera géré spécialement dans le backend
+                newColumnFilters.push({
+                    id: 'seuil_minimal',
+                    value: 'true'
+                });
+            } else {
+                // Filtre par statut actif/inactif
+                newColumnFilters.push({
+                    id: 'status',
+                    value: filtresAvances.statut
+                });
+            }
+        }
+        
+        // Appliquer les filtres
+        setColumnFilters(newColumnFilters);
+        
+        // Appliquer le terme de recherche comme filtre global
+        if (filtresAvances.searchTerm) {
+            setGlobalFilter(filtresAvances.searchTerm);
+        } else {
+            setGlobalFilter('');
+        }
     };
 
     // Fonction pour réinitialiser les filtres
@@ -415,6 +490,10 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
             statut: '',
             searchTerm: ''
         });
+        
+        // Réinitialiser également les filtres du tableau
+        setColumnFilters([]);
+        setGlobalFilter('');
     };
 
     return (
@@ -465,7 +544,9 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
                                     {statsData.totalProduits}
                                 </Typography>
                                 <Typography variant="body2" color="textSecondary">
-                                    Produits en inventaire
+                                    {filtresAvances.departement ? 
+                                        `Produits dans ${departements.find(d => d.id == filtresAvances.departement)?.nom || 'le département'}` : 
+                                        'Produits en inventaire'}
                                 </Typography>
                             </CardContent>
                         </Card>
@@ -507,7 +588,7 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
                                     Valeur Totale
                                 </Typography>
                                 <Typography variant="h4" component="div" color="primary.main">
-                                    {statsData.valeurTotale.toFixed(2)} €
+                                    {formatNumber(statsData.valeurTotale)} GNF
                                 </Typography>
                                 <Typography variant="body2" color="textSecondary">
                                     Valeur de l'inventaire
@@ -647,6 +728,7 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
                                 color="secondary" 
                                 onClick={reinitialiserFiltres}
                                 className="mr-2"
+                                startIcon={<Refresh />}
                             >
                                 Réinitialiser
                             </Button>
@@ -654,6 +736,7 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
                                 variant="contained" 
                                 color="primary" 
                                 onClick={appliquerFiltres}
+                                startIcon={<Search />}
                             >
                                 Appliquer les filtres
                             </Button>
@@ -794,9 +877,22 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
 
                 {/* Tableau des produits */}
                 <Paper elevation={2} className="p-4">
-                    <Typography variant="h6" gutterBottom>
-                        Liste des Produits en Stock
-                    </Typography>
+                    <div className="flex justify-between items-center mb-4">
+                        <Typography variant="h6">
+                            Liste des Produits en Stock
+                        </Typography>
+                        {filtresAvances.departement && (
+                            <Chip 
+                                color="primary" 
+                                label={`Stock du département: ${departements.find(d => d.id == filtresAvances.departement)?.nom || 'Sélectionné'}`}
+                                onDelete={() => {
+                                    setFiltresAvances(prev => ({ ...prev, departement: '' }));
+                                    // Appliquer les filtres mis à jour
+                                    setTimeout(() => appliquerFiltres(), 100);
+                                }}
+                            />
+                        )}
+                    </div>
                     <MaterialReactTable table={table} />
                 </Paper>
             </div>

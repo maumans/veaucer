@@ -30,12 +30,12 @@ const Show = ({ auth, ajustement, success, error }) => {
     const [motifRejetError, setMotifRejetError] = useState('');
     const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
 
-    // Fonction pour formater le statut avec un Chip coloré
-    const formatStatut = (statut) => {
+    // Fonction pour formater le status avec un Chip coloré
+    const formatStatus = (status) => {
         let color = 'default';
         let icon = null;
 
-        switch (statut) {
+        switch (status) {
             case 'en_attente':
                 color = 'warning';
                 break;
@@ -53,7 +53,7 @@ const Show = ({ auth, ajustement, success, error }) => {
 
         return (
             <Chip 
-                label={statut.charAt(0).toUpperCase() + statut.slice(1).replace('_', ' ')} 
+                label={status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')} 
                 color={color} 
                 size="small"
                 icon={icon}
@@ -136,8 +136,8 @@ const Show = ({ auth, ajustement, success, error }) => {
                                 
                                 <Grid container spacing={2}>
                                     <Grid item xs={6}>
-                                        <Typography variant="subtitle2">Statut</Typography>
-                                        <Box mt={0.5}>{formatStatut(ajustement.statut)}</Box>
+                                        <Typography variant="subtitle2">Status</Typography>
+                                        <Box mt={0.5}>{formatStatus(ajustement.status)}</Box>
                                     </Grid>
                                     
                                     <Grid item xs={6}>
@@ -251,7 +251,7 @@ const Show = ({ auth, ajustement, success, error }) => {
                         </Card>
                         
                         {/* Actions */}
-                        {ajustement.statut === 'en_attente' && (
+                        {ajustement.status === 'en_attente' && (
                             <Card elevation={2} sx={{ mt: 2 }}>
                                 <CardContent>
                                     <Typography variant="h6" gutterBottom>

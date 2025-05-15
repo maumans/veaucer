@@ -15,7 +15,7 @@ import { MaterialReactTable, useMaterialReactTable } from 'material-react-table'
 import { MRT_Localization_FR } from 'material-react-table/locales/fr';
 import {router, useForm} from "@inertiajs/react";
 import {Alert, AlertTitle, Autocomplete, Button, Snackbar} from "@mui/material";
-import {Add, AddCircle, AddOutlined, Check, Close, Delete, Edit, Visibility} from "@mui/icons-material";
+import {Add, AddCircle, AddOutlined, ArrowBack, Check, Close, Delete, Edit, Visibility} from "@mui/icons-material";
 import InputError from "@/Components/InputError.jsx";
 import { formatNumber } from 'chart.js/helpers';
 
@@ -358,10 +358,18 @@ function Index({auth,errors,produits,typeProduits,categories,error,success}) {
                 }*/
             ]}
         >
-            <div className={'grid gap-5 bg-gray-200 p-2 rounded border'}>
-
-
-                <div className={'flex justify-end'}>
+            <div className="p-4 bg-white rounded shadow">
+                <div className={'flex justify-between items-center mb-4'}>
+                    <div className="flex items-center gap-4">
+                        <h1 className="text-2xl font-bold">Liste des produits</h1>
+                        <Button 
+                            variant="outlined" 
+                            startIcon={<ArrowBack />}
+                            onClick={() => router.get(route('admin.dashboard', auth.user.id))}
+                        >
+                            Retour au tableau de bord
+                        </Button>
+                    </div>
                     <Button color={'warning'} variant={'contained'} onClick={handleClickOpen} >
                         <AddCircle className={'mr-1'}></AddCircle> Ajout produit
                     </Button>

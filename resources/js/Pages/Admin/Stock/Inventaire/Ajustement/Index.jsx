@@ -19,7 +19,8 @@ import {
     Add, 
     Visibility, 
     CheckCircle, 
-    Cancel
+    Cancel,
+    ArrowBack
 } from "@mui/icons-material";
 import dayjs from 'dayjs';
 
@@ -31,30 +32,43 @@ const Index = ({ auth, ajustements, success, error }) => {
     const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
     const [confirmAction, setConfirmAction] = useState({ action: '', id: null, message: '' });
 
-    // Fonction pour formater le statut avec un Chip coloré
-    const formatStatut = (statut) => {
+    // Fonction pour formater le status avec un Chip coloré
+    const formatStatus = (status) => {
+        // Gérer les valeurs undefined ou null
+        if (!status) {
+            return <Chip label="Inconnu" color="default" size="small" />;
+        }
+        
         let color = 'default';
         let icon = null;
+        let label = '';
 
-        switch (statut) {
+        switch (status) {
             case 'en_attente':
                 color = 'warning';
+                label = 'En attente';
                 break;
             case 'validé':
                 color = 'success';
                 icon = <CheckCircle fontSize="small" />;
+                label = 'Validé';
                 break;
             case 'rejeté':
                 color = 'error';
                 icon = <Cancel fontSize="small" />;
+                label = 'Rejeté';
                 break;
             default:
                 color = 'default';
+                // Sécuriser le formatage pour éviter les erreurs
+                label = typeof status === 'string' ? 
+                    status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ') : 
+                    'Inconnu';
         }
 
         return (
             <Chip 
-                label={statut.charAt(0).toUpperCase() + statut.slice(1).replace('_', ' ')} 
+                label={label} 
                 color={color} 
                 size="small"
                 icon={icon}
@@ -160,9 +174,9 @@ const Index = ({ auth, ajustements, success, error }) => {
             Cell: ({ row }) => row.original.departement ? row.original.departement.nom : '-',
         },
         {
-            accessorKey: 'statut',
-            header: 'Statut',
-            Cell: ({ row }) => formatStatut(row.original.statut),
+            accessorKey: 'status',
+            header: 'Status',
+            Cell: ({ row }) => formatStatus(row.original.status),
         },
         {
             accessorKey: 'actions',
@@ -178,7 +192,7 @@ const Index = ({ auth, ajustements, success, error }) => {
                         </IconButton>
                     </Tooltip>
                     
-                    {row.original.statut === 'en_attente' && (
+                    {row.original.status === 'en_attente' && (
                         <>
                             <Tooltip title="Valider">
                                 <IconButton
@@ -266,7 +280,16 @@ const Index = ({ auth, ajustements, success, error }) => {
             ]}
         >
             <div className="p-4 bg-white rounded shadow">
-                <h1 className="text-2xl font-bold mb-4">Ajustements d'inventaire</h1>
+                <div className="flex justify-between items-center mb-4">
+                    <h1 className="text-2xl font-bold">Ajustements d'inventaire</h1>
+                    <Button 
+                        variant="outlined" 
+                        startIcon={<ArrowBack />}
+                        onClick={() => router.get(route('admin.stockInventaire.index', auth.user.id))}
+                    >
+                        Retour à la liste des inventaires
+                    </Button>
+                </div>
                 
                 <MaterialReactTable table={table} />
                 

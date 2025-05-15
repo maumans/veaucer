@@ -21,7 +21,8 @@ import {
     PlayArrow, 
     Stop, 
     Cancel, 
-    CheckCircle 
+    CheckCircle,
+    ArrowBack 
 } from "@mui/icons-material";
 import dayjs from 'dayjs';
 
@@ -242,7 +243,16 @@ const Index = ({ auth, inventaires, departements, success, error }) => {
             ]}
         >
             <div className="p-4 bg-white rounded shadow">
-                <h1 className="text-2xl font-bold mb-4">Inventaires Physiques</h1>
+                <div className="flex justify-between items-center mb-4">
+                    <h1 className="text-2xl font-bold">Inventaires Physiques</h1>
+                    <Button 
+                        variant="outlined" 
+                        startIcon={<ArrowBack />}
+                        onClick={() => router.get(route('admin.stockInventaire.index', auth.user.id))}
+                    >
+                        Retour à la liste des inventaires
+                    </Button>
+                </div>
                 
                 <MaterialReactTable table={table} />
                 

@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\AjustementInventaire;
 use App\Models\Departement;
 use App\Models\InventairePhysique;
+use App\Models\Operation;
 use App\Models\Produit;
 use App\Models\Stock;
+use App\Models\TypeOperation;
+use App\Services\StockMovementService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -34,13 +37,16 @@ class AjustementInventaireController extends Controller
      */
     public function create()
     {
-        $produits = Produit::where('status', true)
-            ->where(function ($query) {
-                $query->where('societe_id', session('societe')['id'])
-                    ->orWhere('societe_id', null);
-            })
-            ->orderBy('nom')
-            ->get();
+        $produits = Produit::with(['stocks' => function($query) {
+            $query->where('societe_id', session('societe')['id']);
+        }])
+        ->where('status', true)
+        ->where(function ($query) {
+            $query->where('societe_id', session('societe')['id'])
+                ->orWhere('societe_id', null);
+        })
+        ->orderBy('nom')
+        ->get();
 
         $departements = Departement::where('societe_id', session('societe')['id'])
             ->where('status', true)
@@ -73,7 +79,17 @@ class AjustementInventaireController extends Controller
             $produit = Produit::findOrFail($request->produit_id);
             
             // Calculer la différence
-            $quantite_avant = $produit->stockGlobal ?? 0;
+            if ($request->departement_id) {
+                // Si un département est spécifié, récupérer le stock de ce département
+                $stock = Stock::where('produit_id', $request->produit_id)
+                    ->where('departement_id', $request->departement_id)
+                    ->first();
+                $quantite_avant = $stock ? $stock->quantite : 0;
+            } else {
+                // Sinon, utiliser le stock global
+                $quantite_avant = $produit->stockGlobal ?? 0;
+            }
+            
             $difference = $request->quantite_apres - $quantite_avant;
 
             // Créer l'ajustement
@@ -117,34 +133,24 @@ class AjustementInventaireController extends Controller
     /**
      * Valide un ajustement d'inventaire
      */
-    public function valider($userId, $id)
+    public function valider(Request $request, $id)
     {
         $ajustement = AjustementInventaire::findOrFail($id);
 
-        // Vérifier si l'ajustement peut être validé
         if ($ajustement->status !== 'en_attente') {
-            return back()->with('error', 'Seuls les ajustements en attente peuvent être validés.');
+            return redirect()->back()->with('error', 'Cet ajustement ne peut pas être validé car il n\'est pas en attente.');
         }
 
         DB::beginTransaction();
 
         try {
-            // Mettre à jour le stock du produit
-            $produit = Produit::findOrFail($ajustement->produit_id);
-            $produit->update([
-                'stockGlobal' => $ajustement->quantite_apres,
-            ]);
-
-            // Créer une entrée dans la table des stocks pour tracer l'ajustement
-            Stock::create([
-                'produit_id' => $ajustement->produit_id,
-                'quantite' => $ajustement->difference,
-                'type' => $ajustement->difference > 0 ? 'ENTREE' : 'SORTIE',
-                'date' => now(),
-                'description' => 'Ajustement d\'inventaire #' . $ajustement->id . ': ' . $ajustement->motif,
-                'status' => true,
-                'societe_id' => session('societe')['id'],
-            ]);
+            // Utiliser le service StockMovementService pour créer l'ajustement
+            $stockMovementService = new StockMovementService();
+            $operation = $stockMovementService->createAdjustment($ajustement);
+            
+            if (!$operation) {
+                throw new \Exception('Erreur lors de la création du mouvement de stock');
+            }
 
             // Mettre à jour le statut de l'ajustement
             $ajustement->update([
@@ -153,10 +159,10 @@ class AjustementInventaireController extends Controller
 
             DB::commit();
 
-            return back()->with('success', 'Ajustement validé avec succès.');
+            return redirect()->route('admin.inventaire.ajustement.index')->with('success', 'Ajustement validé avec succès.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Une erreur est survenue lors de la validation de l\'ajustement: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Une erreur est survenue lors de la validation de l\'ajustement: ' . $e->getMessage());
         }
     }
 

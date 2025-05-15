@@ -7,7 +7,7 @@ import { router, useForm } from "@inertiajs/react";
 import NumberFormatCustomUtils from "@/Pages/Utils/NumberFormatCustomUtils.jsx";
 import PanelLayout from "@/Layouts/PanelLayout.jsx";
 import { MaterialReactTable, useMaterialReactTable } from "material-react-table";
-import { Check, Close, Delete, Edit, Visibility } from "@mui/icons-material";
+import { ArrowBack, Check, Close, Delete, Edit, Visibility } from "@mui/icons-material";
 import { MRT_Localization_FR } from "material-react-table/locales/fr/index.js";
 import { formatNumber } from "chart.js/helpers";
 import { DatePicker } from "@mui/x-date-pickers";
@@ -552,6 +552,20 @@ function Create({ auth, produits, departements, departementPrincipal, caisses, c
         >
             <div>
                 <div className="w-full">
+                    <div className="p-4 bg-white rounded mb-4">
+                        <div className="flex justify-between items-center">
+                            <div className="bg-black w-fit p-2 rounded text-xl font-bold text-white">
+                                <h2>Nouveau mouvement de stock</h2>
+                            </div>
+                            <Button 
+                                variant={'outlined'} 
+                                startIcon={<ArrowBack />}
+                                onClick={() => router.get(route('admin.mouvement.index', auth.user.id))}
+                            >
+                                Retour à la liste
+                            </Button>
+                        </div>
+                    </div>
                     <motion.div
                         initial={{ y: -10, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
@@ -564,6 +578,7 @@ function Create({ auth, produits, departements, departementPrincipal, caisses, c
                     >
                         <form onSubmit={handleSubmit} className={"w-full space-y-5 gap-5 rounded bg-white p-5"}>
                             <div className={"grid grid-cols-1 md:grid-cols-2 gap-5 border p-3 rounded"}>
+                
                                 <div className={"w-full"}>
                                     <div className={"md:col-span-2 font-bold text-orange-500"}>
                                         Date de l'operation
@@ -851,7 +866,7 @@ function Create({ auth, produits, departements, departementPrincipal, caisses, c
                                     ""
                             }
                             
-                            <div className={"w-full md:col-span-2 flex gap-4 mt-10 py-2 px-1 bg-gray-100 rounded"}>
+                            <div className={"w-full md:col-span-2 flex justify-end gap-4 mt-10 py-2 px-1 bg-gray-100 rounded"}>
                                 <Button variant={'contained'} color={'success'} type={"submit"}>
                                     Enregistrer
                                 </Button>

@@ -104,7 +104,7 @@ export default function Index({ departements, auth, success, error, errors }) {
 
     const table = useMaterialReactTable({
         columns,
-        data: departements,
+        data: departements?.data,
         enableRowSelection: true,
         enableColumnFilters: true,
         enableSorting: true,

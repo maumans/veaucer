@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('pieceJustificative')->nullable();
             $table->string('reference')->nullable();
             $table->string('slug')->nullable();
+            $table->longText('description')->nullable();
             $table->longText('commentaire')->nullable();
             $table->foreignId('motif_id')->nullable()->constrained('motifs')->cascadeOnDelete();
             $table->foreignId('societe_id')->nullable()->constrained('societes')->cascadeOnDelete();
@@ -30,12 +31,34 @@ return new class extends Migration
             $table->foreignId('admin_id')->nullable()->constrained('users')->cascadeOnDelete();
             $table->foreignId('fournisseur_id')->nullable()->constrained('fournisseurs')->cascadeOnDelete();
             
+
+            // Type de mouvement (AJUSTEMENT, TRANSFERT, ENTREE, SORTIE)
+            $table->enum('type_mouvement', ['AJUSTEMENT', 'TRANSFERT', 'ENTREE', 'SORTIE'])->nullable();
+            
+            // Référence externe pour lier à d'autres tables (ajustements, inventaires, etc.)
+            $table->string('reference_externe')->nullable();
+            
+            // Produit concerné par le mouvement
+            $table->foreignId('produit_id')->nullable()->constrained('produits')->nullOnDelete();
+            
+            // Quantité du mouvement
+            $table->decimal('quantite', 10, 2)->nullable();
+            
+            // Prix unitaire au moment du mouvement
+            $table->decimal('prix_unitaire', 10, 2)->nullable();
+            
+            // Inventaire physique associé
+            $table->foreignId('inventaire_physique_id')->nullable()->constrained('inventaires_physiques')->nullOnDelete();
+            
+            // Ajustement d'inventaire associé
+            $table->foreignId('ajustement_inventaire_id')->nullable()->constrained('ajustements_inventaire')->nullOnDelete();
+
             $table->foreignId('departement_source_id')->nullable()->constrained('departements')->cascadeOnDelete();
             $table->foreignId('departement_destination_id')->nullable()->constrained('departements')->cascadeOnDelete();
 
             $table->foreignId('caisse_source_id')->nullable()->constrained('caisses')->cascadeOnDelete();
             $table->foreignId('caisse_destination_id')->nullable()->constrained('caisses')->cascadeOnDelete();
-            $table->enum('etat',['EN ATTENTE','LIVREE','ARCHIVEE','ANNULE'])->default("EN ATTENTE")->nullable();
+            $table->enum('etat',['EN ATTENTE','VALIDE','ARCHIVEE','ANNULE'])->default("EN ATTENTE")->nullable();
             $table->boolean('status')->default(true)->nullable();
             $table->timestamps();
         });

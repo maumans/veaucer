@@ -29,7 +29,7 @@ return new class extends Migration
 
             $table->double("tva")->nullable();
             $table->double("remise")->nullable();
-            $table->enum('etat', ['EN ATTENTE', 'LIVREE', 'ANNULE'])->default("EN ATTENTE")->nullable();
+            $table->enum('etat', ['EN ATTENTE', 'VALIDE', 'ANNULE'])->default("EN ATTENTE")->nullable();
             $table->boolean('status')->default(true)->nullable();
             $table->foreignId('stock_id')->nullable()->constrained('stocks')->cascadeOnDelete();
             $table->foreignId("operation_id")->nullable()->constrained("operations")->cascadeOnDelete();

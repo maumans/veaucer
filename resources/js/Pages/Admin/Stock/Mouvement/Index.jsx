@@ -14,8 +14,8 @@ import { MaterialReactTable, useMaterialReactTable } from 'material-react-table'
 
 import { MRT_Localization_FR } from 'material-react-table/locales/fr';
 import { router, useForm } from "@inertiajs/react";
-import { Alert, AlertTitle, Autocomplete, Button, Snackbar } from "@mui/material";
-import { Add, AddCircle, Remove, AddOutlined, Check, Close, Delete, Edit, Visibility, SwapHoriz, Tune as TuneIcon, FilterList } from "@mui/icons-material";
+import { Alert, AlertTitle, Autocomplete, Button, Chip, Snackbar } from "@mui/material";
+import { Add, AddCircle, Remove, AddOutlined, ArrowBack, Check, Close, Delete, Edit, Visibility, SwapHoriz, Tune as TuneIcon, FilterList } from "@mui/icons-material";
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -239,21 +239,13 @@ function Index({ auth, errors, operations, departements, fournisseurs, typeOpera
             {
                 accessorKey: 'type_operation', //access nested data with dot notation
                 header: 'Type',
-                Cell: ({ row }) => (
-                    row.original.type_operation?.libelle?.toLowerCase()=="entrée"?
-                    <div className={'p-2 font-bold bg-green-500 text-white w-fit h-fit rounded'}>
-                        {row.original.type_operation?.libelle}
-                    </div>
-                    :
-                    row.original.type_operation?.libelle?.toLowerCase()=="sortie"?
-                    <div className={'p-2 font-bold bg-red-500 text-white w-fit h-fit rounded'}>
-                        {row.original.type_operation?.libelle}
-                    </div>
-                    :
-                    <div className={'p-2 font-bold bg-orange-500 text-white w-fit h-fit rounded'}>
-                        {row.original.type_operation?.libelle}
-                    </div>
-                )
+                Cell: ({ row }) => row.original?.type_operation?.nom?.toLowerCase() === "entrée" ? 
+                <Chip label="Entrée" color="success" /> : 
+                row.original?.type_operation?.nom?.toLowerCase() === "sortie" ?
+                <Chip label="Sortie" color="error" /> :
+                row.original?.type_operation?.nom?.toLowerCase() === "transfert" ?
+                <Chip label="Transfert" color="warning" /> :
+                <Chip label={row.original?.type_operation?.nom?.toLowerCase()} color="default" />,
                 //size: 10,
             },
            
@@ -772,30 +764,6 @@ function Index({ auth, errors, operations, departements, fournisseurs, typeOpera
                                     value={selectedTypeOperation}
                                     onChange={(e, val) => setSelectedTypeOperation(val)}
                                     options={typeOperations || []}
-                                    getOptionLabel={(option) => option.nom}
-                                    isOptionEqualToValue={(option, value) => option.id === value.id}
-                                    renderInput={(params) => (
-                                        <TextField 
-                                            {...params} 
-                                            label="Type d'opération" 
-                                            fullWidth 
-                                            size="small"
-                                        />
-                                    )}
-                                />
-                            </div>
-                            
-                            {/* Filtre par département */}
-                            <div>
-                                <Autocomplete
-                                    value={selectedDepartement}
-                                    onChange={(e, val) => setSelectedDepartement(val)}
-                                    options={departements || []}
-                                    getOptionLabel={(option) => option.nom}
-                                    isOptionEqualToValue={(option, value) => option.id === value.id}
-                                    renderInput={(params) => (
-                                        <TextField 
-                                            {...params} 
                                             label="Département" 
                                             fullWidth 
                                             size="small"
@@ -906,6 +874,38 @@ function Index({ auth, errors, operations, departements, fournisseurs, typeOpera
                     </div>
                 )}
                 
+                <div className="space-y-4">
+                {/* Bouton pour ouvrir les filtres avancés */}
+                <div className="flex justify-between items-center">
+                    <div className="flex gap-2">
+                        <Button
+                            variant="outlined"
+                            startIcon={<ArrowBack />}
+                            onClick={() => router.get(route('admin.dashboard', auth.user.id))}
+                        >
+                            Retour au tableau de bord
+                        </Button>
+                        
+                        <Button
+                            variant="outlined"
+                            startIcon={<TuneIcon />}
+                            onClick={() => setFilterOpen(!filterOpen)}
+                        >
+                            Filtres avancés
+                        </Button>
+                    </div>
+                    
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        startIcon={<Add />}
+                        onClick={() => handleClickOpen()}
+                    >
+                        Nouveau mouvement
+                    </Button>
+                </div>
+                </div>
+
                 <MaterialReactTable
                     table={table}
                 />

@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
 import { Autocomplete, Button, TextareaAutosize, TextField } from "@mui/material";
 import { motion } from "framer-motion";
+import { ArrowBack } from "@mui/icons-material";
 
 import InputError from "@/Components/InputError";
-import { useForm } from "@inertiajs/react";
+import { router, useForm } from "@inertiajs/react";
 import Divider from "@mui/material/Divider";
 import ReferentielLayout from "@/Layouts/ReferentielLayout.jsx";
 import NumberFormatCustomUtils from "@/Pages/Utils/NumberFormatCustomUtils.jsx";
@@ -81,6 +82,20 @@ function Create({ auth, typeProduits, typeProduitAchat, typeProduitVente, catego
         >
             <div>
                 <div className="w-full">
+                    <div className="p-4 bg-white rounded mb-4">
+                        <div className="flex justify-between items-center">
+                            <div className="bg-black w-fit p-2 rounded text-xl font-bold text-white">
+                                <h2>Modification du produit</h2>
+                            </div>
+                            <Button 
+                                variant={'outlined'} 
+                                startIcon={<ArrowBack />}
+                                onClick={() => router.get(route('admin.produit.index', auth.user.id))}
+                            >
+                                Retour à la liste
+                            </Button>
+                        </div>
+                    </div>
                     <motion.div
                         initial={{ y: -10, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}

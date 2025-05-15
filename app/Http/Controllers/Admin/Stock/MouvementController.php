@@ -251,7 +251,7 @@ class MouvementController extends Controller
                 "departement_source_id" => $request->departementSource ?? null,
                 "departement_destination_id" => $request->departementDestination ?? null,
                 "caisse_source_id" => $request->caisse ?? null,
-                "etat" => $request->enregistrer ? 'EN ATTENTE' : 'LIVREE',
+                "etat" => $request->enregistrer ? 'EN ATTENTE' : 'VALIDE',
             ]);
 
             switch ($request->typeOperation_nom) {
@@ -314,7 +314,7 @@ class MouvementController extends Controller
                 'stock_destination_id' => $stock->id,
                 'operation_id' => $operation->id,
                 "societe_id" => session('societe')['id'],
-                "etat" => $enregistrer ? 'EN ATTENTE' : 'LIVREE',
+                "etat" => $enregistrer ? 'EN ATTENTE' : 'VALIDE',
             ]);
             if (!$enregistrer) {
                 $stock->quantite += $operationProduit['quantiteAchat'];
@@ -340,7 +340,7 @@ class MouvementController extends Controller
                 'operation_id' => $operation->id,
                 "societe_id" => session('societe')['id'],
                 "fournisseur_id" => $fournisseur,
-                "etat" => $enregistrer ? 'EN ATTENTE' : 'LIVREE',
+                "etat" => $enregistrer ? 'EN ATTENTE' : 'VALIDE',
             ]);
 
             if (!$enregistrer) {
@@ -366,7 +366,7 @@ class MouvementController extends Controller
                 'stock_source_id' => $stock->id,
                 'operation_id' => $operation->id,
                 "societe_id" => session('societe')['id'],
-                "etat" => $enregistrer ? 'EN ATTENTE' : 'LIVREE',
+                "etat" => $enregistrer ? 'EN ATTENTE' : 'VALIDE',
             ]);
             if (!$enregistrer) {
                 if($stock->quantite < $operationProduit['quantiteAchat']){
@@ -408,7 +408,7 @@ class MouvementController extends Controller
                 'stock_destination_id' => $stockDestination->id,
                 'operation_id' => $operation->id,
                 "societe_id" => session('societe')['id'],
-                "etat" => $enregistrer ? 'EN ATTENTE' : 'LIVREE',
+                "etat" => $enregistrer ? 'EN ATTENTE' : 'VALIDE',
             ]);
 
             if (!$enregistrer) {

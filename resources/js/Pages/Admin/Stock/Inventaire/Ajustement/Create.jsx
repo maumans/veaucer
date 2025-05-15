@@ -20,6 +20,7 @@ import dayjs from 'dayjs';
 const Create = ({ auth, produits, departements, success, error }) => {
     const [selectedProduit, setSelectedProduit] = useState(null);
     const [stockActuel, setStockActuel] = useState(0);
+    const [selectedDepartement, setSelectedDepartement] = useState('');
 
     const { data, setData, post, processing, errors } = useForm({
         produit_id: '',
@@ -33,13 +34,44 @@ const Create = ({ auth, produits, departements, success, error }) => {
     const handleProduitChange = (event, newValue) => {
         if (newValue) {
             setSelectedProduit(newValue);
-            setStockActuel(newValue.stockGlobal || 0);
+            updateStockActuel(newValue, selectedDepartement);
             setData('produit_id', newValue.id);
         } else {
             setSelectedProduit(null);
             setStockActuel(0);
             setData('produit_id', '');
         }
+    };
+    
+    // Mettre à jour le stock actuel lorsqu'un département est sélectionné
+    const handleDepartementChange = (e) => {
+        const departementId = e.target.value;
+        setSelectedDepartement(departementId);
+        setData('departement_id', departementId);
+        
+        if (selectedProduit) {
+            updateStockActuel(selectedProduit, departementId);
+        }
+    };
+    
+    // Fonction pour mettre à jour le stock actuel en fonction du produit et du département
+    const updateStockActuel = (produit, departementId) => {
+        if (!produit) return;
+        
+        if (departementId) {
+            // Si un département est sélectionné, chercher le stock spécifique à ce département
+            const stockDepartement = produit.stocks?.find(stock => stock.departement_id == departementId);
+            console.log('Stock département trouvé:', stockDepartement);
+            setStockActuel(stockDepartement ? stockDepartement.quantite : 0);
+        } else {
+            // Sinon, utiliser le stock global
+            setStockActuel(produit.stockGlobal || 0);
+        }
+        
+        // Log pour débogage
+        console.log('Produit:', produit);
+        console.log('Département ID:', departementId);
+        console.log('Stocks disponibles:', produit.stocks);
     };
 
     const handleSubmit = (e) => {
@@ -82,7 +114,7 @@ const Create = ({ auth, produits, departements, success, error }) => {
                         <Grid item xs={12} md={6}>
                             <Autocomplete
                                 options={produits}
-                                getOptionLabel={(option) => `${option.code} - ${option.nom}`}
+                                getOptionLabel={(option) => option.nom}
                                 value={selectedProduit}
                                 onChange={handleProduitChange}
                                 renderInput={(params) => (
@@ -104,11 +136,11 @@ const Create = ({ auth, produits, departements, success, error }) => {
                                 <Select
                                     labelId="departement-label"
                                     value={data.departement_id}
-                                    onChange={(e) => setData('departement_id', e.target.value)}
-                                    label="Département"
+                                    onChange={handleDepartementChange}
+                                    label="Département (optionnel)"
                                     error={!!errors.departement_id}
                                 >
-                                    <MenuItem value="">Aucun département spécifique</MenuItem>
+                                    <MenuItem value=""><em>Stock global (tous les départements)</em></MenuItem>
                                     {departements.map((departement) => (
                                         <MenuItem key={departement.id} value={departement.id}>
                                             {departement.nom}
