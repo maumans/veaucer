@@ -76,7 +76,7 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
         categorie: '',
         typeProduit: '',
         departement: '',
-        statut: '',
+        status: '',
         searchTerm: ''
     });
 
@@ -106,7 +106,11 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
         }
 
         try {
-            axios.post(route('admin.stockInventaire.paginationFiltre'), requestData)
+            // Récupérer l'ID de l'utilisateur à partir de l'objet auth
+            const userId = auth.user.id;
+            
+            // Utiliser la route avec le paramètre userId
+            axios.post(route('admin.stock.inventaire.paginationFiltre', { userId: userId }), requestData)
                 .then(response => {
                     if (response.data && Array.isArray(response.data.data)) {
                         setProduitsSt(response.data.data);
@@ -199,7 +203,7 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
     };
 
     const handleSubmit = () => {
-        post(route('admin.stockInventaire.store', auth.user.id), {
+        post(route('admin.stock.inventaire.store', auth.user.id), {
             onSuccess: () => {
                 reset();
                 handleClose();
@@ -236,7 +240,7 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
     };
 
     const handleUpdate = () => {
-        put(route('admin.stockInventaire.update', [auth.user.id, data.id]), {
+        put(route('admin.stock.inventaire.update', [auth.user.id, data.id]), {
             onSuccess: () => {
                 reset();
                 handleCloseEdit();
@@ -245,7 +249,7 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
     };
 
     const handleSuspend = () => {
-        router.delete(route('admin.stockInventaire.destroy', [auth.user.id, data.id]));
+        router.delete(route('admin.stock.inventaire.destroy', [auth.user.id, data.id]));
     };
 
     const columns = useMemo(
@@ -265,7 +269,7 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
                 size: 100,
                 Cell: ({ row }) => {
                     const stock = row.original.stockGlobal || 0;
-                    const seuilMin = row.original.seuilMinimal || 0;
+                    const seuilMin = row.original.stockCritique || 0;
                     const seuilMax = row.original.seuilMaximal || 0;
                     
                     let color = 'success.main';
@@ -283,11 +287,11 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
                 },
             },
             {
-                accessorKey: 'seuilMinimal',
+                accessorKey: 'stockCritique',
                 header: 'Seuil Min',
                 size: 100,
                 Cell: ({ row }) => (
-                    <Typography>{formatNumber(row.original.seuilMinimal || 0)}</Typography>
+                    <Typography>{formatNumber(row.original.stockCritique || 0)}</Typography>
                 ),
             },
             {
@@ -406,13 +410,13 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
     // Calcul des statistiques pour le tableau de bord
     const statsData = useMemo(() => {
         const totalProduits = produitsSt.length;
-        const sousSeuilMinimal = produitsSt.filter(p => p.stockGlobal < p.seuilMinimal).length;
+        const sousstockCritique = produitsSt.filter(p => p.stockGlobal < p.stockCritique).length;
         const enRupture = produitsSt.filter(p => p.stockGlobal === 0).length;
         const valeurTotale = produitsSt.reduce((total, p) => total + ((p.stockGlobal || 0) * (p.prixAchat || 0)), 0);
         
         return {
             totalProduits,
-            sousSeuilMinimal,
+            sousstockCritique,
             enRupture,
             valeurTotale
         };
@@ -448,24 +452,24 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
             });
         }
         
-        if (filtresAvances.statut) {
-            if (filtresAvances.statut === 'rupture') {
+        if (filtresAvances.status) {
+            if (filtresAvances.status === 'rupture') {
                 // Filtre pour les produits en rupture de stock
                 newColumnFilters.push({
                     id: 'stockGlobal',
                     value: '0'
                 });
-            } else if (filtresAvances.statut === 'seuil') {
+            } else if (filtresAvances.status === 'seuil') {
                 // Ce filtre sera géré spécialement dans le backend
                 newColumnFilters.push({
                     id: 'seuil_minimal',
                     value: 'true'
                 });
             } else {
-                // Filtre par statut actif/inactif
+                // Filtre par status actif/inactif
                 newColumnFilters.push({
                     id: 'status',
-                    value: filtresAvances.statut
+                    value: filtresAvances.status
                 });
             }
         }
@@ -487,7 +491,7 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
             categorie: '',
             typeProduit: '',
             departement: '',
-            statut: '',
+            status: '',
             searchTerm: ''
         });
         
@@ -507,7 +511,7 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
             breadcrumbs={[
                 {
                     text: "Inventaire",
-                    href: route("admin.stockInventaire.index", [auth.user.id]),
+                    href: route("admin.stock.inventaire.index", [auth.user.id]),
                     active: true
                 }
             ]}
@@ -558,7 +562,7 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
                                     Sous Seuil Minimal
                                 </Typography>
                                 <Typography variant="h4" component="div" color="warning.main">
-                                    {statsData.sousSeuilMinimal}
+                                    {statsData.sousstockCritique}
                                 </Typography>
                                 <Typography variant="body2" color="textSecondary">
                                     Produits à réapprovisionner
@@ -690,8 +694,8 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
                             <FormControl fullWidth size="small">
                                 <InputLabel>Statut</InputLabel>
                                 <Select
-                                    name="statut"
-                                    value={filtresAvances.statut}
+                                    name="status"
+                                    value={filtresAvances.status}
                                     onChange={handleFiltreChange}
                                     label="Statut"
                                 >

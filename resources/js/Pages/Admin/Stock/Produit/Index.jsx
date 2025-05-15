@@ -7,80 +7,136 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
-
-import { useMemo } from 'react';
+import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Typography from '@mui/material/Typography';
+import Grid from '@mui/material/Grid';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import Box from '@mui/material/Box';
+import Paper from '@mui/material/Paper';
+import Divider from '@mui/material/Divider';
+import Chip from '@mui/material/Chip';
 
 import { MaterialReactTable, useMaterialReactTable } from 'material-react-table'
-
 import { MRT_Localization_FR } from 'material-react-table/locales/fr';
 import {router, useForm} from "@inertiajs/react";
-import {Alert, AlertTitle, Autocomplete, Button, Snackbar} from "@mui/material";
-import {Add, AddCircle, AddOutlined, ArrowBack, Check, Close, Delete, Edit, Visibility} from "@mui/icons-material";
+import {Alert, AlertTitle, Autocomplete, Snackbar} from "@mui/material";
+import {Add, AddCircle, AddOutlined, ArrowBack, Check, Close, Delete, Edit, Visibility, FileUpload, FileDownload, Warning, ErrorOutline, TrendingUp} from "@mui/icons-material";
 import InputError from "@/Components/InputError.jsx";
 import { formatNumber } from 'chart.js/helpers';
+import { useMemo } from 'react';
 
-function Index({auth,errors,produits,typeProduits,categories,error,success}) {
-    //PAGINATION
-
-    const [produitsSt, setProduitsSt] = useState([]);
-    const [isError, setIsError] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [isRefetching, setIsRefetching] = useState(false);
-    const [rowCount, setRowCount] = useState(0);
-
-
-    //table state
-    const [columnFilters, setColumnFilters] = useState([]);
-    const [globalFilter, setGlobalFilter] = useState('');
-    const [sorting, setSorting] = useState([]);
+function Index({auth,errors,produits,typeProduits,categories,departements,error,success,filters,stats}) {
+    // État pour la pagination et le filtrage côté client
     const [pagination, setPagination] = useState({
-        pageIndex:produits.current_page-1,
-        pageSize:produits.per_page,
+        pageIndex: produits.current_page - 1,
+        pageSize: produits.per_page,
     });
+    
+    // État pour les filtres
+    const [categorieFilter, setCategorieFilter] = useState(filters?.categorie_id || '');
+    const [typeProduitFilter, setTypeProduitFilter] = useState(filters?.type_produit_id || '');
+    const [stockFilter, setStockFilter] = useState(filters?.stock_filter || 'all');
+    const [departementFilter, setDepartementFilter] = useState(filters?.departement_id || '');
 
-    useEffect(()=>{
-        setRowCount(produits.total)
-        setProduitsSt(produits.data)
-        setIsRefetching(false)
-    },[produits])
-
-    useEffect(() => {
-
-
-        setIsRefetching(true);
-        setIsLoading(true);
-
-        axios.post(route('admin.produit.paginationFiltre'),
-            {
-                'start': pagination.pageIndex * pagination.pageSize,
-                "size": pagination.pageSize,
-                'filters': columnFilters ?? [],
-                'globalFilter': globalFilter ?? '',
-                'sorting': sorting ?? []
-            })
-            .then(response => {
-                setProduitsSt(response.data.data);
-                setRowCount(response.data.rowCount);
-
-                setIsLoading(false)
-                setIsRefetching(false);
-            })
-            .catch(err => {
-                setIsError(true);
-                console.error(error);
-            })
-
-        setIsError(false);
-        setIsLoading(false);
-        setIsRefetching(false);
-
-    }, [
-        columnFilters,
-        globalFilter,
-        pagination.pageIndex,
-        pagination.pageSize,
-        sorting,
-    ])
+    // Utiliser directement les données fournies par le contrôleur
+    const handlePaginationChange = (updatedPagination) => {
+        setPagination(updatedPagination);
+        
+        // Naviguer vers la page demandée en utilisant Inertia
+        router.get(route('admin.stock.produit.index', {userId: auth.user.id}), {
+            page: updatedPagination.pageIndex + 1,
+            per_page: updatedPagination.pageSize,
+        }, {
+            preserveState: true,
+            preserveScroll: true,
+            only: ['produits'],
+        });
+    };
+    
+    // Fonction pour gérer le filtrage global
+    const handleGlobalFilterChange = (value) => {
+        router.get(route('admin.stock.produit.index', {userId: auth.user.id}), {
+            search: value,
+            page: 1, // Réinitialiser à la première page lors d'une recherche
+            categorie_id: categorieFilter,
+            type_produit_id: typeProduitFilter,
+            stock_filter: stockFilter,
+            departement_id: departementFilter,
+        }, {
+            preserveState: true,
+            preserveScroll: true,
+            only: ['produits'],
+        });
+    };
+    
+    // Fonction pour gérer les changements de filtres
+    const handleFilterChange = (filterType, value) => {
+        switch(filterType) {
+            case 'categorie':
+                setCategorieFilter(value);
+                break;
+            case 'typeProduit':
+                setTypeProduitFilter(value);
+                break;
+            case 'stock':
+                setStockFilter(value);
+                break;
+            case 'departement':
+                setDepartementFilter(value);
+                break;
+            default:
+                break;
+        }
+        
+        // Appliquer les filtres
+        router.get(route('admin.stock.produit.index', {userId: auth.user.id}), {
+            search: filters?.search || '',
+            page: 1, // Réinitialiser à la première page lors d'un changement de filtre
+            categorie_id: filterType === 'categorie' ? value : categorieFilter,
+            type_produit_id: filterType === 'typeProduit' ? value : typeProduitFilter,
+            stock_filter: filterType === 'stock' ? value : stockFilter,
+            departement_id: filterType === 'departement' ? value : departementFilter,
+        }, {
+            preserveState: true,
+            preserveScroll: true,
+            only: ['produits', 'stats'],
+        });
+    };
+    
+    // Fonction pour gérer le tri
+    const handleSortingChange = (updatedSorting) => {
+        if (updatedSorting.length > 0) {
+            router.get(route('admin.stock.produit.index', {userId: auth.user.id}), {
+                sort_field: updatedSorting[0].id,
+                sort_direction: updatedSorting[0].desc ? 'desc' : 'asc',
+                page: pagination.pageIndex + 1,
+                categorie_id: categorieFilter,
+                type_produit_id: typeProduitFilter,
+                stock_filter: stockFilter,
+                departement_id: departementFilter,
+            }, {
+                preserveState: true,
+                preserveScroll: true,
+                only: ['produits'],
+            });
+        }
+    }
+    
+    // Fonction pour formater les valeurs monétaires
+    const formatMoney = (amount) => {
+        return new Intl.NumberFormat('fr-FR', {
+            style: 'currency',
+            currency: 'EUR',
+            minimumFractionDigits: 2
+        }).format(amount);
+    }
 
 
     //PAGINATION
@@ -101,11 +157,22 @@ function Index({auth,errors,produits,typeProduits,categories,error,success}) {
     const [openDelete, setOpenDelete] = useState(false);
 
     const handleClickOpen = () => {
-
-        router.get(route("admin.produit.create",auth.user.id),{onSuccess:()=>reset()})
-
-        //reset()
-        //setOpen(true);
+        router.get(route("admin.stock.produit.create", {userId: auth.user.id}), {onSuccess:()=>reset()})
+    };
+    
+    const handleFileUpload = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            router.post(route('admin.stock.produit.import-csv', {userId: auth.user.id}), formData, {
+                onSuccess: () => {
+                    // Réinitialiser l'input file
+                    event.target.value = null;
+                }
+            });
+        }
     };
 
     const handleClose = () => {
@@ -307,32 +374,18 @@ function Index({auth,errors,produits,typeProduits,categories,error,success}) {
 
     const table = useMaterialReactTable({
         columns,
-        data:produitsSt,
-        //enableRowSelection: true,
+        data: produits.data,
         getRowId: (row) => row.id,
         initialState: { showColumnFilters: false },
         manualFiltering: true,
         manualPagination: true,
         manualSorting: true,
-        muiToolbarAlertBannerProps: isError
-            ? {
-                color: 'error',
-                children: 'Error loading data',
-            }
-            : undefined,
-        onColumnFiltersChange: setColumnFilters,
-        onGlobalFilterChange: setGlobalFilter,
-        onPaginationChange: setPagination,
-        onSortingChange: setSorting,
-        rowCount,
+        onGlobalFilterChange: handleGlobalFilterChange,
+        onPaginationChange: handlePaginationChange,
+        onSortingChange: handleSortingChange,
+        rowCount: produits.total,
         state: {
-            columnFilters,
-            globalFilter,
-            isLoading,
             pagination,
-            showAlertBanner: isError,
-            showProgressBars: isRefetching,
-            sorting,
         },
         localization: MRT_Localization_FR
     });
@@ -347,9 +400,14 @@ function Index({auth,errors,produits,typeProduits,categories,error,success}) {
             sousActive={'produit'}
             breadcrumbs={[
                 {
-                    text:"Produit",
-                    href:route("admin.produit.index",[auth.user.id]),
+                    text:"Stock",
+                    href:route("admin.dashboard", {id: auth.user.id}),
                     active:false
+                },
+                {
+                    text:"Produits",
+                    href:route("admin.stock.produit.index", {userId: auth.user.id}),
+                    active:true
                 },
                 /*{
                     text:"Création",
@@ -365,14 +423,43 @@ function Index({auth,errors,produits,typeProduits,categories,error,success}) {
                         <Button 
                             variant="outlined" 
                             startIcon={<ArrowBack />}
-                            onClick={() => router.get(route('admin.dashboard', auth.user.id))}
+                            onClick={() => router.get(route('admin.dashboard', {id: auth.user.id}))}
                         >
                             Retour au tableau de bord
                         </Button>
+                        
                     </div>
-                    <Button color={'warning'} variant={'contained'} onClick={handleClickOpen} >
-                        <AddCircle className={'mr-1'}></AddCircle> Ajout produit
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button 
+                            color={'success'} 
+                            variant={'outlined'} 
+                            onClick={() => window.location.href = route('admin.stock.produit.export-csv', {userId: auth.user.id})}
+                        >
+                            <FileDownload className={'mr-1'} /> Exporter CSV
+                        </Button>
+                        <label htmlFor="upload-csv">
+                            <input
+                                style={{ display: 'none' }}
+                                id="upload-csv"
+                                name="upload-csv"
+                                type="file"
+                                accept=".csv"
+                                onChange={handleFileUpload}
+                            />
+                            <Button 
+                                color={'info'} 
+                                variant={'outlined'} 
+                                component="span"
+                            >
+                                <FileUpload className={'mr-1'} /> Importer CSV
+                            </Button>
+                        </label>
+                        <Button color={'warning'} variant={'contained'} onClick={handleClickOpen} >
+                            <AddCircle className={'mr-1'} /> Ajout produit
+                        </Button>
+                    </div>
+
+                    
 
                     {
                         ///////ADD DIALOG
@@ -583,6 +670,209 @@ function Index({auth,errors,produits,typeProduits,categories,error,success}) {
 
 
                 </div>
+
+                <div>
+                        {/* Statistiques globales */}
+                        <Grid container spacing={2} sx={{ mt: 2, mb: 3 }}>
+                            <Grid item xs={12}>
+                                <Typography variant="h6" sx={{ mb: 1, fontWeight: 'bold' }}>
+                                    {stats?.departement ? `Statistiques pour le département: ${stats.departement.nom_departement}` : 'Statistiques globales'}
+                                    {(departementFilter || categorieFilter || typeProduitFilter || stockFilter !== 'all') && (
+                                        <Typography variant="caption" sx={{ ml: 1, fontWeight: 'normal', display: 'inline-block' }}>
+                                            (filtrées selon les critères sélectionnés)
+                                        </Typography>
+                                    )}
+                                </Typography>
+                            </Grid>
+                            <Grid item xs={12} sm={6} md={3}>
+                                <Paper elevation={2} sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Typography variant="h6" color="primary">Total Produits</Typography>
+                                    <Typography variant="h4">{stats?.departement ? stats.departement.total_produits : stats?.total_produits || 0}</Typography>
+                                </Paper>
+                            </Grid>
+                            <Grid item xs={12} sm={6} md={3}>
+                                <Paper elevation={2} sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', bgcolor: '#fff9c4' }}>
+                                    <Typography variant="h6" color="warning.main" sx={{ display: 'flex', alignItems: 'center' }}>
+                                        <Warning fontSize="small" sx={{ mr: 1 }} /> Stock Critique
+                                    </Typography>
+                                    <Typography variant="h4" color="warning.main">
+                                        {stats?.departement ? stats.departement.stockCritique : stats?.stockCritique || 0}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                        {stats && (
+                                            stats.departement ? 
+                                                `${Math.round(((stats.departement?.stockCritique || 0) / (stats.departement?.total_produits || 1)) * 100)}%` : 
+                                                `${Math.round(((stats?.stockCritique || 0) / (stats?.total_produits || 1)) * 100)}%`
+                                        )}
+                                    </Typography>
+                                </Paper>
+                            </Grid>
+                            <Grid item xs={12} sm={6} md={3}>
+                                <Paper elevation={2} sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', bgcolor: '#ffebee' }}>
+                                    <Typography variant="h6" color="error" sx={{ display: 'flex', alignItems: 'center' }}>
+                                        <ErrorOutline fontSize="small" sx={{ mr: 1 }} /> Stock Épuisé
+                                    </Typography>
+                                    <Typography variant="h4" color="error">
+                                        {stats?.departement ? stats.departement.stock_epuise : stats?.stock_epuise || 0}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                        {stats && (
+                                            stats.departement ? 
+                                                `${Math.round(((stats.departement?.stock_epuise || 0) / (stats.departement?.total_produits || 1)) * 100)}%` : 
+                                                `${Math.round(((stats?.stock_epuise || 0) / (stats?.total_produits || 1)) * 100)}%`
+                                        )}
+                                    </Typography>
+                                </Paper>
+                            </Grid>
+                            <Grid item xs={12} sm={6} md={3}>
+                                <Paper elevation={2} sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', bgcolor: '#e8f5e9' }}>
+                                    <Typography variant="h6" color="success.main" sx={{ display: 'flex', alignItems: 'center' }}>
+                                        <TrendingUp fontSize="small" sx={{ mr: 1 }} /> Valeur Stock
+                                    </Typography>
+                                    <Typography variant="h4" color="success.main">
+                                        {formatMoney(stats?.departement ? stats.departement.valeur_totale_stock : stats?.valeur_totale_stock || 0)}
+                                    </Typography>
+                                </Paper>
+                            </Grid>
+                        </Grid>
+                        
+                        {/* Filtres */}
+                        <Grid container spacing={2} sx={{ mb: 3 }}>
+                            <Grid item xs={12}>
+                                <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>Filtres</Typography>
+                            </Grid>
+                            <Grid item xs={12} sm={6} md={3}>
+                                <FormControl fullWidth variant="outlined" size="small">
+                                    <InputLabel>Département</InputLabel>
+                                    <Select
+                                        value={departementFilter}
+                                        onChange={(e) => handleFilterChange('departement', e.target.value)}
+                                        label="Département"
+                                    >
+                                        <MenuItem value="">Tous les départements</MenuItem>
+                                        {departements?.map((departement) => (
+                                            <MenuItem key={departement.id} value={departement.id}>{departement.nom}</MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                            <Grid item xs={12} sm={6} md={3}>
+                                <FormControl fullWidth variant="outlined" size="small">
+                                    <InputLabel>Catégorie</InputLabel>
+                                    <Select
+                                        value={categorieFilter}
+                                        onChange={(e) => handleFilterChange('categorie', e.target.value)}
+                                        label="Catégorie"
+                                    >
+                                        <MenuItem value="">Toutes les catégories</MenuItem>
+                                        {categories.map((categorie) => (
+                                            <MenuItem key={categorie.id} value={categorie.id}>{categorie.nom}</MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                            <Grid item xs={12} sm={6} md={3}>
+                                <FormControl fullWidth variant="outlined" size="small">
+                                    <InputLabel>Type de produit</InputLabel>
+                                    <Select
+                                        value={typeProduitFilter}
+                                        onChange={(e) => handleFilterChange('typeProduit', e.target.value)}
+                                        label="Type de produit"
+                                    >
+                                        <MenuItem value="">Tous les types</MenuItem>
+                                        {typeProduits.map((type) => (
+                                            <MenuItem key={type.id} value={type.id}>{type.nom}</MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                            <Grid item xs={12} sm={6} md={3}>
+                                <FormControl fullWidth variant="outlined" size="small">
+                                    <InputLabel>État du stock</InputLabel>
+                                    <Select
+                                        value={stockFilter}
+                                        onChange={(e) => handleFilterChange('stock', e.target.value)}
+                                        label="État du stock"
+                                    >
+                                        <MenuItem value="all">Tous les produits</MenuItem>
+                                        <MenuItem value="low">
+                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                <Warning fontSize="small" color="warning" sx={{ mr: 1 }} />
+                                                Stock critique
+                                            </Box>
+                                        </MenuItem>
+                                        <MenuItem value="out">
+                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                <ErrorOutline fontSize="small" color="error" sx={{ mr: 1 }} />
+                                                Stock épuisé
+                                            </Box>
+                                        </MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                        </Grid>
+                        
+                        {/* Filtres actifs */}
+                        {(departementFilter || categorieFilter || typeProduitFilter || stockFilter !== 'all') && (
+                            <Box sx={{ mb: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                <Typography variant="body2" sx={{ mr: 1, display: 'flex', alignItems: 'center' }}>
+                                    Filtres actifs:
+                                </Typography>
+                                {departementFilter && (
+                                    <Chip 
+                                        label={`Département: ${departements?.find(d => d.id === parseInt(departementFilter))?.nom || ''}`}
+                                        onDelete={() => handleFilterChange('departement', '')}
+                                        color="primary"
+                                        variant="outlined"
+                                        size="small"
+                                    />
+                                )}
+                                {categorieFilter && (
+                                    <Chip 
+                                        label={`Catégorie: ${categories.find(c => c.id === parseInt(categorieFilter))?.nom || ''}`}
+                                        onDelete={() => handleFilterChange('categorie', '')}
+                                        color="primary"
+                                        variant="outlined"
+                                        size="small"
+                                    />
+                                )}
+                                {typeProduitFilter && (
+                                    <Chip 
+                                        label={`Type: ${typeProduits.find(t => t.id === parseInt(typeProduitFilter))?.nom || ''}`}
+                                        onDelete={() => handleFilterChange('typeProduit', '')}
+                                        color="primary"
+                                        variant="outlined"
+                                        size="small"
+                                    />
+                                )}
+                                {stockFilter !== 'all' && (
+                                    <Chip 
+                                        label={stockFilter === 'low' ? 'Stock critique' : 'Stock épuisé'}
+                                        onDelete={() => handleFilterChange('stock', 'all')}
+                                        color={stockFilter === 'low' ? 'warning' : 'error'}
+                                        variant="outlined"
+                                        size="small"
+                                    />
+                                )}
+                                <Button 
+                                    variant="text" 
+                                    size="small" 
+                                    startIcon={<Close fontSize="small" />}
+                                    onClick={() => {
+                                        setDepartementFilter('');
+                                        setCategorieFilter('');
+                                        setTypeProduitFilter('');
+                                        setStockFilter('all');
+                                        router.get(route('admin.stock.produit.index', {userId: auth.user.id}), {
+                                            page: 1
+                                        });
+                                    }}
+                                >
+                                    Réinitialiser tous les filtres
+                                </Button>
+                            </Box>
+                        )}
+                    </div>
 
                 <MaterialReactTable
                     table={table}

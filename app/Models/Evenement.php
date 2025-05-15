@@ -22,7 +22,7 @@ class Evenement extends Model
         'capacite_max',
         'prix_standard',
         'prix_vip',
-        'statut',
+        'status',
         'configuration',
         'actif'
     ];

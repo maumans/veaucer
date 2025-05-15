@@ -111,7 +111,7 @@ function Show({ auth, errors, inventaire, stats, details, error, success }) {
         router.get(route('admin.inventaire.physique.generer-ajustements', [auth.user.id, inventaire.id]));
     };
 
-    // Déterminer la couleur du statut
+    // Déterminer la couleur du status
     const getStatusColor = (status) => {
         switch (status) {
             case 'planifié': return 'info';
@@ -144,7 +144,7 @@ function Show({ auth, errors, inventaire, stats, details, error, success }) {
             breadcrumbs={[
                 {
                     text: "Inventaires",
-                    href: route("admin.stockInventaire.index", [auth.user.id]),
+                    href: route("admin.stock.inventaire.index", [auth.user.id]),
                     active: false
                 },
                 {
@@ -171,8 +171,8 @@ function Show({ auth, errors, inventaire, stats, details, error, success }) {
                         </Typography>
                     </div>
                     <Chip 
-                        label={inventaire.statut.replace('_', ' ').toUpperCase()} 
-                        color={getStatusColor(inventaire.statut)} 
+                        label={inventaire.status.replace('_', ' ').toUpperCase()} 
+                        color={getStatusColor(inventaire.status)} 
                         size="medium"
                     />
                 </div>
@@ -253,7 +253,7 @@ function Show({ auth, errors, inventaire, stats, details, error, success }) {
 
                 {/* Actions */}
                 <Box className="flex flex-wrap gap-2">
-                    {inventaire.statut === 'planifié' && (
+                    {inventaire.status === 'planifié' && (
                         <Button 
                             variant="contained" 
                             color="primary"
@@ -263,7 +263,7 @@ function Show({ auth, errors, inventaire, stats, details, error, success }) {
                             Démarrer l'inventaire
                         </Button>
                     )}
-                    {inventaire.statut === 'en_cours' && (
+                    {inventaire.status === 'en_cours' && (
                         <Button 
                             variant="contained" 
                             color="success"
@@ -273,7 +273,7 @@ function Show({ auth, errors, inventaire, stats, details, error, success }) {
                             Terminer l'inventaire
                         </Button>
                     )}
-                    {(inventaire.statut === 'planifié' || inventaire.statut === 'en_cours') && (
+                    {(inventaire.status === 'planifié' || inventaire.status === 'en_cours') && (
                         <Button 
                             variant="contained" 
                             color="error"
@@ -283,7 +283,7 @@ function Show({ auth, errors, inventaire, stats, details, error, success }) {
                             Annuler l'inventaire
                         </Button>
                     )}
-                    {inventaire.statut === 'terminé' && (
+                    {inventaire.status === 'terminé' && (
                         <Button 
                             variant="contained" 
                             color="secondary"
@@ -339,7 +339,7 @@ function Show({ auth, errors, inventaire, stats, details, error, success }) {
                                             </TableCell>
                                             <TableCell>{detail.notes || '-'}</TableCell>
                                             <TableCell>
-                                                {inventaire.statut === 'en_cours' && (
+                                                {inventaire.status === 'en_cours' && (
                                                     <Box className="flex gap-1">
                                                         <Tooltip title="Compter">
                                                             <IconButton 

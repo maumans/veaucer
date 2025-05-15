@@ -79,12 +79,12 @@ const Show = ({ auth, operation }) => {
     
     // Fonction pour retourner à la liste des mouvements
     const handleRetour = () => {
-        router.get(route('admin.mouvement.index', auth.user.id));
+        router.get(route('admin.stock.mouvement.index', auth.user.id));
     };
     
     // Fonction pour éditer le mouvement
     const handleEdit = () => {
-        router.get(route('admin.mouvement.edit', [auth.user.id, operation.id]));
+        router.get(route('admin.stock.mouvement.edit', [auth.user.id, operation.id]));
     };
 
     return (
@@ -95,12 +95,12 @@ const Show = ({ auth, operation }) => {
             breadcrumbs={[
                 {
                     text: 'Mouvement',
-                    href: route('admin.mouvement.index', auth.user.id),
+                    href: route('admin.stock.mouvement.index', auth.user.id),
                     active: false,
                 },
                 {
                     text: 'Détail',
-                    href: route('admin.mouvement.show', [auth.user.id, operation.id]),
+                    href: route('admin.stock.mouvement.show', [auth.user.id, operation.id]),
                     active: true,
                 },
             ]}

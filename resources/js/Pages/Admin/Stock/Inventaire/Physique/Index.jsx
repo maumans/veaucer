@@ -30,12 +30,12 @@ const Index = ({ auth, inventaires, departements, success, error }) => {
     const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
     const [confirmAction, setConfirmAction] = useState({ action: '', id: null, message: '' });
 
-    // Fonction pour formater le statut avec un Chip coloré
-    const formatStatut = (statut) => {
+    // Fonction pour formater le status avec un Chip coloré
+    const formatStatut = (status) => {
         let color = 'default';
         let icon = null;
 
-        switch (statut) {
+        switch (status) {
             case 'planifié':
                 color = 'info';
                 icon = <CheckCircle fontSize="small" />;
@@ -58,7 +58,7 @@ const Index = ({ auth, inventaires, departements, success, error }) => {
 
         return (
             <Chip 
-                label={statut.charAt(0).toUpperCase() + statut.slice(1)} 
+                label={status.charAt(0).toUpperCase() + status.slice(1)} 
                 color={color} 
                 size="small"
                 icon={icon}
@@ -116,9 +116,9 @@ const Index = ({ auth, inventaires, departements, success, error }) => {
             Cell: ({ row }) => row.original.departement ? row.original.departement.nom : 'Tous les départements',
         },
         {
-            accessorKey: 'statut',
+            accessorKey: 'status',
             header: 'Statut',
-            Cell: ({ row }) => formatStatut(row.original.statut),
+            Cell: ({ row }) => formatStatut(row.original.status),
         },
         {
             accessorKey: 'user.name',
@@ -139,7 +139,7 @@ const Index = ({ auth, inventaires, departements, success, error }) => {
                         </IconButton>
                     </Tooltip>
                     
-                    {row.original.statut === 'planifié' && (
+                    {row.original.status === 'planifié' && (
                         <>
                             <Tooltip title="Modifier">
                                 <IconButton
@@ -170,7 +170,7 @@ const Index = ({ auth, inventaires, departements, success, error }) => {
                         </>
                     )}
                     
-                    {row.original.statut === 'en_cours' && (
+                    {row.original.status === 'en_cours' && (
                         <Tooltip title="Terminer l'inventaire">
                             <IconButton
                                 color="warning"
@@ -232,7 +232,7 @@ const Index = ({ auth, inventaires, departements, success, error }) => {
             breadcrumbs={[
                 {
                     text: "Inventaire",
-                    href: route("admin.stockInventaire.index", [auth.user.id]),
+                    href: route("admin.stock.inventaire.index", [auth.user.id]),
                     active: false
                 },
                 {
@@ -248,7 +248,7 @@ const Index = ({ auth, inventaires, departements, success, error }) => {
                     <Button 
                         variant="outlined" 
                         startIcon={<ArrowBack />}
-                        onClick={() => router.get(route('admin.stockInventaire.index', auth.user.id))}
+                        onClick={() => router.get(route('admin.stock.inventaire.index', auth.user.id))}
                     >
                         Retour à la liste des inventaires
                     </Button>

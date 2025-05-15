@@ -127,12 +127,12 @@ const Dashboard = ({
 
     // Fonction pour naviguer vers la liste des mouvements
     const goToMovements = () => {
-        router.get(route('admin.mouvement.index', auth.user.id));
+        router.get(route('admin.stock.mouvement.index', auth.user.id));
     };
 
     // Fonction pour naviguer vers les détails d'un mouvement
     const viewMovementDetails = (id) => {
-        router.get(route('admin.mouvement.show', [auth.user.id, id]));
+        router.get(route('admin.stock.mouvement.show', [auth.user.id, id]));
     };
 
     dayjs.locale('fr');
@@ -145,12 +145,12 @@ const Dashboard = ({
             breadcrumbs={[
                 {
                     text: 'Mouvements',
-                    href: route('admin.mouvement.index', auth.user.id),
+                    href: route('admin.stock.mouvement.index', auth.user.id),
                     active: false,
                 },
                 {
                     text: 'Tableau de bord',
-                    href: route('admin.mouvement.dashboard', auth.user.id),
+                    href: route('admin.stock.mouvement.dashboard', auth.user.id),
                     active: true,
                 },
             ]}

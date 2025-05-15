@@ -10,6 +10,7 @@ use App\Models\InventairePhysiqueDetail;
 use App\Models\Operation;
 use App\Models\Produit;
 use App\Models\Stock;
+use App\Models\TypeOperation;
 use App\Services\StockMovementService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -74,7 +75,7 @@ class InventairePhysiqueController extends Controller
             $inventaire = InventairePhysique::create([
                 'date_debut' => $request->date_debut,
                 'date_fin' => $request->date_fin,
-                'statut' => 'planifié',
+                'status' => 'planifié',
                 'description' => $request->description,
                 'societe_id' => session('societe')['id'],
                 'departement_id' => $request->departement_id,
@@ -195,7 +196,7 @@ class InventairePhysiqueController extends Controller
         $inventaire = InventairePhysique::findOrFail($id);
 
         // Vérifier si l'inventaire peut être modifié
-        if ($inventaire->statut !== 'planifié') {
+        if ($inventaire->status !== 'planifié') {
             return back()->with('error', 'Seuls les inventaires planifiés peuvent être modifiés.');
         }
 
@@ -219,12 +220,12 @@ class InventairePhysiqueController extends Controller
         $inventaire = InventairePhysique::findOrFail($id);
 
         // Vérifier si l'inventaire peut être démarré
-        if ($inventaire->statut !== 'planifié') {
+        if ($inventaire->status !== 'planifié') {
             return back()->with('error', 'Seuls les inventaires planifiés peuvent être démarrés.');
         }
 
         $inventaire->update([
-            'statut' => 'en_cours',
+            'status' => 'en_cours',
             'date_debut' => now(),
         ]);
 
@@ -239,12 +240,12 @@ class InventairePhysiqueController extends Controller
         $inventaire = InventairePhysique::findOrFail($id);
 
         // Vérifier si l'inventaire peut être terminé
-        if ($inventaire->statut !== 'en_cours') {
+        if ($inventaire->status !== 'en_cours') {
             return back()->with('error', 'Seuls les inventaires en cours peuvent être terminés.');
         }
 
         $inventaire->update([
-            'statut' => 'terminé',
+            'status' => 'terminé',
             'date_fin' => now(),
         ]);
 
@@ -259,12 +260,12 @@ class InventairePhysiqueController extends Controller
         $inventaire = InventairePhysique::findOrFail($id);
 
         // Vérifier si l'inventaire peut être annulé
-        if ($inventaire->statut === 'terminé') {
+        if ($inventaire->status === 'terminé') {
             return back()->with('error', 'Les inventaires terminés ne peuvent pas être annulés.');
         }
 
         $inventaire->update([
-            'statut' => 'annulé',
+            'status' => 'annulé',
         ]);
 
         return back()->with('success', 'Inventaire physique annulé avec succès.');
@@ -284,7 +285,7 @@ class InventairePhysiqueController extends Controller
         $inventaire = InventairePhysique::findOrFail($inventaireId);
 
         // Vérifier si l'inventaire est en cours
-        if ($inventaire->statut !== 'en_cours') {
+        if ($inventaire->status !== 'en_cours') {
             return back()->with('error', 'Les produits ne peuvent être comptés que pour les inventaires en cours.');
         }
 
@@ -311,7 +312,7 @@ class InventairePhysiqueController extends Controller
         $inventaire = InventairePhysique::findOrFail($inventaireId);
 
         // Vérifier si l'inventaire est en cours
-        if ($inventaire->statut !== 'en_cours') {
+        if ($inventaire->status !== 'en_cours') {
             return back()->with('error', 'Les produits ne peuvent être validés que pour les inventaires en cours.');
         }
 
@@ -331,7 +332,7 @@ class InventairePhysiqueController extends Controller
         $inventaire = InventairePhysique::findOrFail($id);
 
         // Vérifier si l'inventaire est terminé
-        if ($inventaire->statut !== 'terminé') {
+        if ($inventaire->status !== 'terminé') {
             return back()->with('error', 'Les ajustements ne peuvent être générés que pour les inventaires terminés.');
         }
 
@@ -346,6 +347,8 @@ class InventairePhysiqueController extends Controller
 
             // Initialiser le service de gestion des mouvements de stock
             $stockMovementService = new StockMovementService();
+
+            $typeOperation = TypeOperation::where('nom', 'ajustement')->first();
             
             // Créer une opération principale pour l'inventaire
             $operation = Operation::create([
@@ -359,8 +362,10 @@ class InventairePhysiqueController extends Controller
                 'departement_destination_id' => $inventaire->departement_id,
                 'reference_externe' => 'INV-' . $id,
                 'type_mouvement' => 'AJUSTEMENT',
-                'inventaire_physique_id' => $id
+                'inventaire_physique_id' => $id,
+                'type_operation_id' => $typeOperation->id,
             ]);
+
 
             foreach ($details as $detail) {
                 // Créer un ajustement pour chaque détail
@@ -379,7 +384,7 @@ class InventairePhysiqueController extends Controller
                     'notes' => $detail->notes,
                 ]);
 
-                // Mettre à jour le statut du détail
+                // Mettre à jour le status du détail
                 $detail->update(['status' => 'ajusté']);
             }
 

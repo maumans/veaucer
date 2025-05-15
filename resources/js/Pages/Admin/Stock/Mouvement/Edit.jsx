@@ -66,13 +66,13 @@ const Edit = ({ auth, errors, operation, produits, departements, fournisseurs, c
         console.log('Données envoyées au serveur:', formData);
         
         // Envoyer les données au serveur via Inertia
-        put(route("admin.mouvement.update", [auth.user.id, data.id]), formData, {
+        put(route("admin.stock.mouvement.update", [auth.user.id, data.id]), formData, {
             preserveScroll: true,
             onSuccess: () => {
                 setSuccessMessage('Mouvement mis à jour avec succès');
                 // Redirection vers la page d'index après 1.5 secondes
                 setTimeout(() => {
-                    router.visit(route('admin.mouvement.index', auth.user.id));
+                    router.visit(route('admin.stock.mouvement.index', auth.user.id));
                 }, 1500);
             },
             onError: (errors) => {
@@ -173,7 +173,7 @@ const Edit = ({ auth, errors, operation, produits, departements, fournisseurs, c
     
     // Fonction pour annuler et retourner à la liste
     const handleCancel = () => {
-        router.get(route('admin.mouvement.index', auth.user.id));
+        router.get(route('admin.stock.mouvement.index', auth.user.id));
     };
 
     // Configuration des colonnes pour le tableau des produits
@@ -274,12 +274,12 @@ const Edit = ({ auth, errors, operation, produits, departements, fournisseurs, c
             breadcrumbs={[
                 {
                     text: 'Mouvement',
-                    href: route('admin.mouvement.index', auth.user.id),
+                    href: route('admin.stock.mouvement.index', auth.user.id),
                     active: false,
                 },
                 {
                     text: 'Modifier',
-                    href: route('admin.mouvement.edit', [auth.user.id, operation.id]),
+                    href: route('admin.stock.mouvement.edit', [auth.user.id, operation.id]),
                     active: true,
                 },
             ]}

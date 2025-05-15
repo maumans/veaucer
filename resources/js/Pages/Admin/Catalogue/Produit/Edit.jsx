@@ -17,7 +17,7 @@ function Create({auth,typeProduits,categories,fournisseurs,devises,uniteMesures,
         'prixAchat':produit.prixAchat,
         'prixVente':produit.prixVente,
         'stockGlobal':produit.stockGlobal,
-        'seuilMinimal':produit.seuilMinimal,
+        'stockCritique':produit.stockCritique,
         'image':produit.image,
         'typeProduit':produit.type_produit,
         'categorie':produit.categorie,
@@ -184,17 +184,17 @@ function Create({auth,typeProduits,categories,fournisseurs,devises,uniteMesures,
 
                                 <div className={"w-full"}>
                                     <TextField
-                                        value={data.seuilMinimal}
+                                        value={data.stockCritique}
                                         InputProps={{
                                             inputComponent: NumberFormatCustomUtils,
                                             inputProps:{
                                                 max:100000000000,
                                                 min:-1000000000000,
-                                                name:"seuilMinimal",
+                                                name:"stockCritique",
                                             },
                                         }}
-                                        className={"w-full"} label="Seuil minimal" name="seuilMinimal" onChange={onHandleChange}/>
-                                    <InputError message={errors.seuilMinimal}/>
+                                        className={"w-full"} label="Stock critique" name="stockCritique" onChange={onHandleChange}/>
+                                    <InputError message={errors.stockCritique}/>
                                 </div>
 
                             </div>

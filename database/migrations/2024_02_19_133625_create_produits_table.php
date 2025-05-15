@@ -19,7 +19,7 @@ return new class extends Migration
             
             
             $table->double('stockGlobal')->nullable();
-            $table->double('seuilMinimal')->nullable();
+            $table->double('stockCritique')->nullable();
             $table->double('seuilMaximal')->nullable();
             $table->string('image')->nullable();
             $table->integer('notes')->nullable();

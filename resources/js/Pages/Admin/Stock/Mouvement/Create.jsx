@@ -347,7 +347,7 @@ function Create({ auth, produits, departements, departementPrincipal, caisses, c
 
     function handleSubmit(e) {
         e.preventDefault();
-        router.post(route("admin.mouvement.store", auth.user.id), {
+        router.post(route("admin.stock.mouvement.store", auth.user.id), {
             date: data.date,
             typeOperation: data.typeOperation?.id,
             typeOperation_nom: data.typeOperation?.nom,
@@ -540,12 +540,12 @@ function Create({ auth, produits, departements, departementPrincipal, caisses, c
             breadcrumbs={[
                 {
                     text: "Mouvement",
-                    href: route("admin.mouvement.index", auth.user.id),
+                    href: route("admin.stock.mouvement.index", auth.user.id),
                     active: false
                 },
                 {
                     text: "Nouveau",
-                    href: route("admin.mouvement.create", auth.user.id),
+                    href: route("admin.stock.mouvement.create", auth.user.id),
                     active: true
                 }
             ]}
@@ -560,7 +560,7 @@ function Create({ auth, produits, departements, departementPrincipal, caisses, c
                             <Button 
                                 variant={'outlined'} 
                                 startIcon={<ArrowBack />}
-                                onClick={() => router.get(route('admin.mouvement.index', auth.user.id))}
+                                onClick={() => router.get(route('admin.stock.mouvement.index', auth.user.id))}
                             >
                                 Retour à la liste
                             </Button>

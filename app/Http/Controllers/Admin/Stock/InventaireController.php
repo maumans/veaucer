@@ -39,12 +39,129 @@ class InventaireController extends Controller
         ]);
     }
 
-    public function paginationFiltre(Request $request): \Illuminate\Http\JsonResponse
+    public function paginationFiltre(Request $request, $userId = null): \Illuminate\Http\JsonResponse
     {
-        $extraQuery = Produit::where(function($query) use ($request) {
-            // Filtre par société
-            $query->where("societe_id", session('societe')['id'])->orWhere("societe_id", null);
-        })->where(function($query) use ($request) {
+        try {
+            // Construction de la requête de base
+            $baseQuery = Produit::where(function($query) use ($request) {
+                // Filtre par société
+                $query->where("societe_id", session('societe')['id'])->orWhere("societe_id", null);
+            });
+            
+            // Cloner la requête pour le comptage total (avant d'appliquer skip/take)
+            $countQuery = clone $baseQuery;
+            
+            // Appliquer les filtres sur la requête principale
+            $this->applyFilters($baseQuery, $request);
+            
+            // Variable pour stocker l'ID du département sélectionné
+            $departement_id = null;
+            
+            // Filtre par département si spécifié
+            if ($request->has('departement_id') && !empty($request->departement_id)) {
+                $departement_id = $request->departement_id;
+                
+                // Vérifier si la relation stocks existe
+                if (method_exists('App\\Models\\Produit', 'stocks')) {
+                    // Vérification si le produit a des stocks dans ce département
+                    $baseQuery->whereHas('stocks', function($q) use ($departement_id) {
+                        $q->where('departement_id', $departement_id);
+                    });
+                    
+                    // Appliquer le même filtre à la requête de comptage
+                    $countQuery->whereHas('stocks', function($q) use ($departement_id) {
+                        $q->where('departement_id', $departement_id);
+                    });
+                }
+            }
+            
+            // Appliquer les mêmes filtres à la requête de comptage
+            $this->applyFilters($countQuery, $request);
+            
+            // Chargement des relations
+            $baseQuery->with(['typeProduitAchat', 'categorie']);
+            
+            // Ajouter la relation fournisseurPrincipal seulement si elle existe
+            if (method_exists('App\\Models\\Produit', 'fournisseurPrincipal')) {
+                $baseQuery->with('fournisseurPrincipal');
+            }
+            
+            // Gestion du tri
+            if (!empty($request->sorting)) {
+                foreach ($request->sorting as $sort) {
+                    $direction = ($sort['desc']) ? 'desc' : 'asc';
+                    $baseQuery->orderBy($sort['id'], $direction);
+                }
+            } else {
+                // Tri par défaut si aucun tri n'est spécifié
+                $baseQuery->orderBy('nom', 'asc');
+            }
+            
+            // Pagination
+            $baseQuery->skip($request->start)->take($request->size);
+            
+            // Récupération des données
+            $produits = $baseQuery->get();
+            
+            // Comptage total pour la pagination (avant skip/take)
+            $rowCount = $countQuery->count();
+            
+            // Si un département est sélectionné, remplacer le stockGlobal par le stock du département
+            if ($departement_id) {
+                foreach ($produits as $produit) {
+                    try {
+                        // Récupérer le stock spécifique au département
+                        $stockDepartement = $produit->stocks()
+                            ->where('departement_id', $departement_id)
+                            ->value('quantite');
+                        
+                        // Remplacer temporairement le stockGlobal par le stock du département
+                        $produit->stockOriginal = $produit->stockGlobal;
+                        $produit->stockGlobal = $stockDepartement ?? 0;
+                        
+                        // Recalculer la valeur du stock pour ce département
+                        $produit->valeurStock = ($stockDepartement ?? 0) * ($produit->prixAchat ?? 0);
+                    } catch (\Exception $e) {
+                        // En cas d'erreur, utiliser des valeurs par défaut
+                        $produit->stockOriginal = $produit->stockGlobal;
+                        $produit->stockGlobal = 0;
+                        $produit->valeurStock = 0;
+                    }
+                }
+            } else {
+                // Calcul normal de la valeur du stock pour chaque produit
+                foreach ($produits as $produit) {
+                    $produit->valeurStock = ($produit->stockGlobal ?? 0) * ($produit->prixAchat ?? 0);
+                }
+            }
+            
+            return response()->json([
+                'data' => $produits,
+                'rowCount' => $rowCount,
+                'departement_id' => $departement_id,
+                'success' => true
+            ]);
+        } catch (\Exception $e) {
+            // Gestion des erreurs
+            return response()->json([
+                'data' => [],
+                'rowCount' => 0,
+                'success' => false,
+                'error' => 'Erreur lors du chargement des données: ' . $e->getMessage() . ' dans ' . $e->getFile() . ' à la ligne ' . $e->getLine()
+            ], 500);
+        }
+    }
+    
+    /**
+     * Applique les filtres à une requête
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param Request $request
+     * @return void
+     */
+    private function applyFilters($query, $request): void
+    {
+        $query->where(function($query) use ($request) {
             // Traitement des filtres de colonnes
             if (!empty($request->filters)) {
                 foreach ($request->filters as $filter) {
@@ -74,27 +191,32 @@ class InventaireController extends Controller
                             });
                         }
                     }
-                    else if($filter['id'] == 'fournisseur') {
+                    else if($filter['id'] == 'fournisseur' && method_exists('App\\Models\\Produit', 'fournisseurPrincipal')) {
                         $query->whereHas('fournisseurPrincipal', function($q) use ($filter) {
                             $q->where('nom', 'like', "%{$filter['value']}%");
                         });
                     }
                     else if($filter['id'] == 'seuil_minimal') {
                         // Filtre spécial pour les produits sous le seuil minimal
-                        $query->whereRaw('stockGlobal < seuilMinimal');
+                        $query->whereRaw('stockGlobal < stockCritique');
                     }
                     else if($filter['id'] == 'stockGlobal' && $filter['value'] == '0') {
                         // Filtre pour les produits en rupture de stock
                         $query->where('stockGlobal', '=', 0);
                     }
+                    else if($filter['id'] == 'stockGlobal' && is_numeric($filter['value'])) {
+                        // Filtre par valeur de stock
+                        $query->where('stockGlobal', '=', $filter['value']);
+                    }
                     else {
+                        // Filtre standard pour les autres colonnes
                         $query->where($filter['id'], 'like', "%{$filter['value']}%");
                     }
                 }
             }
 
-            // Filtre global (recherche)
-            if($request->globalFilter) {
+            // Traitement du filtre global
+            if (!empty($request->globalFilter)) {
                 $searchTerm = "%{$request->globalFilter}%";
                 $query->where(function($q) use ($request, $searchTerm) {
                     $q->where('nom', 'like', $searchTerm)
@@ -111,7 +233,7 @@ class InventaireController extends Controller
                       });
                     
                     // Ajouter la recherche par fournisseur seulement si la relation existe
-                    if (method_exists('App\Models\Produit', 'fournisseurPrincipal')) {
+                    if (method_exists('App\\Models\\Produit', 'fournisseurPrincipal')) {
                         $q->orWhereHas('fournisseurPrincipal', function($subq) use ($searchTerm) {
                             $subq->where('nom', 'like', $searchTerm);
                         });
@@ -119,82 +241,5 @@ class InventaireController extends Controller
                 });
             }
         });
-        
-        // Variable pour stocker l'ID du département sélectionné
-        $departement_id = null;
-        
-        // Filtre par département si spécifié
-        if ($request->has('departement_id') && !empty($request->departement_id)) {
-            $departement_id = $request->departement_id;
-            
-            // Vérification si le produit a des stocks dans ce département
-            $extraQuery->whereHas('stocks', function($q) use ($departement_id) {
-                $q->where('departement_id', $departement_id);
-            });
-        }
-        
-        // Chargement des relations
-        $extraQuery = $extraQuery->with(['typeProduitAchat', 'categorie', 'fournisseurPrincipal'])
-                                ->skip($request->start)
-                                ->take($request->size);
-
-        // Gestion du tri
-        if (!empty($request->sorting)) {
-            foreach ($request->sorting as $sort) {
-                if ($sort['desc']) {
-                    $extraQuery->orderBy($sort['id'], 'desc');
-                } else {
-                    $extraQuery->orderBy($sort['id'], 'asc');
-                }
-            }
-        } else {
-            // Tri par défaut si aucun tri n'est spécifié
-            $extraQuery->orderBy('nom', 'asc');
-        }
-
-        try {
-            // Récupération des données
-            $produits = $extraQuery->get();
-            
-            // Si un département est sélectionné, remplacer le stockGlobal par le stock du département
-            if ($departement_id) {
-                foreach ($produits as $produit) {
-                    // Récupérer le stock spécifique au département
-                    $stockDepartement = $produit->stocks()
-                        ->where('departement_id', $departement_id)
-                        ->value('quantite') ?? 0;
-                    
-                    // Remplacer temporairement le stockGlobal par le stock du département
-                    $produit->stockOriginal = $produit->stockGlobal;
-                    $produit->stockGlobal = $stockDepartement;
-                    
-                    // Recalculer la valeur du stock pour ce département
-                    $produit->valeurStock = $stockDepartement * ($produit->prixAchat ?? 0);
-                }
-            } else {
-                // Calcul normal de la valeur du stock pour chaque produit
-                foreach ($produits as $produit) {
-                    $produit->valeurStock = ($produit->stockGlobal ?? 0) * ($produit->prixAchat ?? 0);
-                }
-            }
-            
-            // Comptage total pour la pagination
-            $rowCount = $extraQuery->paginate($request->size)->total();
-            
-            return response()->json([
-                'data' => $produits,
-                'rowCount' => $rowCount,
-                'departement_id' => $departement_id,
-                'success' => true
-            ]);
-        } catch (\Exception $e) {
-            // Gestion des erreurs
-            return response()->json([
-                'data' => [],
-                'rowCount' => 0,
-                'success' => false,
-                'error' => $e->getMessage()
-            ], 500);
-        }
     }
 }

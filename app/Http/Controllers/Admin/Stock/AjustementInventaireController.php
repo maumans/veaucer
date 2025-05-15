@@ -152,7 +152,7 @@ class AjustementInventaireController extends Controller
                 throw new \Exception('Erreur lors de la création du mouvement de stock');
             }
 
-            // Mettre à jour le statut de l'ajustement
+            // Mettre à jour le status de l'ajustement
             $ajustement->update([
                 'status' => 'validé',
             ]);

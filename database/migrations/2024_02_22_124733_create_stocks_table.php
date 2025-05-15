@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('stocks', function (Blueprint $table) {
             $table->id();
             $table->double("quantite")->nullable();
-            $table->double('seuilMinimal')->nullable();
+            $table->double('stockCritique')->nullable();
             $table->double('seuilMaximal')->nullable();
             $table->string('slug')->nullable();
             $table->enum("type",['PRINCIPAL','SECONDAIRE'])->nullable();

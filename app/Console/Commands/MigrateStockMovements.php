@@ -34,22 +34,22 @@ class MigrateStockMovements extends Command
 
         // Récupérer ou créer le type d'opération pour les ajustements
         $typeOperation = $this->getOrCreateOperationType('Ajustement d\'inventaire', 'Ajustement du stock suite à un inventaire');
-        
+
         // Migrer les ajustements d'inventaire
         $this->migrateAdjustments($typeOperation);
-        
+
         $this->info('Migration des mouvements de stock terminée avec succès.');
-        
+
         return Command::SUCCESS;
     }
-    
+
     /**
      * Migre les ajustements d'inventaire vers le nouveau système
      */
     private function migrateAdjustments($typeOperation)
     {
         $this->info('Migration des ajustements d\'inventaire...');
-        
+
         // Récupérer tous les ajustements validés qui n'ont pas encore été migrés
         $ajustements = AjustementInventaire::where('status', 'validé')
             ->whereNotExists(function ($query) {
@@ -58,12 +58,12 @@ class MigrateStockMovements extends Command
                     ->whereColumn('operations.ajustement_inventaire_id', 'ajustements_inventaire.id');
             })
             ->get();
-            
+
         $this->info('Nombre d\'ajustements à migrer : ' . $ajustements->count());
-        
+
         $bar = $this->output->createProgressBar($ajustements->count());
         $bar->start();
-        
+
         foreach ($ajustements as $ajustement) {
             try {
                 // Créer une opération pour cet ajustement
@@ -90,30 +90,30 @@ class MigrateStockMovements extends Command
                 Log::error('Erreur lors de la migration de l\'ajustement #' . $ajustement->id . ': ' . $e->getMessage());
                 $this->error('Erreur lors de la migration de l\'ajustement #' . $ajustement->id . ': ' . $e->getMessage());
             }
-            
+
             $bar->advance();
         }
-        
+
         $bar->finish();
         $this->newLine();
     }
-    
+
     /**
      * Récupère ou crée un type d'opération
      */
     private function getOrCreateOperationType(string $nom, string $description)
     {
         $typeOperation = TypeOperation::where('nom', 'LIKE', '%' . $nom . '%')->first();
-        
+
         if (!$typeOperation) {
             $this->info('Création du type d\'opération : ' . $nom);
-            
+
             $typeOperation = TypeOperation::create([
                 'nom' => $nom,
                 'status' => true
             ]);
         }
-        
+
         return $typeOperation;
     }
 }

@@ -271,7 +271,7 @@ class MouvementController extends Controller
 
             DB::commit();
 
-            return redirect()->route('admin.mouvement.index', Auth::id())->with("success", "Mouvement effectué avec succés");
+            return redirect()->route('admin.stock.mouvement.index', Auth::id())->with("success", "Mouvement effectué avec succés");
         } catch (\Exception $e) {
             DB::rollBack();
             dd($e->getMessage());
@@ -497,7 +497,7 @@ class MouvementController extends Controller
                 'total' => $totalProduits + $totalDepense,
                 'produits' => $produits,
                 'depenses' => $depenses,
-                'statut' => $operation->status,
+                'status' => $operation->status,
                 'commentaire' => $operation->commentaire,
             ]
         ]);
@@ -602,7 +602,7 @@ class MouvementController extends Controller
                 'total' => $totalProduits + $totalDepense,
                 'produits' => $produits_operation,
                 'depenses' => $depenses_operation,
-                'statut' => $operation->status,
+                'status' => $operation->status,
                 'commentaire' => $operation->commentaire,
             ],
             'produits' => $produits,
@@ -833,7 +833,7 @@ class MouvementController extends Controller
             }
 
             DB::commit();
-            return redirect()->route('admin.mouvement.index', Auth::id())
+            return redirect()->route('admin.stock.mouvement.index', Auth::id())
                 ->with('success', 'Mouvement mis à jour avec succès.');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -926,7 +926,7 @@ class MouvementController extends Controller
 
             DB::commit();
 
-            return redirect()->route('admin.mouvement.index', $userId)
+            return redirect()->route('admin.stock.mouvement.index', $userId)
                 ->with('success', 'Mouvement supprimé avec succès');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -1061,7 +1061,7 @@ class MouvementController extends Controller
 
             DB::commit();
 
-            return redirect()->route('admin.mouvement.index', $userId)
+            return redirect()->route('admin.stock.mouvement.index', $userId)
                 ->with('success', 'Mouvement annulé avec succès');
         } catch (\Exception $e) {
             DB::rollBack();

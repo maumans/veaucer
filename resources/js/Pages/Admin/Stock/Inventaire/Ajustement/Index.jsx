@@ -269,7 +269,7 @@ const Index = ({ auth, ajustements, success, error }) => {
             breadcrumbs={[
                 {
                     text: "Inventaire",
-                    href: route("admin.stockInventaire.index", [auth.user.id]),
+                    href: route("admin.stock.inventaire.index", [auth.user.id]),
                     active: false
                 },
                 {
@@ -285,7 +285,7 @@ const Index = ({ auth, ajustements, success, error }) => {
                     <Button 
                         variant="outlined" 
                         startIcon={<ArrowBack />}
-                        onClick={() => router.get(route('admin.stockInventaire.index', auth.user.id))}
+                        onClick={() => router.get(route('admin.stock.inventaire.index', auth.user.id))}
                     >
                         Retour à la liste des inventaires
                     </Button>

@@ -1,0 +1,1 @@
+import{j as r}from"./app-4edf48e5.js";import{c as o}from"./createSvgIcon-5bc31cb8.js";const p=o(r.jsx("path",{d:"m16 6 2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"}),"TrendingUp");export{p as T};

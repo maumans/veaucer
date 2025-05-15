@@ -22,7 +22,7 @@ class StockMovementService
     {
         try {
             // Récupérer ou créer le type d'opération pour les ajustements
-            $typeOperation = $this->getOrCreateOperationType('Ajustement d\'inventaire', 'Ajustement du stock suite à un inventaire');
+            $typeOperation = $this->getOrCreateOperationType('ajustement', 'Ajustement du stock suite à un inventaire');
             
             // Créer l'opération
             $operation = $this->createOperation([
@@ -208,6 +208,7 @@ class StockMovementService
         if (!$typeOperation) {
             $typeOperation = TypeOperation::create([
                 'nom' => $nom,
+                'libelle' => ucfirst($nom),
                 'description' => $description,
                 'status' => true
             ]);

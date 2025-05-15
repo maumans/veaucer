@@ -1,0 +1,1 @@
+import{j as o}from"./app-4edf48e5.js";import{c as r}from"./createSvgIcon-5bc31cb8.js";const p=r(o.jsx("path",{d:"M6.99 11 3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"}),"SwapHoriz");export{p as S};

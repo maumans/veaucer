@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->dateTime('date_debut');
             $table->dateTime('date_fin')->nullable();
-            $table->enum('statut', ['planifié', 'en_cours', 'terminé', 'annulé'])->default('planifié');
+            $table->enum('status', ['planifié', 'en_cours', 'terminé', 'annulé'])->default('planifié');
             $table->text('description')->nullable();
             $table->foreignId('societe_id')->constrained('societes');
             $table->foreignId('departement_id')->nullable()->constrained('departements');

@@ -143,15 +143,15 @@ Le module Stock est organisé comme suit :
   - [x] Sélection d'un département spécifique ou de tous les départements
   - [x] Planification de la date de début
 - [x] Gestion du cycle de vie d'un inventaire physique
-  - [x] Planification (statut "planifié")
-  - [x] Démarrage (statut "en_cours")
+  - [x] Planification (status "planifié")
+  - [x] Démarrage (status "en_cours")
   - [x] Comptage des produits
   - [x] Validation des comptages
-  - [x] Finalisation (statut "terminé")
-  - [x] Annulation (statut "annulé")
+  - [x] Finalisation (status "terminé")
+  - [x] Annulation (status "annulé")
 - [x] Affichage de la liste des inventaires physiques
-  - [x] Filtrage par statut, département, date
-  - [x] Actions selon le statut (démarrer, terminer, annuler)
+  - [x] Filtrage par status, département, date
+  - [x] Actions selon le status (démarrer, terminer, annuler)
 - [x] Comptage des produits
   - [x] Saisie des quantités comptées
   - [x] Comparaison avec les quantités théoriques
@@ -166,12 +166,12 @@ Le module Stock est organisé comme suit :
   - [x] Calcul automatique de la différence
   - [x] Saisie du motif d'ajustement
 - [x] Gestion du cycle de vie d'un ajustement
-  - [x] Création (statut "en_attente")
-  - [x] Validation (statut "validé")
-  - [x] Rejet (statut "rejeté")
+  - [x] Création (status "en_attente")
+  - [x] Validation (status "validé")
+  - [x] Rejet (status "rejeté")
 - [x] Affichage de la liste des ajustements
-  - [x] Filtrage par statut, produit, département
-  - [x] Actions selon le statut (valider, rejeter)
+  - [x] Filtrage par status, produit, département
+  - [x] Actions selon le status (valider, rejeter)
 - [x] Mise à jour automatique des stocks lors de la validation d'un ajustement
 
 ## État d'Avancement
@@ -266,7 +266,7 @@ Le module Stock est organisé comme suit :
 - `id` - Identifiant unique
 - `date_debut` - Date de début de l'inventaire
 - `date_fin` - Date de fin de l'inventaire (null si non terminé)
-- `statut` - Statut de l'inventaire (planifié, en_cours, terminé, annulé)
+- `status` - Statut de l'inventaire (planifié, en_cours, terminé, annulé)
 - `departement_id` - Référence au département concerné (null si tous les départements)
 - `notes` - Notes ou commentaires sur l'inventaire
 - `user_id` - Référence à l'utilisateur qui a créé l'inventaire
@@ -280,7 +280,7 @@ Le module Stock est organisé comme suit :
 - `produit_id` - Référence au produit
 - `quantite_theorique` - Quantité théorique en stock
 - `quantite_comptee` - Quantité comptée lors de l'inventaire (null si non compté)
-- `statut` - Statut du détail (à_compter, compté, validé, écart)
+- `status` - Statut du détail (à_compter, compté, validé, écart)
 - `notes` - Notes ou commentaires sur le comptage
 - `societe_id` - Référence à la société
 - `created_at` - Date de création
@@ -294,7 +294,7 @@ Le module Stock est organisé comme suit :
 - `difference` - Différence entre les quantités
 - `motif` - Motif de l'ajustement
 - `date_ajustement` - Date de l'ajustement
-- `statut` - Statut de l'ajustement (en_attente, validé, rejeté)
+- `status` - Statut de l'ajustement (en_attente, validé, rejeté)
 - `departement_id` - Référence au département concerné
 - `inventaire_physique_id` - Référence à l'inventaire physique source (null si ajustement manuel)
 - `user_id` - Référence à l'utilisateur qui a créé l'ajustement
@@ -308,7 +308,7 @@ Le module Stock est organisé comme suit :
 #### Table `stocks`
 - `id` - Identifiant unique
 - `quantite` - Quantité en stock
-- `seuilMinimal` - Seuil minimal de stock
+- `stockCritique` - Stock critique de stock
 - `seuilMaximal` - Seuil maximal de stock
 - `slug` - Slug pour l'URL
 - `type` - Type de stock (PRINCIPAL, SECONDAIRE)
@@ -326,7 +326,7 @@ Le module Stock est organisé comme suit :
 - `nom` - Nom du produit
 - `description` - Description du produit
 - `stockGlobal` - Stock global
-- `seuilMinimal` - Seuil minimal de stock
+- `stockCritique` - Stock critique de stock
 - `seuilMaximal` - Seuil maximal de stock
 - `image` - Image du produit
 - `notes` - Notes sur le produit
@@ -378,25 +378,25 @@ Le module Stock est organisé comme suit :
 ### Logique Métier
 
 #### Processus d'Inventaire Physique
-1. Création d'un inventaire physique avec statut "planifié"
-2. Démarrage de l'inventaire, passage au statut "en_cours"
+1. Création d'un inventaire physique avec status "planifié"
+2. Démarrage de l'inventaire, passage au status "en_cours"
 3. Pour chaque produit:
    - Affichage de la quantité théorique en stock
    - Saisie de la quantité comptée physiquement
    - Calcul de l'écart entre quantité théorique et quantité comptée
    - Validation du comptage
-4. Finalisation de l'inventaire, passage au statut "terminé"
+4. Finalisation de l'inventaire, passage au status "terminé"
 5. Génération des ajustements d'inventaire pour les produits présentant des écarts
 
 #### Processus d'Ajustement d'Inventaire
 1. Création d'un ajustement (manuel ou automatique depuis un inventaire physique)
-2. Enregistrement avec statut "en_attente"
+2. Enregistrement avec status "en_attente"
 3. Validation de l'ajustement:
-   - Passage au statut "validé"
+   - Passage au status "validé"
    - Mise à jour de la quantité en stock du produit
    - Création d'une entrée dans la table des stocks pour tracer l'ajustement
 4. Ou rejet de l'ajustement:
-   - Passage au statut "rejeté"
+   - Passage au status "rejeté"
    - Enregistrement du motif de rejet
 
 ### Logique Métier (Processus existants)

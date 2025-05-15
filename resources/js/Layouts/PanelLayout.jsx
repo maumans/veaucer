@@ -153,12 +153,12 @@ export default function PanelLayout(props) {
                                 },
                                 {
                                     sousActive:"mouvement",
-                                    route:"admin.mouvement.index",
+                                    route:"admin.stock.mouvement.index",
                                     text:'Mouvements'
                                 },
                                  {
                                      sousActive:"inventaire",
-                                     route:"admin.stockInventaire.index",
+                                     route:"admin.stock.inventaire.index",
                                      text:'Inventaires'
                                  },
                              ],

@@ -16,7 +16,7 @@ function Create({ auth, typeProduits, typeProduitAchat, typeProduitVente, catego
         'id': produit.id,
         'nom': produit.nom,
         'stockGlobal': produit.stockGlobal,
-        'seuilMinimal': produit.seuilMinimal,
+        'stockCritique': produit.stockCritique,
         //'image': produit.image,
         'typeProduitAchat': produit.type_produit_achat,
         'prixAchat': produit.prixAchat,
@@ -281,14 +281,14 @@ function Create({ auth, typeProduits, typeProduitAchat, typeProduitVente, catego
                                         InputProps={{
                                             inputComponent: NumberFormatCustomUtils,
                                             inputProps: {
-                                                value: data.seuilMinimal,
+                                                value: data.stockCritique,
                                                 max: 100000000000,
                                                 min: -1000000000000,
-                                                name: "seuilMinimal",
+                                                name: "stockCritique",
                                             },
                                         }}
-                                        className={"w-full"} label="Seuil minimal" name="seuilMinimal" onChange={onHandleChange} size="small" />
-                                    <InputError message={errors.seuilMinimal} />
+                                        className={"w-full"} label="Stock critique" name="stockCritique" onChange={onHandleChange} size="small" />
+                                    <InputError message={errors.stockCritique} />
                                 </div>
 
                             </div>

@@ -15,7 +15,7 @@ class InventairePhysique extends Model
     protected $fillable = [
         'date_debut',
         'date_fin',
-        'statut', // planifié, en_cours, terminé, annulé
+        'status', // planifié, en_cours, terminé, annulé
         'description',
         'societe_id',
         'departement_id',

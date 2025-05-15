@@ -23,7 +23,7 @@ return new class extends Migration
             $table->integer('capacite_max')->nullable();
             $table->decimal('prix_standard', 15, 2)->default(0);
             $table->decimal('prix_vip', 15, 2)->nullable();
-            $table->string('statut')->default('planifie'); // planifie, en_cours, termine, annule
+            $table->string('status')->default('planifie'); // planifie, en_cours, termine, annule
             $table->json('configuration')->nullable(); // Pour stocker des configurations spécifiques à l'événement
             $table->boolean('actif')->default(true);
             $table->timestamps();

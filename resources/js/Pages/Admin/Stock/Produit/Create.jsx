@@ -19,7 +19,7 @@ function Create({ auth, typeProduits, typeProduitAchat, typeProduitVente, catego
         'prixAchat': '',
         'prixVente': '',
         'stockGlobal': '',
-        'seuilMinimal': '',
+        'stockCritique': '',
         //'image':'',
         'typeProduitAchat': typeProduitAchat,
         "quantiteAchat": '',
@@ -279,11 +279,11 @@ function Create({ auth, typeProduits, typeProduitAchat, typeProduitVente, catego
                                             inputProps: {
                                                 max: 100000000000,
                                                 min: -1000000000000,
-                                                name: "seuilMinimal",
+                                                name: "stockCritique",
                                             },
                                         }}
-                                        className={"w-full"} label="Seuil minimal" name="seuilMinimal" onChange={onHandleChange} size="small" />
-                                    <InputError message={errors.seuilMinimal} />
+                                        className={"w-full"} label="Stock critique" name="stockCritique" onChange={onHandleChange} size="small" />
+                                    <InputError message={errors.stockCritique} />
                                 </div>
 
                             </div>

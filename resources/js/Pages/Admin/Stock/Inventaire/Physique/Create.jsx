@@ -42,7 +42,7 @@ const Create = ({ auth, departements, success, error }) => {
             breadcrumbs={[
                 {
                     text: "Inventaire",
-                    href: route("admin.stockInventaire.index", [auth.user.id]),
+                    href: route("admin.stock.inventaire.index", [auth.user.id]),
                     active: false
                 },
                 {

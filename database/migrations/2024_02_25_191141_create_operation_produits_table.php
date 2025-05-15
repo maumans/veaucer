@@ -15,6 +15,11 @@ return new class extends Migration
             $table->id();
             
             $table->foreignId('type_produit_achat_id')->nullable()->constrained('type_produits')->cascadeOnDelete();
+            
+            $table->integer('quantite')->nullable();
+            $table->double('prix_unitaire')->nullable();
+
+
             $table->integer('quantiteAchat')->nullable();
             $table->double('prixAchat')->nullable();
 
