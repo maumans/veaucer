@@ -320,6 +320,9 @@ class MouvementController extends Controller
                 $stock->quantite += $operationProduit['quantiteAchat'];
                 $stock->save();
 
+                $stock->produit->stockGlobal += $operationProduit['quantiteAchat'];
+                $stock->produit->save();
+
                 if ($caisse) {
                     $caisse->solde -= $operationProduit['prixAchat'] * $operationProduit['quantiteAchat'];
                     $caisse->save();
@@ -374,6 +377,9 @@ class MouvementController extends Controller
                 }
                 $stock->quantite -= $operationProduit['quantiteAchat'];
                 $stock->save();
+
+                $stock->produit->stockGlobal -= $operationProduit['quantiteAchat'];
+                $stock->produit->save();
             }
         }
         $operation->motif_id = $motifSortie;
@@ -420,6 +426,12 @@ class MouvementController extends Controller
 
                 $stockDestination->quantite += $operationProduit['quantiteAchat'];
                 $stockDestination->save();
+
+                $stockSource->produit->stockGlobal -= $operationProduit['quantiteAchat'];
+                $stockSource->produit->save();
+
+                $stockDestination->produit->stockGlobal += $operationProduit['quantiteAchat'];
+                $stockDestination->produit->save();
             }
         }
         $operation->motif_id = $motifTransfert;

@@ -555,14 +555,14 @@ function Create({ auth, produits, departements, departementPrincipal, caisses, c
                     <div className="p-4 bg-white rounded mb-4">
                         <div className="flex justify-between items-center">
                             <div className="bg-black w-fit p-2 rounded text-xl font-bold text-white">
-                                <h2>Nouveau mouvement de stock</h2>
+                                <h2>Nouveau mouvement</h2>
                             </div>
                             <Button 
                                 variant={'outlined'} 
                                 startIcon={<ArrowBack />}
                                 onClick={() => router.get(route('admin.stock.mouvement.index', auth.user.id))}
                             >
-                                Retour à la liste
+                                Retour
                             </Button>
                         </div>
                     </div>

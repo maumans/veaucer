@@ -113,7 +113,7 @@ export default function Show({ auth, caisse }) {
                                 Solde actuel
                             </Typography>
                             <Typography variant="body1" className="mt-1">
-                                {caisse.solde} €
+                                {caisse.solde} GNF
                             </Typography>
                         </Grid>
 

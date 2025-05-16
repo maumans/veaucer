@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import PanelLayout from "@/Layouts/PanelLayout.jsx";
 import ReferentielLayout from "@/Layouts/ReferentielLayout.jsx";
 import TextField from '@mui/material/TextField';
@@ -25,20 +25,20 @@ import Chip from '@mui/material/Chip';
 
 import { MaterialReactTable, useMaterialReactTable } from 'material-react-table'
 import { MRT_Localization_FR } from 'material-react-table/locales/fr';
-import {router, useForm} from "@inertiajs/react";
-import {Alert, AlertTitle, Autocomplete, Snackbar} from "@mui/material";
-import {Add, AddCircle, AddOutlined, ArrowBack, Check, Close, Delete, Edit, Visibility, FileUpload, FileDownload, Warning, ErrorOutline, TrendingUp} from "@mui/icons-material";
+import { router, useForm } from "@inertiajs/react";
+import { Alert, AlertTitle, Autocomplete, Snackbar } from "@mui/material";
+import { Add, AddCircle, AddOutlined, ArrowBack, Check, Close, Delete, Edit, Visibility, FileUpload, FileDownload, Warning, ErrorOutline, TrendingUp, Dashboard } from "@mui/icons-material";
 import InputError from "@/Components/InputError.jsx";
 import { formatNumber } from 'chart.js/helpers';
 import { useMemo } from 'react';
 
-function Index({auth,errors,produits,typeProduits,categories,departements,error,success,filters,stats}) {
+function Index({ auth, errors, produits, typeProduits, categories, departements, error, success, filters, stats }) {
     // État pour la pagination et le filtrage côté client
     const [pagination, setPagination] = useState({
         pageIndex: produits.current_page - 1,
         pageSize: produits.per_page,
     });
-    
+
     // État pour les filtres
     const [categorieFilter, setCategorieFilter] = useState(filters?.categorie_id || '');
     const [typeProduitFilter, setTypeProduitFilter] = useState(filters?.type_produit_id || '');
@@ -48,9 +48,9 @@ function Index({auth,errors,produits,typeProduits,categories,departements,error,
     // Utiliser directement les données fournies par le contrôleur
     const handlePaginationChange = (updatedPagination) => {
         setPagination(updatedPagination);
-        
+
         // Naviguer vers la page demandée en utilisant Inertia
-        router.get(route('admin.stock.produit.index', {userId: auth.user.id}), {
+        router.get(route('admin.stock.produit.index', { userId: auth.user.id }), {
             page: updatedPagination.pageIndex + 1,
             per_page: updatedPagination.pageSize,
         }, {
@@ -59,10 +59,10 @@ function Index({auth,errors,produits,typeProduits,categories,departements,error,
             only: ['produits'],
         });
     };
-    
+
     // Fonction pour gérer le filtrage global
     const handleGlobalFilterChange = (value) => {
-        router.get(route('admin.stock.produit.index', {userId: auth.user.id}), {
+        router.get(route('admin.stock.produit.index', { userId: auth.user.id }), {
             search: value,
             page: 1, // Réinitialiser à la première page lors d'une recherche
             categorie_id: categorieFilter,
@@ -75,10 +75,10 @@ function Index({auth,errors,produits,typeProduits,categories,departements,error,
             only: ['produits'],
         });
     };
-    
+
     // Fonction pour gérer les changements de filtres
     const handleFilterChange = (filterType, value) => {
-        switch(filterType) {
+        switch (filterType) {
             case 'categorie':
                 setCategorieFilter(value);
                 break;
@@ -94,9 +94,9 @@ function Index({auth,errors,produits,typeProduits,categories,departements,error,
             default:
                 break;
         }
-        
+
         // Appliquer les filtres
-        router.get(route('admin.stock.produit.index', {userId: auth.user.id}), {
+        router.get(route('admin.stock.produit.index', { userId: auth.user.id }), {
             search: filters?.search || '',
             page: 1, // Réinitialiser à la première page lors d'un changement de filtre
             categorie_id: filterType === 'categorie' ? value : categorieFilter,
@@ -109,11 +109,11 @@ function Index({auth,errors,produits,typeProduits,categories,departements,error,
             only: ['produits', 'stats'],
         });
     };
-    
+
     // Fonction pour gérer le tri
     const handleSortingChange = (updatedSorting) => {
         if (updatedSorting.length > 0) {
-            router.get(route('admin.stock.produit.index', {userId: auth.user.id}), {
+            router.get(route('admin.stock.produit.index', { userId: auth.user.id }), {
                 sort_field: updatedSorting[0].id,
                 sort_direction: updatedSorting[0].desc ? 'desc' : 'asc',
                 page: pagination.pageIndex + 1,
@@ -128,13 +128,13 @@ function Index({auth,errors,produits,typeProduits,categories,departements,error,
             });
         }
     }
-    
+
     // Fonction pour formater les valeurs monétaires
     const formatMoney = (amount) => {
         return new Intl.NumberFormat('fr-FR', {
             style: 'currency',
-            currency: 'EUR',
-            minimumFractionDigits: 2
+            currency: 'GNF',
+            minimumFractionDigits: 0
         }).format(amount);
     }
 
@@ -142,12 +142,12 @@ function Index({auth,errors,produits,typeProduits,categories,departements,error,
     //PAGINATION
 
 
-    const {data,setData,post, put, reset} = useForm(
+    const { data, setData, post, put, reset } = useForm(
         {
-            'id':'',
-            'nom':'',
-            'typeProduit':null,
-            'categorie':null,
+            'id': '',
+            'nom': '',
+            'typeProduit': null,
+            'categorie': null,
         }
     )
 
@@ -157,16 +157,16 @@ function Index({auth,errors,produits,typeProduits,categories,departements,error,
     const [openDelete, setOpenDelete] = useState(false);
 
     const handleClickOpen = () => {
-        router.get(route("admin.stock.produit.create", {userId: auth.user.id}), {onSuccess:()=>reset()})
+        router.get(route("admin.stock.produit.create", { userId: auth.user.id }), { onSuccess: () => reset() })
     };
-    
+
     const handleFileUpload = (event) => {
         const file = event.target.files[0];
         if (file) {
             const formData = new FormData();
             formData.append('file', file);
-            
-            router.post(route('admin.stock.produit.import-csv', {userId: auth.user.id}), formData, {
+
+            router.post(route('admin.stock.produit.import-csv', { userId: auth.user.id }), formData, {
                 onSuccess: () => {
                     // Réinitialiser l'input file
                     event.target.value = null;
@@ -196,47 +196,47 @@ function Index({auth,errors,produits,typeProduits,categories,departements,error,
     const handleChange = (e) => {
         e.target.type === 'checkbox'
             ?
-            setData(e.target.name,e.target.checked)
+            setData(e.target.name, e.target.checked)
             :
-            setData(e.target.name,e.target.value);
+            setData(e.target.name, e.target.value);
     };
 
     const handleSubmit = () => {
-        post(route('admin.produit.store'),{
-            onSuccess:()=> {
+        post(route('admin.produit.store'), {
+            onSuccess: () => {
                 reset()
                 setOpen(false);
             },
         })
     };
 
-    const handleEdit = (  el ) => {
-        router.get(route("admin.produit.edit",[auth.user.id,el.id]),{preserveScroll:true})
+    const handleEdit = (el) => {
+        router.get(route("admin.produit.edit", [auth.user.id, el.id]), { preserveScroll: true })
     };
 
-    const handleShow = (  el ) => {
+    const handleShow = (el) => {
         setData({
-            'id' : el.id,
+            'id': el.id,
             'nom': el.nom || '',
-            'typeProduit':el.type_souscripteur || null,
-            'categorie':el.categorie_souscripteur ||null,
+            'typeProduit': el.type_souscripteur || null,
+            'categorie': el.categorie_souscripteur || null,
         })
 
         setOpenShow(true);
     };
 
-    const handleDelete = (id,message) => {
+    const handleDelete = (id, message) => {
         setData({
-            'id' : id,
-            message : message
+            'id': id,
+            message: message
         })
 
         setOpenDelete(true);
     };
 
     const handleUpdate = () => {
-        put(route('admin.produit.update',data.id),{
-            onSuccess:()=> {
+        put(route('admin.produit.update', data.id), {
+            onSuccess: () => {
                 reset()
                 setOpenEdit(false);
             },
@@ -246,7 +246,7 @@ function Index({auth,errors,produits,typeProduits,categories,departements,error,
 
     const handleSuspend = () => {
         setOpen(false);
-        router.delete(route('admin.produit.destroy',{id:data.id}))
+        router.delete(route('admin.produit.destroy', { id: data.id }))
     };
 
     const columns = useMemo(
@@ -256,12 +256,12 @@ function Index({auth,errors,produits,typeProduits,categories,departements,error,
                 header: 'Nom',
                 //size: 10,
             },
-            
+
             {
                 accessorKey: 'typeProduitAchat',
                 header: 'Option d\'achat',
                 //size: 50,
-                Cell: ({ row }) =>(
+                Cell: ({ row }) => (
                     row.original.type_produit_achat?.libelle
                 )
             },
@@ -269,7 +269,7 @@ function Index({auth,errors,produits,typeProduits,categories,departements,error,
                 accessorKey: 'prixAchat', //access nested data with dot notation
                 header: 'Prix d\'achat (GNF)',
                 //size: 10,
-                Cell: ({ row }) =>(
+                Cell: ({ row }) => (
                     formatNumber(row.original.prixAchat ?? 0)
                 )
             },
@@ -277,7 +277,7 @@ function Index({auth,errors,produits,typeProduits,categories,departements,error,
                 accessorKey: 'quantiteAchat',
                 header: 'Quantité à l\'achat',
                 //size: 50,
-                Cell: ({ row }) =>(
+                Cell: ({ row }) => (
                     formatNumber(row.original.quantiteAchat ?? 0)
                 )
             },
@@ -286,7 +286,7 @@ function Index({auth,errors,produits,typeProduits,categories,departements,error,
                 accessorKey: 'typeProduitVente',
                 header: 'Option de vente',
                 //size: 50,
-                Cell: ({ row }) =>(
+                Cell: ({ row }) => (
                     row.original.type_produit_vente?.libelle
                 )
             },
@@ -294,7 +294,7 @@ function Index({auth,errors,produits,typeProduits,categories,departements,error,
                 accessorKey: 'prixVente', //access nested data with dot notation
                 header: "Prix d'achat (GNF)",
                 //size: 10,
-                Cell: ({ row }) =>(
+                Cell: ({ row }) => (
                     formatNumber(row.original.prixVente ?? 0)
                 )
             },
@@ -302,7 +302,7 @@ function Index({auth,errors,produits,typeProduits,categories,departements,error,
                 accessorKey: 'quantiteVente',
                 header: 'Quantité à la vente',
                 //size: 50,
-                Cell: ({ row }) =>(
+                Cell: ({ row }) => (
                     formatNumber(row.original.quantiteVente ?? 0)
                 )
             },
@@ -311,7 +311,7 @@ function Index({auth,errors,produits,typeProduits,categories,departements,error,
                 accessorKey: 'categorie',
                 header: 'Categorie',
                 //size: 50,
-                Cell: ({ row }) =>(
+                Cell: ({ row }) => (
                     row.original.categorie?.libelle
                 )
             },
@@ -327,7 +327,7 @@ function Index({auth,errors,produits,typeProduits,categories,departements,error,
                 accessorKey: 'status',
                 header: 'Status',
                 //size: 50,
-                Cell: ({ row }) =>(
+                Cell: ({ row }) => (
                     row.original.status
                         ?
                         <div className={'p-2 font-bold bg-green-500 text-white w-fit h-fit rounded'}>
@@ -342,24 +342,24 @@ function Index({auth,errors,produits,typeProduits,categories,departements,error,
             {
                 accessorKey: 'action',
                 header: 'Action',
-                Cell: ({ row }) =>(
+                Cell: ({ row }) => (
                     <div className={'flex gap-2'} key={row.original.id}>
-                        <Button onClick={()=>handleShow(row.original)} variant={'contained'} size={'small'} color={'info'}>
+                        <Button onClick={() => handleShow(row.original)} variant={'contained'} size={'small'} color={'info'}>
                             <Visibility></Visibility>
                         </Button>
 
-                        <Button onClick={()=>handleEdit(row.original)} variant={'contained'} size={'small'} color={'secondary'}>
+                        <Button onClick={() => handleEdit(row.original)} variant={'contained'} size={'small'} color={'secondary'}>
                             <Edit></Edit>
                         </Button>
 
                         {
                             row.original.status
                                 ?
-                                <Button onClick={()=>handleDelete(row.original.id,"delete")} variant={'contained'} size={'small'} color={'error'}>
+                                <Button onClick={() => handleDelete(row.original.id, "delete")} variant={'contained'} size={'small'} color={'error'}>
                                     <Delete></Delete>
                                 </Button>
                                 :
-                                <Button onClick={()=>handleDelete(row.original.id,'check')} variant={'contained'} size={'small'} color={'success'}>
+                                <Button onClick={() => handleDelete(row.original.id, 'check')} variant={'contained'} size={'small'} color={'success'}>
                                     <Check></Check>
                                 </Button>
                         }
@@ -400,14 +400,14 @@ function Index({auth,errors,produits,typeProduits,categories,departements,error,
             sousActive={'produit'}
             breadcrumbs={[
                 {
-                    text:"Stock",
-                    href:route("admin.dashboard", {id: auth.user.id}),
-                    active:false
+                    text: "Stock",
+                    href: route("admin.dashboard", { id: auth.user.id }),
+                    active: false
                 },
                 {
-                    text:"Produits",
-                    href:route("admin.stock.produit.index", {userId: auth.user.id}),
-                    active:true
+                    text: "Produits",
+                    href: route("admin.stock.produit.index", { userId: auth.user.id }),
+                    active: true
                 },
                 /*{
                     text:"Création",
@@ -416,51 +416,11 @@ function Index({auth,errors,produits,typeProduits,categories,departements,error,
                 }*/
             ]}
         >
-            <div className="p-4 bg-white rounded shadow">
+            <div className={'grid gap-5 bg-gray-200 p-2 rounded border'}>
                 <div className={'flex justify-between items-center mb-4'}>
-                    <div className="flex items-center gap-4">
-                        <h1 className="text-2xl font-bold">Liste des produits</h1>
-                        <Button 
-                            variant="outlined" 
-                            startIcon={<ArrowBack />}
-                            onClick={() => router.get(route('admin.dashboard', {id: auth.user.id}))}
-                        >
-                            Retour au tableau de bord
-                        </Button>
-                        
+                    <div className="flex items-center flex-wrap gap-2 bg-black p-2 rounded">
+                        <h1 className="text-2xl font-bold text-white">Liste des produits</h1>
                     </div>
-                    <div className="flex gap-2">
-                        <Button 
-                            color={'success'} 
-                            variant={'outlined'} 
-                            onClick={() => window.location.href = route('admin.stock.produit.export-csv', {userId: auth.user.id})}
-                        >
-                            <FileDownload className={'mr-1'} /> Exporter CSV
-                        </Button>
-                        <label htmlFor="upload-csv">
-                            <input
-                                style={{ display: 'none' }}
-                                id="upload-csv"
-                                name="upload-csv"
-                                type="file"
-                                accept=".csv"
-                                onChange={handleFileUpload}
-                            />
-                            <Button 
-                                color={'info'} 
-                                variant={'outlined'} 
-                                component="span"
-                            >
-                                <FileUpload className={'mr-1'} /> Importer CSV
-                            </Button>
-                        </label>
-                        <Button color={'warning'} variant={'contained'} onClick={handleClickOpen} >
-                            <AddCircle className={'mr-1'} /> Ajout produit
-                        </Button>
-                    </div>
-
-                    
-
                     {
                         ///////ADD DIALOG
                     }
@@ -491,14 +451,14 @@ function Index({auth,errors,produits,typeProduits,categories,departements,error,
                                 >
                                     <Autocomplete
                                         className={"w-full"}
-                                        onChange={(e,val)=>setData("typeProduit",val)}
+                                        onChange={(e, val) => setData("typeProduit", val)}
                                         disablePortal={true}
                                         options={typeProduits}
-                                        getOptionLabel={(option)=>option.nom}
+                                        getOptionLabel={(option) => option.nom}
                                         isOptionEqualToValue={(option, value) => option.id === value.id}
-                                        renderInput={(params)=><TextField  fullWidth {...params} placeholder={"Type de produit"} label={params.nom}/>}
+                                        renderInput={(params) => <TextField fullWidth {...params} placeholder={"Type de produit"} label={params.nom} />}
                                     />
-                                    <InputError message={errors["data.typeProduit"]}/>
+                                    <InputError message={errors["data.typeProduit"]} />
                                 </div>
 
                                 <div
@@ -506,15 +466,15 @@ function Index({auth,errors,produits,typeProduits,categories,departements,error,
                                 >
                                     <Autocomplete
                                         className={"w-full"}
-                                        onChange={(e,val)=>setData("categorie",val)}
+                                        onChange={(e, val) => setData("categorie", val)}
                                         disablePortal={true}
                                         options={categories}
                                         groupBy={(option) => option.categorie.libelle}
-                                        getOptionLabel={(option)=>option.nom}
+                                        getOptionLabel={(option) => option.nom}
                                         isOptionEqualToValue={(option, value) => option.id === value.id}
-                                        renderInput={(params)=><TextField  fullWidth {...params} placeholder={"Catégorie de produit"} label={params.nom}/>}
+                                        renderInput={(params) => <TextField fullWidth {...params} placeholder={"Catégorie de produit"} label={params.nom} />}
                                     />
-                                    <InputError message={errors["data.categorie"]}/>
+                                    <InputError message={errors["data.categorie"]} />
                                 </div>
 
                             </div>
@@ -557,14 +517,14 @@ function Index({auth,errors,produits,typeProduits,categories,departements,error,
                                     <Autocomplete
                                         value={data.typeProduit}
                                         className={"w-full"}
-                                        onChange={(e,val)=>setData("typeProduit",val)}
+                                        onChange={(e, val) => setData("typeProduit", val)}
                                         disablePortal={true}
                                         options={typeProduits}
-                                        getOptionLabel={(option)=>option.nom}
+                                        getOptionLabel={(option) => option.nom}
                                         isOptionEqualToValue={(option, value) => option.id === value.id}
-                                        renderInput={(params)=><TextField  fullWidth {...params} placeholder={"Type de produit"} label={params.nom}/>}
+                                        renderInput={(params) => <TextField fullWidth {...params} placeholder={"Type de produit"} label={params.nom} />}
                                     />
-                                    <InputError message={errors["data.typeProduit"]}/>
+                                    <InputError message={errors["data.typeProduit"]} />
                                 </div>
 
                                 <div
@@ -573,15 +533,15 @@ function Index({auth,errors,produits,typeProduits,categories,departements,error,
                                     <Autocomplete
                                         value={data.categorie}
                                         className={"w-full"}
-                                        onChange={(e,val)=>setData("categorie",val)}
+                                        onChange={(e, val) => setData("categorie", val)}
                                         disablePortal={true}
                                         options={categories}
                                         groupBy={(option) => option.categorie.libelle}
-                                        getOptionLabel={(option)=>option.nom}
+                                        getOptionLabel={(option) => option.nom}
                                         isOptionEqualToValue={(option, value) => option.id === value.id}
-                                        renderInput={(params)=><TextField  fullWidth {...params} placeholder={"Catégorie de produit"} label={params.nom}/>}
+                                        renderInput={(params) => <TextField fullWidth {...params} placeholder={"Catégorie de produit"} label={params.nom} />}
                                     />
-                                    <InputError message={errors["data.categorie"]}/>
+                                    <InputError message={errors["data.categorie"]} />
                                 </div>
                             </div>
                         </DialogContent>
@@ -672,211 +632,244 @@ function Index({auth,errors,produits,typeProduits,categories,departements,error,
                 </div>
 
                 <div>
-                        {/* Statistiques globales */}
-                        <Grid container spacing={2} sx={{ mt: 2, mb: 3 }}>
-                            <Grid item xs={12}>
-                                <Typography variant="h6" sx={{ mb: 1, fontWeight: 'bold' }}>
-                                    {stats?.departement ? `Statistiques pour le département: ${stats.departement.nom_departement}` : 'Statistiques globales'}
-                                    {(departementFilter || categorieFilter || typeProduitFilter || stockFilter !== 'all') && (
-                                        <Typography variant="caption" sx={{ ml: 1, fontWeight: 'normal', display: 'inline-block' }}>
-                                            (filtrées selon les critères sélectionnés)
-                                        </Typography>
+                    {/* Statistiques globales */}
+                    <Grid container spacing={2} sx={{ mb: 3 }}>
+                        {/* <Grid item xs={12}>
+                            <Typography variant="h6" sx={{ mb: 1, fontWeight: 'bold' }}>
+                                {stats?.departement ? `Statistiques pour le département: ${stats.departement.nom_departement}` : 'Statistiques globales'}
+                                {(departementFilter || categorieFilter || typeProduitFilter || stockFilter !== 'all') && (
+                                    <Typography variant="caption" sx={{ ml: 1, fontWeight: 'normal', display: 'inline-block' }}>
+                                        (filtrées selon les critères sélectionnés)
+                                    </Typography>
+                                )}
+                            </Typography>
+                        </Grid> */}
+                        <Grid item xs={12} sm={6} md={3}>
+                            <Paper elevation={2} sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                <Typography variant="h6" color="primary">Total Produits</Typography>
+                                <Typography variant="h5">{stats?.departement ? stats.departement.total_produits : stats?.total_produits || 0}</Typography>
+                            </Paper>
+                        </Grid>
+                        <Grid item xs={12} sm={6} md={3}>
+                            <Paper elevation={2} sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', bgcolor: '#fff9c4' }}>
+                                <Typography variant="h6" color="warning.main" sx={{ display: 'flex', alignItems: 'center' }}>
+                                    <Warning fontSize="small" sx={{ mr: 1 }} /> Stock Critique
+                                </Typography>
+                                <Typography variant="h5" color="warning.main">
+                                    {stats?.departement ? stats.departement.stockCritique : stats?.stockCritique || 0}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                    {stats && (
+                                        stats.departement ?
+                                            `${Math.round(((stats.departement?.stockCritique || 0) / (stats.departement?.total_produits || 1)) * 100)}%` :
+                                            `${Math.round(((stats?.stockCritique || 0) / (stats?.total_produits || 1)) * 100)}%`
                                     )}
                                 </Typography>
-                            </Grid>
-                            <Grid item xs={12} sm={6} md={3}>
-                                <Paper elevation={2} sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Typography variant="h6" color="primary">Total Produits</Typography>
-                                    <Typography variant="h4">{stats?.departement ? stats.departement.total_produits : stats?.total_produits || 0}</Typography>
-                                </Paper>
-                            </Grid>
-                            <Grid item xs={12} sm={6} md={3}>
-                                <Paper elevation={2} sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', bgcolor: '#fff9c4' }}>
-                                    <Typography variant="h6" color="warning.main" sx={{ display: 'flex', alignItems: 'center' }}>
-                                        <Warning fontSize="small" sx={{ mr: 1 }} /> Stock Critique
-                                    </Typography>
-                                    <Typography variant="h4" color="warning.main">
-                                        {stats?.departement ? stats.departement.stockCritique : stats?.stockCritique || 0}
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                        {stats && (
-                                            stats.departement ? 
-                                                `${Math.round(((stats.departement?.stockCritique || 0) / (stats.departement?.total_produits || 1)) * 100)}%` : 
-                                                `${Math.round(((stats?.stockCritique || 0) / (stats?.total_produits || 1)) * 100)}%`
-                                        )}
-                                    </Typography>
-                                </Paper>
-                            </Grid>
-                            <Grid item xs={12} sm={6} md={3}>
-                                <Paper elevation={2} sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', bgcolor: '#ffebee' }}>
-                                    <Typography variant="h6" color="error" sx={{ display: 'flex', alignItems: 'center' }}>
-                                        <ErrorOutline fontSize="small" sx={{ mr: 1 }} /> Stock Épuisé
-                                    </Typography>
-                                    <Typography variant="h4" color="error">
-                                        {stats?.departement ? stats.departement.stock_epuise : stats?.stock_epuise || 0}
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                        {stats && (
-                                            stats.departement ? 
-                                                `${Math.round(((stats.departement?.stock_epuise || 0) / (stats.departement?.total_produits || 1)) * 100)}%` : 
-                                                `${Math.round(((stats?.stock_epuise || 0) / (stats?.total_produits || 1)) * 100)}%`
-                                        )}
-                                    </Typography>
-                                </Paper>
-                            </Grid>
-                            <Grid item xs={12} sm={6} md={3}>
-                                <Paper elevation={2} sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', bgcolor: '#e8f5e9' }}>
-                                    <Typography variant="h6" color="success.main" sx={{ display: 'flex', alignItems: 'center' }}>
-                                        <TrendingUp fontSize="small" sx={{ mr: 1 }} /> Valeur Stock
-                                    </Typography>
-                                    <Typography variant="h4" color="success.main">
-                                        {formatMoney(stats?.departement ? stats.departement.valeur_totale_stock : stats?.valeur_totale_stock || 0)}
-                                    </Typography>
-                                </Paper>
-                            </Grid>
+                            </Paper>
                         </Grid>
-                        
-                        {/* Filtres */}
-                        <Grid container spacing={2} sx={{ mb: 3 }}>
-                            <Grid item xs={12}>
-                                <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>Filtres</Typography>
-                            </Grid>
-                            <Grid item xs={12} sm={6} md={3}>
-                                <FormControl fullWidth variant="outlined" size="small">
-                                    <InputLabel>Département</InputLabel>
-                                    <Select
-                                        value={departementFilter}
-                                        onChange={(e) => handleFilterChange('departement', e.target.value)}
-                                        label="Département"
-                                    >
-                                        <MenuItem value="">Tous les départements</MenuItem>
-                                        {departements?.map((departement) => (
-                                            <MenuItem key={departement.id} value={departement.id}>{departement.nom}</MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
-                            </Grid>
-                            <Grid item xs={12} sm={6} md={3}>
-                                <FormControl fullWidth variant="outlined" size="small">
-                                    <InputLabel>Catégorie</InputLabel>
-                                    <Select
-                                        value={categorieFilter}
-                                        onChange={(e) => handleFilterChange('categorie', e.target.value)}
-                                        label="Catégorie"
-                                    >
-                                        <MenuItem value="">Toutes les catégories</MenuItem>
-                                        {categories.map((categorie) => (
-                                            <MenuItem key={categorie.id} value={categorie.id}>{categorie.nom}</MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
-                            </Grid>
-                            <Grid item xs={12} sm={6} md={3}>
-                                <FormControl fullWidth variant="outlined" size="small">
-                                    <InputLabel>Type de produit</InputLabel>
-                                    <Select
-                                        value={typeProduitFilter}
-                                        onChange={(e) => handleFilterChange('typeProduit', e.target.value)}
-                                        label="Type de produit"
-                                    >
-                                        <MenuItem value="">Tous les types</MenuItem>
-                                        {typeProduits.map((type) => (
-                                            <MenuItem key={type.id} value={type.id}>{type.nom}</MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
-                            </Grid>
-                            <Grid item xs={12} sm={6} md={3}>
-                                <FormControl fullWidth variant="outlined" size="small">
-                                    <InputLabel>État du stock</InputLabel>
-                                    <Select
-                                        value={stockFilter}
-                                        onChange={(e) => handleFilterChange('stock', e.target.value)}
-                                        label="État du stock"
-                                    >
-                                        <MenuItem value="all">Tous les produits</MenuItem>
-                                        <MenuItem value="low">
-                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                                <Warning fontSize="small" color="warning" sx={{ mr: 1 }} />
-                                                Stock critique
-                                            </Box>
-                                        </MenuItem>
-                                        <MenuItem value="out">
-                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                                <ErrorOutline fontSize="small" color="error" sx={{ mr: 1 }} />
-                                                Stock épuisé
-                                            </Box>
-                                        </MenuItem>
-                                    </Select>
-                                </FormControl>
-                            </Grid>
-                        </Grid>
-                        
-                        {/* Filtres actifs */}
-                        {(departementFilter || categorieFilter || typeProduitFilter || stockFilter !== 'all') && (
-                            <Box sx={{ mb: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                <Typography variant="body2" sx={{ mr: 1, display: 'flex', alignItems: 'center' }}>
-                                    Filtres actifs:
+                        <Grid item xs={12} sm={6} md={3}>
+                            <Paper elevation={2} sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', bgcolor: '#ffebee' }}>
+                                <Typography variant="h6" color="error" sx={{ display: 'flex', alignItems: 'center' }}>
+                                    <ErrorOutline fontSize="small" sx={{ mr: 1 }} /> Stock Épuisé
                                 </Typography>
-                                {departementFilter && (
-                                    <Chip 
-                                        label={`Département: ${departements?.find(d => d.id === parseInt(departementFilter))?.nom || ''}`}
-                                        onDelete={() => handleFilterChange('departement', '')}
-                                        color="primary"
-                                        variant="outlined"
-                                        size="small"
-                                    />
-                                )}
-                                {categorieFilter && (
-                                    <Chip 
-                                        label={`Catégorie: ${categories.find(c => c.id === parseInt(categorieFilter))?.nom || ''}`}
-                                        onDelete={() => handleFilterChange('categorie', '')}
-                                        color="primary"
-                                        variant="outlined"
-                                        size="small"
-                                    />
-                                )}
-                                {typeProduitFilter && (
-                                    <Chip 
-                                        label={`Type: ${typeProduits.find(t => t.id === parseInt(typeProduitFilter))?.nom || ''}`}
-                                        onDelete={() => handleFilterChange('typeProduit', '')}
-                                        color="primary"
-                                        variant="outlined"
-                                        size="small"
-                                    />
-                                )}
-                                {stockFilter !== 'all' && (
-                                    <Chip 
-                                        label={stockFilter === 'low' ? 'Stock critique' : 'Stock épuisé'}
-                                        onDelete={() => handleFilterChange('stock', 'all')}
-                                        color={stockFilter === 'low' ? 'warning' : 'error'}
-                                        variant="outlined"
-                                        size="small"
-                                    />
-                                )}
-                                <Button 
-                                    variant="text" 
-                                    size="small" 
-                                    startIcon={<Close fontSize="small" />}
-                                    onClick={() => {
-                                        setDepartementFilter('');
-                                        setCategorieFilter('');
-                                        setTypeProduitFilter('');
-                                        setStockFilter('all');
-                                        router.get(route('admin.stock.produit.index', {userId: auth.user.id}), {
-                                            page: 1
-                                        });
-                                    }}
-                                >
-                                    Réinitialiser tous les filtres
-                                </Button>
-                            </Box>
-                        )}
-                    </div>
+                                <Typography variant="h5" color="error">
+                                    {stats?.departement ? stats.departement.stock_epuise : stats?.stock_epuise || 0}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                    {stats && (
+                                        stats.departement ?
+                                            `${Math.round(((stats.departement?.stock_epuise || 0) / (stats.departement?.total_produits || 1)) * 100)}%` :
+                                            `${Math.round(((stats?.stock_epuise || 0) / (stats?.total_produits || 1)) * 100)}%`
+                                    )}
+                                </Typography>
+                            </Paper>
+                        </Grid>
+                        <Grid item xs={12} sm={6} md={3}>
+                            <Paper elevation={2} sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', bgcolor: '#e8f5e9' }}>
+                                <Typography variant="h6" color="success.main" sx={{ display: 'flex', alignItems: 'center' }}>
+                                    <TrendingUp fontSize="small" sx={{ mr: 1 }} /> Valeur Stock
+                                </Typography>
+                                <Typography variant="h5" color="success.main">
+                                    {formatMoney(stats?.departement ? stats.departement.valeur_totale_stock : stats?.valeur_totale_stock || 0)}
+                                </Typography>
+                            </Paper>
+                        </Grid>
+                    </Grid>
 
-                <MaterialReactTable
-                    table={table}
-                />
+
+                </div>
+                <div className="grid gap-2 bg-white p-2">
+                    {/* Filtres */}
+                    <Grid container spacing={2} sx={{ mb: 3 }}>
+                        <Grid item xs={12}>
+                            <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>Filtres</Typography>
+                        </Grid>
+                        <Grid item xs={12} sm={6} md={3}>
+                            <FormControl fullWidth variant="outlined" size="small">
+                                <InputLabel>Département</InputLabel>
+                                <Select
+                                    value={departementFilter}
+                                    onChange={(e) => handleFilterChange('departement', e.target.value)}
+                                    label="Département"
+                                >
+                                    <MenuItem value="">Tous les départements</MenuItem>
+                                    {departements?.map((departement) => (
+                                        <MenuItem key={departement.id} value={departement.id}>{departement.nom}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={12} sm={6} md={3}>
+                            <FormControl fullWidth variant="outlined" size="small">
+                                <InputLabel>Catégorie</InputLabel>
+                                <Select
+                                    value={categorieFilter}
+                                    onChange={(e) => handleFilterChange('categorie', e.target.value)}
+                                    label="Catégorie"
+                                >
+                                    <MenuItem value="">Toutes les catégories</MenuItem>
+                                    {categories.map((categorie) => (
+                                        <MenuItem key={categorie.id} value={categorie.id}>{categorie.nom}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={12} sm={6} md={3}>
+                            <FormControl fullWidth variant="outlined" size="small">
+                                <InputLabel>Type de produit</InputLabel>
+                                <Select
+                                    value={typeProduitFilter}
+                                    onChange={(e) => handleFilterChange('typeProduit', e.target.value)}
+                                    label="Type de produit"
+                                >
+                                    <MenuItem value="">Tous les types</MenuItem>
+                                    {typeProduits.map((type) => (
+                                        <MenuItem key={type.id} value={type.id}>{type.nom}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={12} sm={6} md={3}>
+                            <FormControl fullWidth variant="outlined" size="small">
+                                <InputLabel>État du stock</InputLabel>
+                                <Select
+                                    value={stockFilter}
+                                    onChange={(e) => handleFilterChange('stock', e.target.value)}
+                                    label="État du stock"
+                                >
+                                    <MenuItem value="all">Tous les produits</MenuItem>
+                                    <MenuItem value="low">
+                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                            <Warning fontSize="small" color="warning" sx={{ mr: 1 }} />
+                                            Stock critique
+                                        </Box>
+                                    </MenuItem>
+                                    <MenuItem value="out">
+                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                            <ErrorOutline fontSize="small" color="error" sx={{ mr: 1 }} />
+                                            Stock épuisé
+                                        </Box>
+                                    </MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                    </Grid>
+
+                    {/* Filtres actifs */}
+                    {(departementFilter || categorieFilter || typeProduitFilter || stockFilter !== 'all') && (
+                        <Box sx={{ mb: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                            <Typography variant="body2" sx={{ mr: 1, display: 'flex', alignItems: 'center' }}>
+                                Filtres actifs:
+                            </Typography>
+                            {departementFilter && (
+                                <Chip
+                                    label={`Département: ${departements?.find(d => d.id === parseInt(departementFilter))?.nom || ''}`}
+                                    onDelete={() => handleFilterChange('departement', '')}
+                                    color="primary"
+                                    variant="outlined"
+                                    size="small"
+                                />
+                            )}
+                            {categorieFilter && (
+                                <Chip
+                                    label={`Catégorie: ${categories.find(c => c.id === parseInt(categorieFilter))?.nom || ''}`}
+                                    onDelete={() => handleFilterChange('categorie', '')}
+                                    color="primary"
+                                    variant="outlined"
+                                    size="small"
+                                />
+                            )}
+                            {typeProduitFilter && (
+                                <Chip
+                                    label={`Type: ${typeProduits.find(t => t.id === parseInt(typeProduitFilter))?.nom || ''}`}
+                                    onDelete={() => handleFilterChange('typeProduit', '')}
+                                    color="primary"
+                                    variant="outlined"
+                                    size="small"
+                                />
+                            )}
+                            {stockFilter !== 'all' && (
+                                <Chip
+                                    label={stockFilter === 'low' ? 'Stock critique' : 'Stock épuisé'}
+                                    onDelete={() => handleFilterChange('stock', 'all')}
+                                    color={stockFilter === 'low' ? 'warning' : 'error'}
+                                    variant="outlined"
+                                    size="small"
+                                />
+                            )}
+                            <Button
+                                variant="text"
+                                size="small"
+                                startIcon={<Close fontSize="small" />}
+                                onClick={() => {
+                                    setDepartementFilter('');
+                                    setCategorieFilter('');
+                                    setTypeProduitFilter('');
+                                    setStockFilter('all');
+                                    router.get(route('admin.stock.produit.index', { userId: auth.user.id }), {
+                                        page: 1
+                                    });
+                                }}
+                            >
+                                Réinitialiser tous les filtres
+                            </Button>
+                        </Box>
+                    )}
+
+                    <div className="flex gap-2 justify-end mb-2">
+                        <Button
+                            color={'success'}
+                            variant={'outlined'}
+                            onClick={() => window.location.href = route('admin.stock.produit.export-csv', { userId: auth.user.id })}
+                        >
+                            <FileDownload className={'mr-1'} /> Exporter CSV
+                        </Button>
+                        <label htmlFor="upload-csv">
+                            <input
+                                style={{ display: 'none' }}
+                                id="upload-csv"
+                                name="upload-csv"
+                                type="file"
+                                accept=".csv"
+                                onChange={handleFileUpload}
+                            />
+                            <Button
+                                color={'info'}
+                                variant={'outlined'}
+                                component="span"
+                            >
+                                <FileUpload className={'mr-1'} /> Importer CSV
+                            </Button>
+                        </label>
+                        <Button color={'warning'} variant={'contained'} onClick={handleClickOpen} >
+                            <AddCircle className={'mr-1'} /> Ajout produit
+                        </Button>
+                    </div>
+                    <MaterialReactTable
+                        table={table}
+                    />
+                </div>
+
             </div>
 
         </PanelLayout>

@@ -1,0 +1,1 @@
+import{j as o}from"./app-80aef6d5.js";import{c as t}from"./createSvgIcon-f9f11e70.js";const a=t(o.jsx("path",{d:"M8 5v14l11-7z"}),"PlayArrow"),p=t(o.jsx("path",{d:"M6 6h12v12H6z"}),"Stop");export{a as P,p as S};

@@ -240,6 +240,9 @@ class StockMovementService
                 
                 $stock->quantite = ($stock->quantite ?? 0) + $quantite;
                 $stock->save();
+
+                $produit->stockGlobal = ($produit->stockGlobal ?? 0) + $quantite;
+                $produit->save();
                 
                 return $stock;
             } else {

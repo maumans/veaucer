@@ -148,7 +148,7 @@ export default function PanelLayout(props) {
                              routeLinks:[
                                 {
                                     sousActive:"produit",
-                                    route:"admin.produit.index",
+                                    route:"admin.stock.produit.index",
                                     text:'Produits'
                                 },
                                 {
@@ -374,8 +374,8 @@ export default function PanelLayout(props) {
                     <AppBar
                         position="fixed"
                         sx={{
-                            width: { sm: `calc(100% - ${drawerWidth}px)` },
-                            ml: { sm: `${drawerWidth}px` },
+                            width: { md: `calc(100% - ${drawerWidth}px)` },
+                            ml: { md: `${drawerWidth}px` },
                             boxShadow:"inherit",
                             zIndex:99
                         }}
@@ -387,7 +387,7 @@ export default function PanelLayout(props) {
                             }*/}
                         </Head>
                         <nav className="bg-black border-b h-full w-full">
-                            <div className="max-w-9xl lg:px-20 md:px-8 sm:px-6">
+                            <div className="max-w-9xl md:px-20 md:px-8 md:px-6">
                                 <div className="flex justify-between h-15">
                                     <div className="flex">
                                         <Toolbar>
@@ -395,10 +395,17 @@ export default function PanelLayout(props) {
                                                 aria-label="open drawer"
                                                 edge="start"
                                                 onClick={handleDrawerToggle}
-                                                sx={{ display: { sm: 'none' } }}
+                                                sx={{ display: { md: 'none' } }}
                                             >
                                                 <MenuIcon className="text-orange-500" />
                                             </IconButton>
+                                            <Box className="text-white" sx={{ display: { md: 'none' } }}>
+                                                <Link href={"/"}>
+                                                    {
+                                                        props.auth?.societe?.nom || "Veaucer"
+                                                    }
+                                                </Link>
+                                            </Box>
                                             <div className="text-orange-500 text-xl font-bold cursor-default">
                                                 {[
                                                     {text:"Tableau de bord",active:"superAdminDashboard",lien:'superAdmin.dashboard',params:[props.auth.user.id]},
@@ -416,7 +423,7 @@ export default function PanelLayout(props) {
 
                                     </div>
 
-                                    <div className="hidden sm:flex sm:items-center sm:ml-16">
+                                    <div className="hidden md:flex md:items-center md:ml-16">
                                         <div className="ml-3 relative">
                                             <Dropdown>
                                                 <Dropdown.Trigger>
@@ -475,7 +482,7 @@ export default function PanelLayout(props) {
                     </AppBar>
                     <Box
                         component="nav"
-                        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 },zIndex:10 }}
+                        sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 },zIndex:10 }}
                         aria-label="mailbox folders"
                     >
                         {/* The implementation can be swapped with js to avoid SEO duplication of links. */}
@@ -488,8 +495,8 @@ export default function PanelLayout(props) {
                                 keepMounted: true, // Better open performance on mobile.
                             }}
                             sx={{
-                                display: { xs: 'block', sm: 'none' },
-                                '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth,zIndex:10 },
+                                display: { xs: 'block', md: 'none' },
+                                '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth,zIndex:1 },
                             }}
                         >
                             {drawer}
@@ -497,8 +504,8 @@ export default function PanelLayout(props) {
                         <Drawer
                             variant="permanent"
                             sx={{
-                                display: { xs: 'none', sm: 'block' },
-                                '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth,zIndex:10,border: 'none' },
+                                display: { xs: 'none', md: 'block' },
+                                '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth,zIndex:1,border: 'none' },
                             }}
                             open
                         >
@@ -508,12 +515,12 @@ export default function PanelLayout(props) {
                     <Box
                         className={"bg-gray-200 min-h-screen flex flex-col justify-between"}
                         component="main"
-                        sx={{flexGrow: 1, width: { sm: `calc(100% - ${drawerWidth}px)`} }}
+                        sx={{flexGrow: 1, width: { md: `calc(100% - ${drawerWidth}px)`} }}
                     >
                         {
                             props.breadcrumbs
                             &&
-                            <div role="presentation" className={"fixed sm:top-16 top-12 bg-white lg:px-20 md:px-8 px-5 py-2 w-full z-50"}>
+                            <div role="presentation" className={"fixed md:top-16 sm:top-16 top-12 bg-gray-200 md:px-20 md:px-8 px-5 pb-1 sm:pt-2 pt-4 w-full z-50"}>
                                 <Breadcrumbs aria-label="breadcrumb" separator={"/"}>
                                     {
                                         props.breadcrumbs.map(({text,href,active,icon}) =>(
@@ -530,7 +537,7 @@ export default function PanelLayout(props) {
                                 </Breadcrumbs>
                             </div>
                         }
-                        <div  className={props.breadcrumbs?'mt-28 lg:px-20 md:px-8 px-5':'mt-20 lg:px-20 md:px-8 px-5'}>
+                        <div  className={props.breadcrumbs?'mt-28 md:px-20 md:px-8 px-5':'mt-24 md:px-20 md:px-8 px-5'}>
                             {props.children}
                         </div>
 

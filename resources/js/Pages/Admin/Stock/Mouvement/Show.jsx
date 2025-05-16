@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import {MaterialReactTable, useMaterialReactTable} from 'material-react-table';
+import { MaterialReactTable, useMaterialReactTable } from 'material-react-table';
 import { MRT_Localization_FR } from 'material-react-table/locales/fr';
 import PanelLayout from '@/Layouts/PanelLayout';
 import formatNumber from '@/Pages/Utils/formatNumber';
@@ -76,12 +76,12 @@ const Show = ({ auth, operation }) => {
             showColumnFilters: false,
         },
     });
-    
+
     // Fonction pour retourner à la liste des mouvements
     const handleRetour = () => {
         router.get(route('admin.stock.mouvement.index', auth.user.id));
     };
-    
+
     // Fonction pour éditer le mouvement
     const handleEdit = () => {
         router.get(route('admin.stock.mouvement.edit', [auth.user.id, operation.id]));
@@ -105,23 +105,23 @@ const Show = ({ auth, operation }) => {
                 },
             ]}
         >
-            <div className="w-full">
+            <div className={'grid gap-5 bg-gray-200 p-2 rounded border'}>
                 <div className="p-5 bg-white rounded">
                     <div className="flex justify-between items-center mb-4">
                         <div className="bg-black w-fit p-2 rounded text-xl font-bold text-white">
                             <h2>Détail du mouvement de stock</h2>
                         </div>
                         <div className="flex gap-2">
-                            <Button 
-                                variant="contained" 
-                                color="primary" 
+                            <Button
+                                variant="contained"
+                                color="primary"
                                 onClick={handleEdit}
                             >
                                 Modifier
                             </Button>
-                            <Button 
-                                variant="outlined" 
-                                color="secondary" 
+                            <Button
+                                variant="outlined"
+                                color="secondary"
                                 onClick={handleRetour}
                             >
                                 Retour
@@ -151,33 +151,33 @@ const Show = ({ auth, operation }) => {
                                 </div>
                             )}
                         </div>
+                    </div>
 
-                        <div className="bg-white p-4 rounded shadow">
-                            <h3 className="text-lg font-bold text-orange-500 mb-2">Produits</h3>
-                            <MaterialReactTable table={tableProduits} />
-                            {operation?.totalCommande ? (
-                                <div className="mt-3 text-black font-bold bg-gray-200 p-2 rounded">
-                                    {"Total : " + formatNumber(operation.totalCommande) + ' GNF'}
-                                </div>
-                            ):''}
-                        </div>
-
-                        {operation?.depenses && operation.depenses.length > 0 && (
-                            <div className="bg-white p-4 rounded shadow">
-                                <h3 className="text-lg font-bold text-orange-500 mb-2">Dépenses supplémentaires</h3>
-                                <MaterialReactTable table={tableDepenses} />
-                                {operation?.totalDepense ? (
-                                    <div className="mt-3 text-black font-bold bg-gray-200 p-2 rounded">
-                                        {"Total Dépenses : " + formatNumber(operation.totalDepense) + ' GNF'}
-                                    </div>
-                                ):''}
+                    <div className="bg-white p-4 rounded shadow">
+                        <h3 className="text-lg font-bold text-orange-500 mb-2">Produits</h3>
+                        <MaterialReactTable table={tableProduits} />
+                        {operation?.totalCommande ? (
+                            <div className="mt-3 text-black font-bold bg-gray-200 p-2 rounded">
+                                {"Total : " + formatNumber(operation.totalCommande) + ' GNF'}
                             </div>
-                        )}
-                        
-                        {/* Total général */}
-                        <div className="mt-4 p-3 bg-black text-white font-bold rounded w-fit">
-                            Total général : {formatNumber((operation?.totalCommande || 0) + (operation?.totalDepense || 0))} GNF
+                        ) : ''}
+                    </div>
+
+                    {operation?.depenses && operation.depenses.length > 0 && (
+                        <div className="bg-white p-4 rounded shadow overflow-hidden">
+                            <h3 className="text-lg font-bold text-orange-500 mb-2">Dépenses supplémentaires</h3>
+                            <MaterialReactTable table={tableDepenses} />
+                            {operation?.totalDepense ? (
+                                <div className="mt-3 text-black font-bold bg-gray-200 p-2 rounded">
+                                    {"Total Dépenses : " + formatNumber(operation.totalDepense) + ' GNF'}
+                                </div>
+                            ) : ''}
                         </div>
+                    )}
+
+                    {/* Total général */}
+                    <div className="mt-4 p-3 bg-black text-white font-bold rounded w-fit">
+                        Total général : {formatNumber((operation?.totalCommande || 0) + (operation?.totalDepense || 0))} GNF
                     </div>
                 </div>
             </div>

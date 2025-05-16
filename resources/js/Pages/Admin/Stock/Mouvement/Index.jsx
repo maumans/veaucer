@@ -497,15 +497,179 @@ function Index({ auth, errors, operations, departements, fournisseurs, typeOpera
         >
             <div className={'grid gap-5 bg-gray-200 p-2 rounded border'}>
 
+                <div className="flex items-center flex-wrap gap-2 bg-black p-2 rounded w-fit">
+                    <h1 className="text-2xl font-bold text-white">Liste des mouvements</h1>
+                </div>
 
+                <div className="grid gap-2">
+                    <div className="flex justify-between items-center">
+                        <Button
+                            color="primary"
+                            onClick={() => setFilterOpen(!filterOpen)}
+                            variant="outlined"
+                            startIcon={<TuneIcon />}
+                        >
+                            Filtres avancés
+                        </Button>
+                    </div>
+                    {/* Panneau de filtres avancés */}
+                    {filterOpen && (
+                        <div className="bg-white p-4 mb-4 rounded shadow-md">
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-lg font-semibold">Filtres avancés</h2>
+                                <Button
+                                    variant="outlined"
+                                    color="error"
+                                    size="small"
+                                    onClick={() => setFilterOpen(false)}
+                                >
+                                    <Close fontSize="small" />
+                                </Button>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                                {/* Filtre par type d'opération */}
+                                <div>
+                                    <Autocomplete
+                                        value={selectedTypeOperation}
+                                        onChange={(e, val) => setSelectedTypeOperation(val)}
+                                        options={typeOperations || []}
+                                        getOptionLabel={(option) => option.nom}
+                                        isOptionEqualToValue={(option, value) => option.id === value.id}
+                                        renderInput={(params) => (
+                                            <TextField
+                                                {...params}
+                                                label="Type d'opération"
+                                                fullWidth
+                                                size="small"
+                                            />
+                                        )}
+                                    />
+                                </div>
+
+                                {/* Filtre par département */}
+                                <div>
+                                    <Autocomplete
+                                        value={selectedDepartement}
+                                        onChange={(e, val) => setSelectedDepartement(val)}
+                                        options={departements || []}
+                                        getOptionLabel={(option) => option.nom}
+                                        isOptionEqualToValue={(option, value) => option.id === value.id}
+                                        renderInput={(params) => (
+                                            <TextField
+                                                {...params}
+                                                label="Département"
+                                                fullWidth
+                                                size="small"
+                                            />
+                                        )}
+                                    />
+                                </div>
+
+                                {/* Filtre par fournisseur */}
+                                <div>
+                                    <Autocomplete
+                                        value={selectedFournisseur}
+                                        onChange={(e, val) => setSelectedFournisseur(val)}
+                                        options={fournisseurs || []}
+                                        getOptionLabel={(option) => option.nom}
+                                        isOptionEqualToValue={(option, value) => option.id === value.id}
+                                        renderInput={(params) => (
+                                            <TextField
+                                                {...params}
+                                                label="Fournisseur"
+                                                fullWidth
+                                                size="small"
+                                            />
+                                        )}
+                                    />
+                                </div>
+
+                                {/* Filtre par état */}
+                                <div>
+                                    <Autocomplete
+                                        value={etatFilter}
+                                        onChange={(e, val) => setEtatFilter(val)}
+                                        options={etatOptions}
+                                        getOptionLabel={(option) => option.nom}
+                                        isOptionEqualToValue={(option, value) => option.id === value.id}
+                                        renderInput={(params) => (
+                                            <TextField
+                                                {...params}
+                                                label="État"
+                                                fullWidth
+                                                size="small"
+                                            />
+                                        )}
+                                    />
+                                </div>
+
+                                {/* Filtre par plage de dates */}
+                                <div className="col-span-1 md:col-span-2">
+                                    <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="fr">
+                                        <div className="flex gap-4">
+                                            <DatePicker
+                                                label="Date de début"
+                                                value={dateRange[0]}
+                                                onChange={(newValue) => setDateRange([newValue, dateRange[1]])}
+                                                slotProps={{ textField: { size: 'small', fullWidth: true } }}
+                                            />
+                                            <DatePicker
+                                                label="Date de fin"
+                                                value={dateRange[1]}
+                                                onChange={(newValue) => setDateRange([dateRange[0], newValue])}
+                                                slotProps={{ textField: { size: 'small', fullWidth: true } }}
+                                            />
+                                        </div>
+                                    </LocalizationProvider>
+                                </div>
+
+                                {/* Filtre par montant */}
+                                <div>
+                                    <TextField
+                                        label="Montant minimum"
+                                        value={minMontant}
+                                        onChange={(e) => setMinMontant(e.target.value)}
+                                        type="number"
+                                        fullWidth
+                                        size="small"
+                                    />
+                                </div>
+
+                                <div>
+                                    <TextField
+                                        label="Montant maximum"
+                                        value={maxMontant}
+                                        onChange={(e) => setMaxMontant(e.target.value)}
+                                        type="number"
+                                        fullWidth
+                                        size="small"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end gap-2">
+                                <Button
+                                    variant="outlined"
+                                    color="error"
+                                    onClick={resetFilters}
+                                >
+                                    Réinitialiser
+                                </Button>
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    onClick={applyFilters}
+                                    startIcon={<FilterList />}
+                                >
+                                    Appliquer les filtres
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </div>
                 <div className={'flex justify-between items-center'}>
-                    <Button
-                        color={'info'}
-                        variant={'contained'}
-                        onClick={() => router.get(route('admin.stock.mouvement.dashboard', auth.user.id))}
-                    >
-                        <Visibility className={'mr-1'}></Visibility> Tableau de bord
-                    </Button>
+
 
                     {
                         ///////ADD DIALOG
@@ -772,180 +936,14 @@ function Index({ auth, errors, operations, departements, fournisseurs, typeOpera
                 </div>
 
                 <div className="overflow-auto space-y-2 bg-white p-2 rounded">
-                    <div className="flex justify-between items-center mb-4">
-                        <Button
-                            color="primary"
-                            onClick={() => setFilterOpen(!filterOpen)}
-                            variant="outlined"
-                            startIcon={<TuneIcon />}
-                        >
-                            Filtres avancés
-                        </Button>
-                    </div>
-                    {/* Panneau de filtres avancés */}
-                    {filterOpen && (
-                        <div className="bg-white p-4 mb-4 rounded shadow-md">
-                            <div className="flex justify-between items-center mb-4">
-                                <h2 className="text-lg font-semibold">Filtres avancés</h2>
-                                <Button
-                                    variant="outlined"
-                                    color="error"
-                                    size="small"
-                                    onClick={() => setFilterOpen(false)}
-                                >
-                                    <Close fontSize="small" />
-                                </Button>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-                                {/* Filtre par type d'opération */}
-                                <div>
-                                    <Autocomplete
-                                        value={selectedTypeOperation}
-                                        onChange={(e, val) => setSelectedTypeOperation(val)}
-                                        options={typeOperations || []}
-                                        getOptionLabel={(option) => option.nom}
-                                        isOptionEqualToValue={(option, value) => option.id === value.id}
-                                        renderInput={(params) => (
-                                            <TextField
-                                                {...params}
-                                                label="Type d'opération"
-                                                fullWidth
-                                                size="small"
-                                            />
-                                        )}
-                                    />
-                                </div>
-
-                                {/* Filtre par département */}
-                                <div>
-                                    <Autocomplete
-                                        value={selectedDepartement}
-                                        onChange={(e, val) => setSelectedDepartement(val)}
-                                        options={departements || []}
-                                        getOptionLabel={(option) => option.nom}
-                                        isOptionEqualToValue={(option, value) => option.id === value.id}
-                                        renderInput={(params) => (
-                                            <TextField
-                                                {...params}
-                                                label="Département"
-                                                fullWidth
-                                                size="small"
-                                            />
-                                        )}
-                                    />
-                                </div>
-
-                                {/* Filtre par fournisseur */}
-                                <div>
-                                    <Autocomplete
-                                        value={selectedFournisseur}
-                                        onChange={(e, val) => setSelectedFournisseur(val)}
-                                        options={fournisseurs || []}
-                                        getOptionLabel={(option) => option.nom}
-                                        isOptionEqualToValue={(option, value) => option.id === value.id}
-                                        renderInput={(params) => (
-                                            <TextField
-                                                {...params}
-                                                label="Fournisseur"
-                                                fullWidth
-                                                size="small"
-                                            />
-                                        )}
-                                    />
-                                </div>
-
-                                {/* Filtre par état */}
-                                <div>
-                                    <Autocomplete
-                                        value={etatFilter}
-                                        onChange={(e, val) => setEtatFilter(val)}
-                                        options={etatOptions}
-                                        getOptionLabel={(option) => option.nom}
-                                        isOptionEqualToValue={(option, value) => option.id === value.id}
-                                        renderInput={(params) => (
-                                            <TextField
-                                                {...params}
-                                                label="État"
-                                                fullWidth
-                                                size="small"
-                                            />
-                                        )}
-                                    />
-                                </div>
-
-                                {/* Filtre par plage de dates */}
-                                <div className="col-span-1 md:col-span-2">
-                                    <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="fr">
-                                        <div className="flex gap-4">
-                                            <DatePicker
-                                                label="Date de début"
-                                                value={dateRange[0]}
-                                                onChange={(newValue) => setDateRange([newValue, dateRange[1]])}
-                                                slotProps={{ textField: { size: 'small', fullWidth: true } }}
-                                            />
-                                            <DatePicker
-                                                label="Date de fin"
-                                                value={dateRange[1]}
-                                                onChange={(newValue) => setDateRange([dateRange[0], newValue])}
-                                                slotProps={{ textField: { size: 'small', fullWidth: true } }}
-                                            />
-                                        </div>
-                                    </LocalizationProvider>
-                                </div>
-
-                                {/* Filtre par montant */}
-                                <div>
-                                    <TextField
-                                        label="Montant minimum"
-                                        value={minMontant}
-                                        onChange={(e) => setMinMontant(e.target.value)}
-                                        type="number"
-                                        fullWidth
-                                        size="small"
-                                    />
-                                </div>
-
-                                <div>
-                                    <TextField
-                                        label="Montant maximum"
-                                        value={maxMontant}
-                                        onChange={(e) => setMaxMontant(e.target.value)}
-                                        type="number"
-                                        fullWidth
-                                        size="small"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="flex justify-end gap-2">
-                                <Button
-                                    variant="outlined"
-                                    color="error"
-                                    onClick={resetFilters}
-                                >
-                                    Réinitialiser
-                                </Button>
-                                <Button
-                                    variant="contained"
-                                    color="primary"
-                                    onClick={applyFilters}
-                                    startIcon={<FilterList />}
-                                >
-                                    Appliquer les filtres
-                                </Button>
-                            </div>
-                        </div>
-                    )}
-
-                    <div className='flex gap-5 flex-wrap justify-end'>
-                        <Button color={'success'} variant={'contained'} onClick={() => handleClickOpen('Entrée')} >
+                    <div className={`flex gap-5 flex-wrap justify-end`}>
+                        <Button size={'small'} color={'success'} variant={'contained'} onClick={() => handleClickOpen('Entrée')} >
                             <AddCircle className={'mr-1'}></AddCircle> <span className="hidden sm:flex">Entrée</span>
                         </Button>
-                        <Button color={'warning'} variant={'contained'} onClick={() => handleClickOpen('Transfert')} >
+                        <Button size={'small'} color={'warning'} variant={'contained'} onClick={() => handleClickOpen('Transfert')} >
                             <SwapHoriz className={'mr-1'}></SwapHoriz> <span className="hidden sm:flex">Transfert</span>
                         </Button>
-                        <Button color={'error'} variant={'contained'} onClick={() => handleClickOpen('Sortie')} >
+                        <Button size={'small'} color={'error'} variant={'contained'} onClick={() => handleClickOpen('Sortie')} >
                             <Remove className={'mr-1'}></Remove> <span className="hidden sm:flex">Sortie</span>
                         </Button>
                     </div>

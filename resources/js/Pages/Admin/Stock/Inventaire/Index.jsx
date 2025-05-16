@@ -516,16 +516,13 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
                 }
             ]}
         >
-            <div className="space-y-6">
+            <div className={'grid gap-5 bg-gray-200 p-2 rounded border w-full'}>
                 {/* Titre et description */}
                 <div className="flex justify-between items-center">
                     <div>
-                        <Typography variant="h4" component="h1" gutterBottom>
-                            Gestion des Inventaires
-                        </Typography>
-                        <Typography variant="subtitle1" color="textSecondary">
-                            Tableau de bord pour la gestion et le suivi des stocks
-                        </Typography>
+                        <div className="bg-black w-fit p-2 rounded text-xl font-bold text-white">
+                            <h2>Gestion des inventaires</h2>
+                        </div>
                     </div>
                     <div className="flex space-x-2">
                         <Tooltip title="Rafraîchir les données">
@@ -534,106 +531,6 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
                             </IconButton>
                         </Tooltip>
                     </div>
-                </div>
-
-                {/* Cartes de statistiques */}
-                <Grid container spacing={3}>
-                    <Grid item xs={12} sm={6} md={3}>
-                        <Card elevation={2}>
-                            <CardContent>
-                                <Typography color="textSecondary" gutterBottom>
-                                    Total Produits
-                                </Typography>
-                                <Typography variant="h4" component="div">
-                                    {statsData.totalProduits}
-                                </Typography>
-                                <Typography variant="body2" color="textSecondary">
-                                    {filtresAvances.departement ? 
-                                        `Produits dans ${departements.find(d => d.id == filtresAvances.departement)?.nom || 'le département'}` : 
-                                        'Produits en inventaire'}
-                                </Typography>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
-                        <Card elevation={2}>
-                            <CardContent>
-                                <Typography color="textSecondary" gutterBottom>
-                                    Sous Seuil Minimal
-                                </Typography>
-                                <Typography variant="h4" component="div" color="warning.main">
-                                    {statsData.sousstockCritique}
-                                </Typography>
-                                <Typography variant="body2" color="textSecondary">
-                                    Produits à réapprovisionner
-                                </Typography>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
-                        <Card elevation={2}>
-                            <CardContent>
-                                <Typography color="textSecondary" gutterBottom>
-                                    En Rupture
-                                </Typography>
-                                <Typography variant="h4" component="div" color="error.main">
-                                    {statsData.enRupture}
-                                </Typography>
-                                <Typography variant="body2" color="textSecondary">
-                                    Produits en rupture de stock
-                                </Typography>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
-                        <Card elevation={2}>
-                            <CardContent>
-                                <Typography color="textSecondary" gutterBottom>
-                                    Valeur Totale
-                                </Typography>
-                                <Typography variant="h4" component="div" color="primary.main">
-                                    {formatNumber(statsData.valeurTotale)} GNF
-                                </Typography>
-                                <Typography variant="body2" color="textSecondary">
-                                    Valeur de l'inventaire
-                                </Typography>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-                </Grid>
-
-                {/* Boutons d'action */}
-                <div className="flex flex-wrap gap-3">
-                    <Button 
-                        variant="contained" 
-                        color="primary" 
-                        startIcon={<FactCheck />}
-                        onClick={() => router.get(route('admin.inventaire.physique.index', auth.user.id))}
-                    >
-                        Inventaire Physique
-                    </Button>
-                    <Button 
-                        variant="contained" 
-                        color="secondary" 
-                        startIcon={<CompareArrows />}
-                        onClick={() => router.get(route('admin.inventaire.ajustement.index', auth.user.id))}
-                    >
-                        Ajustements d'Inventaire
-                    </Button>
-                    <Button 
-                        variant="contained" 
-                        color="warning" 
-                        startIcon={<Assessment />}
-                    >
-                        Rapports d'Inventaire
-                    </Button>
-                    <Button 
-                        variant="contained" 
-                        color="info" 
-                        startIcon={<LocalShipping />}
-                    >
-                        Commandes Fournisseurs
-                    </Button>
                 </div>
 
                 {/* Filtres avancés */}
@@ -747,6 +644,106 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
                         </Grid>
                     </Grid>
                 </Paper>
+
+                {/* Cartes de statistiques */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div>
+                        <Card elevation={2}>
+                            <CardContent>
+                                <Typography color="textSecondary" gutterBottom>
+                                    Total Produits
+                                </Typography>
+                                <Typography variant="h4" component="div">
+                                    {statsData.totalProduits}
+                                </Typography>
+                                <Typography variant="body2" color="textSecondary">
+                                    {filtresAvances.departement ? 
+                                        `Produits dans ${departements.find(d => d.id == filtresAvances.departement)?.nom || 'le département'}` : 
+                                        'Produits en inventaire'}
+                                </Typography>
+                            </CardContent>
+                        </Card>
+                    </div>
+                    <div>
+                        <Card elevation={2}>
+                            <CardContent>
+                                <Typography color="textSecondary" gutterBottom>
+                                    Stock Critique
+                                </Typography>
+                                <Typography variant="h4" component="div" color="warning.main">
+                                    {statsData.sousstockCritique}
+                                </Typography>
+                                <Typography variant="body2" color="textSecondary">
+                                    Produits à réapprovisionner
+                                </Typography>
+                            </CardContent>
+                        </Card>
+                    </div>
+                    <div>
+                        <Card elevation={2}>
+                            <CardContent>
+                                <Typography color="textSecondary" gutterBottom>
+                                    En Rupture
+                                </Typography>
+                                <Typography variant="h4" component="div" color="error.main">
+                                    {statsData.enRupture}
+                                </Typography>
+                                <Typography variant="body2" color="textSecondary">
+                                    Produits en rupture de stock
+                                </Typography>
+                            </CardContent>
+                        </Card>
+                    </div>
+                    <div>
+                        <Card elevation={2}>
+                            <CardContent>
+                                <Typography color="textSecondary" gutterBottom>
+                                    Valeur Totale
+                                </Typography>
+                                <Typography variant="h4" component="div" color="primary.main">
+                                    {formatNumber(statsData.valeurTotale)} GNF
+                                </Typography>
+                                <Typography variant="body2" color="textSecondary">
+                                    Valeur de l'inventaire
+                                </Typography>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
+
+                {/* Boutons d'action */}
+                <div className="flex flex-wrap gap-3">
+                    <Button 
+                        variant="contained" 
+                        color="primary" 
+                        startIcon={<FactCheck />}
+                        onClick={() => router.get(route('admin.inventaire.physique.index', auth.user.id))}
+                    >
+                        Inventaire Physique
+                    </Button>
+                    <Button 
+                        variant="contained" 
+                        color="secondary" 
+                        startIcon={<CompareArrows />}
+                        onClick={() => router.get(route('admin.inventaire.ajustement.index', auth.user.id))}
+                    >
+                        Ajustements d'Inventaire
+                    </Button>
+                    <Button 
+                        variant="contained" 
+                        color="warning" 
+                        startIcon={<Assessment />}
+                    >
+                        Rapports d'Inventaire
+                    </Button>
+                    <Button 
+                        variant="contained" 
+                        color="info" 
+                        startIcon={<LocalShipping />}
+                    >
+                        Commandes Fournisseurs
+                    </Button>
+                </div>
 
                 {/* Dialogs */}
                 <div>
@@ -880,7 +877,7 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
                 </div>
 
                 {/* Tableau des produits */}
-                <Paper elevation={2} className="p-4">
+                <Paper elevation={2} className="p-4 overflow-scroll">
                     <div className="flex justify-between items-center mb-4">
                         <Typography variant="h6">
                             Liste des Produits en Stock
@@ -897,7 +894,9 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
                             />
                         )}
                     </div>
-                    <MaterialReactTable table={table} />
+                    <div>
+                        <MaterialReactTable table={table} />
+                    </div>
                 </Paper>
             </div>
         </PanelLayout>

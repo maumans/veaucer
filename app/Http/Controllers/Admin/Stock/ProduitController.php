@@ -145,7 +145,7 @@ class ProduitController extends Controller
             });
         }
         
-        $stockCritique = $stockCritique->whereRaw('stockGlobal <= stockCritique AND stockGlobal > 0')
+        $stockCritique = $stockCritique->whereRaw('stockGlobal <= stockCritique')
             ->count();
             
         $stockEpuise = Produit::where('status', true)
@@ -214,7 +214,7 @@ class ProduitController extends Controller
                     ->where(function ($query) {
                         $query->where("produits.societe_id", session('societe')['id'])->orWhere("produits.societe_id", null);
                     });
-                
+
                 // Appliquer les mêmes filtres que la requête principale
                 if (!empty($categorieFilter)) {
                     $stocksQuery->where('produits.categorie_id', $categorieFilter);
@@ -379,11 +379,14 @@ class ProduitController extends Controller
                 "societe_id" => session('societe')['id'],
             ]);
 
+            $departement=Departement::where("nom","principal")->where("societe_id",session('societe')['id'])->first();
+
             // Création du stock initial
             Stock::create([
                 'produit_id' => $produit->id,
                 'quantite' => $request->stockGlobal,
                 'societe_id' => session('societe')['id'],
+                'departement_id' => $departement->id,
             ]);
 
             DB::commit();
@@ -622,6 +625,7 @@ class ProduitController extends Controller
             })
             ->with('typeProduitAchat', 'typeProduitVente', 'categorie', 'fournisseurPrincipal')
             ->get();
+            
 
         $headers = [
             'Content-Type' => 'text/csv',
@@ -634,7 +638,7 @@ class ProduitController extends Controller
         $callback = function () use ($produits) {
             $file = fopen('php://output', 'w');
             fputcsv($file, [
-                'ID', 'Nom', 'Description', 'Stock Global', 'Seuil Minimal',
+                'ID', 'Nom', 'Description', 'Stock Global', 'Stock Critique',
                 'Type Achat', 'Quantité Achat', 'Prix Achat',
                 'Type Vente', 'Quantité Vente', 'Prix Vente',
                 'Catégorie', 'Fournisseur Principal'

@@ -19,6 +19,10 @@ return new class extends Migration
             $table->boolean('status')->default(true)->nullable();
             $table->timestamps();
         });
+
+        Schema::table('motifs', function (Blueprint $table) {
+            $table->foreignId('type_operation_id')->nullable()->constrained('type_operations')->cascadeOnDelete();
+        });
     }
 
     /**

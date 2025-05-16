@@ -44,7 +44,7 @@ class ReferentielSeeder extends Seeder
 
         Referentiel::create([
             "nom" => 'Inventaire',
-            "route" => 'admin.produit.index',
+            "route" => 'admin.stock.produit.index',
         ]);
 
 

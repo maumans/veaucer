@@ -1,1 +1,0 @@
-import"./app-4edf48e5.js";function m(r){var e;let t=(e=r==null?void 0:r.toString())==null?void 0:e.replace(",",".");t=t.replace(/[^0-9.]/g,"");const i=parseFloat(t);return isNaN(i)?"":i.toLocaleString("fr-FR",{minimumFractionDigits:0,maximumFractionDigits:20}).replace(",",".")}export{m as f};

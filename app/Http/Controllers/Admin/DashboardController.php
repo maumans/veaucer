@@ -293,6 +293,7 @@ class DashboardController extends Controller
             ->select('produits.nom', 'stocks.quantite', 'stocks.stockCritique')
             ->where('produits.status', true)
             ->whereRaw('stocks.quantite <= stocks.stockCritique');
+
             
         if ($departementId) {
             $produitsCritiques->where('stocks.departement_id', $departementId);

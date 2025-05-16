@@ -30,9 +30,10 @@ class DatabaseSeeder extends Seeder
             FournisseurSeeder::class,
             TypeProduitSeeder::class,
             CategorieProduitSeeder::class,
-            MotifSeeder::class,
             TypeOperationSeeder::class,
+            MotifSeeder::class,
             ConfigurationPermissionsSeeder::class,
+            ProduitSeeder::class,
             //FastSeeder::class
         ]);
 

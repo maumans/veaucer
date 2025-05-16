@@ -43,7 +43,7 @@ export default function Index({ caisses, auth, success, error, errors }) {
             Cell: ({ cell }) => (
                 <div className="flex items-center gap-2">
                     <AttachMoneyIcon className="text-green-500" />
-                    <span>{cell.getValue()} €</span>
+                    <span>{cell.getValue()} GNF</span>
                 </div>
             )
         },
