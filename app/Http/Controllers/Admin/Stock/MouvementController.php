@@ -280,9 +280,7 @@ class MouvementController extends Controller
 
     public function entree($operation, $caisse, $totalOperation, $totalDepense, $operations, $depenses, $departement, $fournisseur, $enregistrer)
     {
-
         if (!$enregistrer) {
-
             $caisse = Caisse::where('id', $caisse)->where('status', true)->first();
 
             if ($caisse) {
@@ -306,22 +304,22 @@ class MouvementController extends Controller
                     "societe_id" => session('societe')['id'],
                 ]);
             }
+            
             OperationProduit::create([
-                'type_produit_achat_id' => $operationProduit['type_produit_achat_id'],
-                'quantiteAchat' => $operationProduit['quantiteAchat'],
-                'prixAchat' => $operationProduit['prixAchat'],
+                'type_produit_id' => $operationProduit['type_produit_achat_id'],
+                'type' => 'achat',
+                'quantite' => $operationProduit['quantiteAchat'],
+                'prix_unitaire' => $operationProduit['prixAchat'],
                 'produit_id' => $operationProduit['produit_id'],
                 'stock_destination_id' => $stock->id,
                 'operation_id' => $operation->id,
                 "societe_id" => session('societe')['id'],
                 "etat" => $enregistrer ? 'EN ATTENTE' : 'VALIDE',
             ]);
+            
             if (!$enregistrer) {
                 $stock->quantite += $operationProduit['quantiteAchat'];
                 $stock->save();
-
-                $stock->produit->stockGlobal += $operationProduit['quantiteAchat'];
-                $stock->produit->save();
 
                 if ($caisse) {
                     $caisse->solde -= $operationProduit['prixAchat'] * $operationProduit['quantiteAchat'];
@@ -331,9 +329,7 @@ class MouvementController extends Controller
                 }
             }
         }
-
-
-
+        
         foreach ($depenses as $depense) {
             Depense::create([
                 "total" => $depense['montant'],
@@ -364,7 +360,10 @@ class MouvementController extends Controller
                 return redirect()->back()->with('error', 'Stock source inexistant '.$operationProduit['produit_nom']);
             }
             OperationProduit::create([
-                'quantiteAchat' => 0,
+                'type_produit_id' => $operationProduit['type_produit_achat_id'] ?? $operationProduit['produit']['type_produit_id'] ?? null,
+                'type' => 'vente',
+                'quantite' => $operationProduit['quantiteAchat'],
+                'prix_unitaire' => $operationProduit['prixAchat'] ?? 0,
                 'produit_id' => $operationProduit['produit_id'],
                 'stock_source_id' => $stock->id,
                 'operation_id' => $operation->id,
@@ -377,9 +376,6 @@ class MouvementController extends Controller
                 }
                 $stock->quantite -= $operationProduit['quantiteAchat'];
                 $stock->save();
-
-                $stock->produit->stockGlobal -= $operationProduit['quantiteAchat'];
-                $stock->produit->save();
             }
         }
         $operation->motif_id = $motifSortie;
@@ -408,7 +404,10 @@ class MouvementController extends Controller
             }
 
             OperationProduit::create([
-                'quantiteAchat' => 0,
+                'type_produit_id' => $operationProduit['type_produit_achat_id'] ?? $operationProduit['produit']['type_produit_id'] ?? null,
+                'type' => 'transfert',
+                'quantite' => $operationProduit['quantiteAchat'],
+                'prix_unitaire' => $operationProduit['prixAchat'] ?? 0,
                 'produit_id' => $operationProduit['produit_id'],
                 'stock_source_id' => $stockSource->id,
                 'stock_destination_id' => $stockDestination->id,
@@ -426,12 +425,6 @@ class MouvementController extends Controller
 
                 $stockDestination->quantite += $operationProduit['quantiteAchat'];
                 $stockDestination->save();
-
-                $stockSource->produit->stockGlobal -= $operationProduit['quantiteAchat'];
-                $stockSource->produit->save();
-
-                $stockDestination->produit->stockGlobal += $operationProduit['quantiteAchat'];
-                $stockDestination->produit->save();
             }
         }
         $operation->motif_id = $motifTransfert;

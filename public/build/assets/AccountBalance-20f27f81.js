@@ -1,0 +1,1 @@
+import{r as a,i as r}from"./createSvgIcon-4d9a41bc.js";import{j as t}from"./app-eb4ac14d.js";var e={},u=r;Object.defineProperty(e,"__esModule",{value:!0});var o=e.default=void 0,v=u(a()),i=t,l=(0,v.default)((0,i.jsx)("path",{d:"M4 10h3v7H4zm6.5 0h3v7h-3zM2 19h20v3H2zm15-9h3v7h-3zm-5-9L2 6v2h20V6z"}),"AccountBalance");o=e.default=l;export{o as d};

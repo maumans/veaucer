@@ -14,18 +14,10 @@ return new class extends Migration
         Schema::create('operation_produits', function (Blueprint $table) {
             $table->id();
             
-            $table->foreignId('type_produit_achat_id')->nullable()->constrained('type_produits')->cascadeOnDelete();
-            
-            $table->integer('quantite')->nullable();
-            $table->double('prix_unitaire')->nullable();
-
-
-            $table->integer('quantiteAchat')->nullable();
-            $table->double('prixAchat')->nullable();
-
-            $table->foreignId('type_produit_vente_id')->nullable()->constrained('type_produits')->cascadeOnDelete();
-            $table->integer('quantiteVente')->nullable();
-            $table->double('prixVente')->nullable();
+            $table->foreignId('type_produit_id')->constrained('type_produits')->cascadeOnDelete();
+            $table->enum('type', ['achat', 'vente', 'transfert', 'ajustement']); 
+            $table->integer('quantite');
+            $table->double('prix_unitaire');
 
             $table->double('quantiteLivree')->nullable();
 
