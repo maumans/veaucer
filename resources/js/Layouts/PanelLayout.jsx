@@ -236,11 +236,11 @@ export default function PanelLayout(props) {
                                     route:"admin.produit.index",
                                     text:'Produits'
                                 }, */
-                                {
+                                /* {
                                     sousActive:"produit",
-                                    route:"admin.produit.index",
+                                    route:"admin.stock.produit.index",
                                     text:'Produits'
-                                },
+                                }, */
                                 {
                                     sousActive:"service",
                                     route:"admin.service.index",

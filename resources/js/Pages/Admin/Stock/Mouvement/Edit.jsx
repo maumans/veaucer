@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useForm, router } from '@inertiajs/react';
-import { Autocomplete, Button, TextField, IconButton, Tooltip } from '@mui/material';
+import { Autocomplete, Button, TextField, IconButton, Tooltip, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import { MRT_Localization_FR } from "material-react-table/locales/fr/index.js";
 import { DatePicker } from "@mui/x-date-pickers";
 import { motion } from 'framer-motion';
@@ -95,6 +95,7 @@ const Edit = ({ auth, errors, operation, produits, departements, fournisseurs, c
             produit: data.produit,
             quantiteAchat: parseFloat(data.quantiteAchat),
             prixAchat: parseFloat(data.prixAchat),
+            type_produit_id: data.type_produit_id || 1, // 1 pour unité par défaut, 2 pour ensemble
             total: parseFloat(data.quantiteAchat) * parseFloat(data.prixAchat),
         };
 
@@ -181,6 +182,34 @@ const Edit = ({ auth, errors, operation, produits, departements, fournisseurs, c
         {
             accessorKey: 'produit.nom',
             header: 'Produit',
+        },
+        {
+            accessorKey: 'type_produit_id',
+            header: "Type d'achat",
+            Cell: ({ row, cell }) => {
+                const handleTypeChange = (e) => {
+                    const newValue = e.target.value;
+                    const updatedProduits = [...data.produits];
+                    updatedProduits[row.index].type_produit_id = newValue;
+                    setData({
+                        ...data,
+                        produits: updatedProduits
+                    });
+                };
+                
+                return (
+                    <FormControl fullWidth size="small">
+                        <Select
+                            value={cell.getValue() || 1}
+                            onChange={handleTypeChange}
+                            size="small"
+                        >
+                            <MenuItem value={1}>Unité</MenuItem>
+                            <MenuItem value={2}>Ensemble</MenuItem>
+                        </Select>
+                    </FormControl>
+                );
+            },
         },
         {
             accessorKey: 'quantiteAchat',
@@ -412,7 +441,11 @@ const Edit = ({ auth, errors, operation, produits, departements, fournisseurs, c
                                             <TextField
                                                 value={data.quantiteAchat}
                                                 InputProps={{
-                                                    inputComponent: NumberFormatCustomUtils, 
+                                                    inputComponent: NumberFormatCustomUtils,
+                                                    inputProps: {
+                                                        max: 100000000000,
+                                                        min: 0
+                                                    }
                                                 }}
                                                 className="w-full"
                                                 label="Quantité"
@@ -424,11 +457,30 @@ const Edit = ({ auth, errors, operation, produits, departements, fournisseurs, c
                                         </div>
 
                                         <div>
+                                            <FormControl fullWidth size="small">
+                                                <InputLabel>Type d'achat</InputLabel>
+                                                <Select
+                                                    value={data.type_produit_id || 1}
+                                                    label="Type d'achat"
+                                                    onChange={(e) => setData("type_produit_id", e.target.value)}
+                                                >
+                                                    <MenuItem value={1}>Unité</MenuItem>
+                                                    <MenuItem value={2}>Ensemble</MenuItem>
+                                                </Select>
+                                            </FormControl>
+                                            <InputError message={errors.type_produit_id} />
+                                        </div>
+                                        
+                                        <div>
                                             <TextField
                                                 value={data.prixAchat}
                                                 InputProps={{
                                                     inputComponent: NumberFormatCustomUtils,
-                                                    endAdornment: "GNF",
+                                                    inputProps: {
+                                                        max: 100000000000,
+                                                        min: 0,
+                                                        devise: "gnf"
+                                                    }
                                                 }}
                                                 className="w-full"
                                                 label="Prix d'achat"
@@ -491,6 +543,8 @@ const Edit = ({ auth, errors, operation, produits, departements, fournisseurs, c
                                                 InputProps={{
                                                     inputComponent: NumberFormatCustomUtils,
                                                     endAdornment: "GNF",
+                                                    max: 100000000000,
+                                                    min: 0,
                                                 }}
                                                 className="w-full"
                                                 label="Montant"

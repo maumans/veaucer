@@ -10,7 +10,7 @@ import ReferentielLayout from "@/Layouts/ReferentielLayout.jsx";
 import NumberFormatCustomUtils from "@/Pages/Utils/NumberFormatCustomUtils.jsx";
 import PanelLayout from "@/Layouts/PanelLayout.jsx";
 
-function Create({ auth, typeProduits, typeProduitAchat, typeProduitVente, categories, fournisseurs, devises, uniteMesures, errors, success, error, produit }) {
+function Create({ auth, typeProduits, categories, fournisseurs, devises, uniteMesures, errors, success, error, produit }) {
 
     const { data, setData, post, processing } = useForm({
         'id': produit.id,
@@ -18,12 +18,10 @@ function Create({ auth, typeProduits, typeProduitAchat, typeProduitVente, catego
         'stockGlobal': produit.stockGlobal,
         'stockCritique': produit.stockCritique,
         //'image': produit.image,
-        'typeProduitAchat': produit.type_produit_achat,
         'prixAchat': produit.prixAchat,
-        "quantiteAchat": produit.quantiteAchat,
-        'typeProduitVente': produit.type_produit_vente,
         'prixVente': produit.prixVente,
-        "quantiteVente": produit.quantiteVente,
+        'quantiteEnsemble': produit.quantiteEnsemble || '',
+        'prixEnsemble': produit.prixEnsemble || '',
         'categorie': produit.categorie,
         'fournisseur': produit.fournisseur_principal,
         'uniteMesure': produit.unite_mesure,
@@ -31,17 +29,8 @@ function Create({ auth, typeProduits, typeProduitAchat, typeProduitVente, catego
         'description': produit.description,
     });
 
-    useEffect(() => {
-        if (typeProduitAchat?.nom === "unité") {
-            setData("quantiteAchat", 1);
-        }
-    }, [typeProduitAchat])
-
-    useEffect(() => {
-        if (typeProduitVente?.nom === "unité") {
-            setData("quantiteVente", 1);
-        }
-    }, [typeProduitVente])
+    // Les effets liés à typeProduitAchat et typeProduitVente ont été supprimés
+    // car ces champs ne sont plus utilisés dans le modèle
 
     const onHandleChange = (e) => {
         e.target.type === 'checkbox'
@@ -59,7 +48,7 @@ function Create({ auth, typeProduits, typeProduitAchat, typeProduitVente, catego
 
     function handleSubmit(e) {
         e.preventDefault();
-        post(route("admin.produit.store", auth.user.id), { preserveScroll: true })
+        post(route("admin.stock.produit.store", auth.user.id), { preserveScroll: true })
     }
 
     return (
@@ -70,12 +59,12 @@ function Create({ auth, typeProduits, typeProduitAchat, typeProduitVente, catego
             breadcrumbs={[
                 {
                     text: "Société",
-                    href: route("admin.produit.index", auth.user.id),
+                    href: route("admin.stock.produit.index", auth.user.id),
                     active: false
                 },
                 {
                     text: "Modification",
-                    href: route("admin.produit.edit", [auth.user.id, produit.id]),
+                    href: route("admin.stock.produit.edit", [auth.user.id, produit.id]),
                     active: true
                 }
             ]}
@@ -90,7 +79,7 @@ function Create({ auth, typeProduits, typeProduitAchat, typeProduitVente, catego
                             <Button 
                                 variant={'outlined'} 
                                 startIcon={<ArrowBack />}
-                                onClick={() => router.get(route('admin.produit.index', auth.user.id))}
+                                onClick={() => router.get(route('admin.stock.produit.index', auth.user.id))}
                             >
                                 Retour à la liste
                             </Button>
@@ -149,41 +138,8 @@ function Create({ auth, typeProduits, typeProduitAchat, typeProduitVente, catego
 
                             <div className={"grid grid-cols-1 md:grid-cols-2 gap-5 border p-3 rounded"}>
                                 <div className={"md:col-span-2 font-bold text-orange-500"}>
-                                    Options d'achat
+                                    Options d'achat et vente par défaut
                                 </div>
-
-                                <div>
-                                    <Autocomplete
-                                        value={data.typeProduitAchat}
-                                        className={"w-full"}
-                                        onChange={(e, val) => setData("typeProduitAchat", val)}
-                                        disablePortal={true}
-                                        options={typeProduits}
-                                        getOptionLabel={(option) => option.nom}
-                                        isOptionEqualToValue={(option, value) => option.id === value.id}
-                                        renderInput={(params) => <TextField fullWidth {...params} placeholder={"Type de produit"} label={params.nom} size="small" />}
-                                    />
-                                    <InputError message={errors["data.typeProduitAchat"]} />
-                                </div>
-
-                                {
-                                    data.typeProduitAchat?.nom === "ensemble" ?
-                                        <div>
-                                            <TextField
-                                                value={data.quantiteAchat}
-                                                id="quantiteAchat"
-                                                name="quantiteAchat"
-                                                label="Quantité"
-                                                className={'bg-white'}
-                                                fullWidth
-                                                onChange={onHandleChangeNumber}
-                                                size="small"
-                                            />
-                                            <InputError message={errors.quantiteAchat} className="mt-2" />
-                                        </div>
-                                        :
-                                        null
-                                }
 
                                 <div className={"w-full"}>
                                     <TextField
@@ -193,52 +149,13 @@ function Create({ auth, typeProduits, typeProduitAchat, typeProduitVente, catego
                                             inputProps: {
                                                 value: data.prixAchat,
                                                 max: 100000000000,
-                                                min: -1000000000000,
+                                                min: 0,
                                                 name: "prixAchat",
                                             },
                                         }}
-                                        className={"w-full"} label={`Prix d'achat ${data.typeProduitAchat?.nom === "unité" ? "unitaire" : "total"}`} name="prixAchat" onChange={onHandleChange} size='small' />
+                                        className={"w-full"} label={"Prix d'achat unitaire"} name="prixAchat" onChange={onHandleChange} size='small' />
                                     <InputError message={errors.prixAchat} />
                                 </div>
-                            </div>
-
-                            <div className={"grid grid-cols-1 md:grid-cols-2 gap-5 border p-3 rounded"}>
-                                <div className={"md:col-span-2 font-bold text-orange-500"}>
-                                    Options de vente
-                                </div>
-
-                                <div>
-                                    <Autocomplete
-                                        value={data.typeProduitVente}
-                                        className={"w-full"}
-                                        onChange={(e, val) => setData("typeProduitVente", val)}
-                                        disablePortal={true}
-                                        options={typeProduits}
-                                        getOptionLabel={(option) => option.nom}
-                                        isOptionEqualToValue={(option, value) => option.id === value.id}
-                                        renderInput={(params) => <TextField fullWidth {...params} placeholder={"Type de produit"} label={params.nom} size="small" />}
-                                    />
-                                    <InputError message={errors["data.typeProduitVente"]} />
-                                </div>
-
-                                {
-                                    data.typeProduitVente?.nom === "ensemble" ?
-                                        <div>
-                                            <TextField
-                                                value={data.quantiteVente}
-                                                id="quantiteVente"
-                                                name="quantiteVente"
-                                                label="Quantité"
-                                                className={'bg-white'}
-                                                fullWidth
-                                                onChange={onHandleChangeNumber}
-                                                size="small"
-                                            />
-                                            <InputError message={errors.quantiteVente} className="mt-2" />
-                                        </div>
-                                        :
-                                        null
-                                }
 
                                 <div className={"w-full"}>
                                     <TextField
@@ -248,12 +165,48 @@ function Create({ auth, typeProduits, typeProduitAchat, typeProduitVente, catego
                                             inputProps: {
                                                 value: data.prixVente,
                                                 max: 100000000000,
-                                                min: -1000000000000,
+                                                min: 0,
                                                 name: "prixVente",
                                             },
                                         }}
-                                        className={"w-full"} label={`Prix de vente ${data.typeProduitVente?.nom === "unité" ? "unitaire" : "total"}`} name="prixVente" onChange={onHandleChange} size='small' />
+                                        className={"w-full"} label={"Prix de vente unitaire"} name="prixVente" onChange={onHandleChange} size='small' />
                                     <InputError message={errors.prixVente} />
+                                </div>
+
+                                <div>
+                                    <TextField
+                                        InputProps={{
+                                            inputComponent: NumberFormatCustomUtils,
+                                            inputProps: {
+                                                value: data.quantiteEnsemble,
+                                                max: 100000000000,
+                                                min: 0,
+                                                name: "quantiteEnsemble",
+                                            },
+                                        }}
+                                        className={'w-full'}
+                                        label="Quantité par ensemble"
+                                        name="quantiteEnsemble"
+                                        onChange={onHandleChange}
+                                        size="small"
+                                    />
+                                    <InputError message={errors.quantiteEnsemble} className="mt-2" />
+                                </div>
+
+                                <div className={"w-full"}>
+                                    <TextField
+                                        InputProps={{
+                                            inputComponent: NumberFormatCustomUtils,
+                                            endAdornment: "GNF",
+                                            inputProps: {
+                                                value: data.prixEnsemble,
+                                                max: 100000000000,
+                                                min: 0,
+                                                name: "prixEnsemble",
+                                            },
+                                        }}
+                                        className={"w-full"} label={"Prix de vente par ensemble"} name="prixEnsemble" onChange={onHandleChange} size='small' />
+                                    <InputError message={errors.prixEnsemble} />
                                 </div>
                             </div>
 
@@ -268,7 +221,7 @@ function Create({ auth, typeProduits, typeProduitAchat, typeProduitVente, catego
                                             inputProps: {
                                                 value: data.stockGlobal,
                                                 max: 100000000000,
-                                                min: -1000000000000,
+                                                min: 0,
                                                 name: "stockGlobal",
                                             },
                                         }}
@@ -283,7 +236,7 @@ function Create({ auth, typeProduits, typeProduitAchat, typeProduitVente, catego
                                             inputProps: {
                                                 value: data.stockCritique,
                                                 max: 100000000000,
-                                                min: -1000000000000,
+                                                min: 0,
                                                 name: "stockCritique",
                                             },
                                         }}

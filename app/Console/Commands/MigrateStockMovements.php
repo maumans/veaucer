@@ -82,7 +82,7 @@ class MigrateStockMovements extends Command
                     'type_mouvement' => 'AJUSTEMENT',
                     'produit_id' => $ajustement->produit_id,
                     'quantite' => $ajustement->difference,
-                    'prix_unitaire' => $ajustement->produit->prixAchat ?? 0,
+                    'prix' => $ajustement->produit->prixAchat ?? 0,
                     'ajustement_inventaire_id' => $ajustement->id,
                     'inventaire_physique_id' => $ajustement->inventaire_physique_id
                 ]);

@@ -490,7 +490,7 @@ function Index({ auth, errors, operations, departements, fournisseurs, typeOpera
                 },
                 /*{
                     text:"Création",
-                    href:route("admin.produit.create",[auth.user.id]),
+                    href:route("admin.stock.produit.create",[auth.user.id]),
                     active:true
                 }*/
             ]}

@@ -61,9 +61,9 @@ const Show = ({ auth, produit, mouvements }) => {
             },
         },
         {
-            accessorKey: 'prix_unitaire',
+            accessorKey: 'prix',
             header: 'Prix unitaire',
-            Cell: ({ row }) => formatNumber(row.original.prix_unitaire) + ' GNF',
+            Cell: ({ row }) => formatNumber(row.original.prix) + ' GNF',
         },
         {
             accessorKey: 'departementSource.nom',
@@ -210,54 +210,41 @@ const Show = ({ auth, produit, mouvements }) => {
                             )}
                         </Paper>
 
-                        {/* Informations d'achat */}
-                        <Paper elevation={3} className="p-4">
+                        {/* Informations de prix */}
+                        <Paper elevation={3} className="p-4 md:col-span-2">
                             <Typography variant="h6" className="mb-3 text-orange-500 font-bold">
-                                Informations d'achat
+                                Informations de prix
                             </Typography>
-                            <TableContainer>
-                                <Table size="small">
-                                    <TableBody>
-                                        <TableRow>
-                                            <TableCell component="th" className="font-bold" width="40%">Type d'achat</TableCell>
-                                            <TableCell>{produit.typeProduitAchat?.nom || '-'}</TableCell>
-                                        </TableRow>
-                                        <TableRow>
-                                            <TableCell component="th" className="font-bold">Quantité d'achat</TableCell>
-                                            <TableCell>{formatNumber(produit.quantiteAchat)}</TableCell>
-                                        </TableRow>
-                                        <TableRow>
-                                            <TableCell component="th" className="font-bold">Prix d'achat</TableCell>
-                                            <TableCell>{formatNumber(produit.prixAchat)} GNF</TableCell>
-                                        </TableRow>
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
-                        </Paper>
-
-                        {/* Informations de vente */}
-                        <Paper elevation={3} className="p-4">
-                            <Typography variant="h6" className="mb-3 text-orange-500 font-bold">
-                                Informations de vente
-                            </Typography>
-                            <TableContainer>
-                                <Table size="small">
-                                    <TableBody>
-                                        <TableRow>
-                                            <TableCell component="th" className="font-bold" width="40%">Type de vente</TableCell>
-                                            <TableCell>{produit.typeProduitVente?.nom || '-'}</TableCell>
-                                        </TableRow>
-                                        <TableRow>
-                                            <TableCell component="th" className="font-bold">Quantité de vente</TableCell>
-                                            <TableCell>{formatNumber(produit.quantiteVente)}</TableCell>
-                                        </TableRow>
-                                        <TableRow>
-                                            <TableCell component="th" className="font-bold">Prix de vente</TableCell>
-                                            <TableCell>{formatNumber(produit.prixVente)} GNF</TableCell>
-                                        </TableRow>
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <TableContainer>
+                                    <Table size="small">
+                                        <TableBody>
+                                            <TableRow>
+                                                <TableCell component="th" className="font-bold" width="40%">Prix d'achat unitaire</TableCell>
+                                                <TableCell>{formatNumber(produit.prixAchat)} GNF</TableCell>
+                                            </TableRow>
+                                            <TableRow>
+                                                <TableCell component="th" className="font-bold">Prix de vente unitaire</TableCell>
+                                                <TableCell>{formatNumber(produit.prixVente)} GNF</TableCell>
+                                            </TableRow>
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                                <TableContainer>
+                                    <Table size="small">
+                                        <TableBody>
+                                            <TableRow>
+                                                <TableCell component="th" className="font-bold" width="40%">Quantité par ensemble</TableCell>
+                                                <TableCell>{produit.quantiteEnsemble ? formatNumber(produit.quantiteEnsemble) : '-'}</TableCell>
+                                            </TableRow>
+                                            <TableRow>
+                                                <TableCell component="th" className="font-bold">Prix de vente par ensemble</TableCell>
+                                                <TableCell>{produit.prixEnsemble ? `${formatNumber(produit.prixEnsemble)} GNF` : '-'}</TableCell>
+                                            </TableRow>
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                            </div>
                         </Paper>
 
                         {/* Informations de stock */}

@@ -8,6 +8,7 @@ use App\Models\Categorie;
 use App\Models\Departement;
 use App\Models\TypeProduit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class InventaireController extends Controller
@@ -31,11 +32,48 @@ class InventaireController extends Controller
             $query->where("societe_id",session('societe')['id'])->orWhere("societe_id",null);
         })->orderBy('nom')->get();
 
+        // Calcul des statistiques globales
+        $totalProduits = Produit::where('status', true)
+            ->where(function ($query) {
+                $query->where("societe_id", session('societe')['id'])->orWhere("societe_id", null);
+            })
+            ->count();
+            
+        $sousstockCritique = Produit::where('status', true)
+            ->where(function ($query) {
+                $query->where("societe_id", session('societe')['id'])->orWhere("societe_id", null);
+            })
+            ->whereRaw('stockGlobal < stockCritique')
+            ->count();
+            
+        $enRupture = Produit::where('status', true)
+            ->where(function ($query) {
+                $query->where("societe_id", session('societe')['id'])->orWhere("societe_id", null);
+            })
+            ->where('stockGlobal', '=', 0)
+            ->count();
+            
+        $valeurTotale = Produit::where('status', true)
+            ->where(function ($query) {
+                $query->where("societe_id", session('societe')['id'])->orWhere("societe_id", null);
+            })
+            ->selectRaw('SUM(stockGlobal * prixAchat) as valeur_totale')
+            ->value('valeur_totale') ?? 0;
+            
+        // Préparation des statistiques globales
+        $statsGlobales = [
+            'totalProduits' => $totalProduits,
+            'sousstockCritique' => $sousstockCritique,
+            'enRupture' => $enRupture,
+            'valeurTotale' => $valeurTotale
+        ];
+
         return Inertia::render('Admin/Stock/Inventaire/Index',[
             'produits' => $produits,
             'typeProduits' => $typeProduits,
             'categories' => $categories,
             'departements' => $departements,
+            'statsGlobales' => $statsGlobales,
         ]);
     }
 
@@ -79,7 +117,7 @@ class InventaireController extends Controller
             $this->applyFilters($countQuery, $request);
             
             // Chargement des relations
-            $baseQuery->with(['typeProduitAchat', 'categorie']);
+            $baseQuery->with(['categorie']);
             
             // Ajouter la relation fournisseurPrincipal seulement si elle existe
             if (method_exists('App\\Models\\Produit', 'fournisseurPrincipal')) {
@@ -135,10 +173,71 @@ class InventaireController extends Controller
                 }
             }
             
+            // Calcul des statistiques globales ou par département
+            $statsQuery = Produit::where('status', true)
+                ->where(function ($query) {
+                    $query->where("societe_id", session('societe')['id'])->orWhere("societe_id", null);
+                });
+                
+            // Appliquer les filtres sur la requête de statistiques
+            $this->applyFilters($statsQuery, $request);
+            
+            // Si un département est sélectionné, filtrer les statistiques par département
+            if ($departement_id) {
+                $statsQuery->whereHas('stocks', function($q) use ($departement_id) {
+                    $q->where('departement_id', $departement_id);
+                });
+                
+                // Calcul des statistiques pour le département sélectionné
+                $totalProduits = $statsQuery->count();
+                
+                $sousstockCritiqueQuery = clone $statsQuery;
+                $sousstockCritique = $sousstockCritiqueQuery->whereHas('stocks', function($q) use ($departement_id) {
+                    $q->where('departement_id', $departement_id)
+                      ->whereRaw('quantite < produits.stockCritique');
+                })->count();
+                
+                $enRuptureQuery = clone $statsQuery;
+                $enRupture = $enRuptureQuery->whereHas('stocks', function($q) use ($departement_id) {
+                    $q->where('departement_id', $departement_id)
+                      ->where('quantite', '=', 0);
+                })->count();
+                
+                $valeurTotale = DB::table('stocks')
+                    ->where('departement_id', $departement_id)
+                    ->join('produits', 'stocks.produit_id', '=', 'produits.id')
+                    ->where('produits.status', true)
+                    ->where(function ($query) {
+                        $query->where("produits.societe_id", session('societe')['id'])->orWhere("produits.societe_id", null);
+                    })
+                    ->sum(DB::raw('stocks.quantite * produits.prixAchat')) ?? 0;
+            } else {
+                // Calcul des statistiques globales
+                $totalProduits = $statsQuery->count();
+                
+                $sousstockCritiqueQuery = clone $statsQuery;
+                $sousstockCritique = $sousstockCritiqueQuery->whereRaw('stockGlobal < stockCritique AND stockGlobal > 0')->count();
+                
+                $enRuptureQuery = clone $statsQuery;
+                $enRupture = $enRuptureQuery->where('stockGlobal', '=', 0)->count();
+                
+                $valeurTotaleQuery = clone $statsQuery;
+                $valeurTotale = $valeurTotaleQuery->selectRaw('SUM(stockGlobal * prixAchat) as valeur_totale')->value('valeur_totale') ?? 0;
+            }
+            
+            // Préparation des statistiques
+            $stats = [
+                'totalProduits' => $totalProduits,
+                'sousstockCritique' => $sousstockCritique,
+                'enRupture' => $enRupture,
+                'valeurTotale' => $valeurTotale
+            ];
+
             return response()->json([
                 'data' => $produits,
                 'rowCount' => $rowCount,
                 'departement_id' => $departement_id,
+                'stats' => $stats,
                 'success' => true
             ]);
         } catch (\Exception $e) {
@@ -165,18 +264,9 @@ class InventaireController extends Controller
             // Traitement des filtres de colonnes
             if (!empty($request->filters)) {
                 foreach ($request->filters as $filter) {
+                    // Le filtre par typeProduit a été désactivé car la relation n'existe plus
                     if ($filter['id'] == 'typeProduit') {
-                        // Si c'est un ID numérique, on filtre par ID
-                        if (is_numeric($filter['value'])) {
-                            $query->whereHas('typeProduitAchat', function($q) use ($filter) {
-                                $q->where('id', $filter['value']);
-                            });
-                        } else {
-                            // Sinon on filtre par nom
-                            $query->whereHas('typeProduitAchat', function($q) use ($filter) {
-                                $q->where('nom', 'like', "%{$filter['value']}%");
-                            });
-                        }
+                        // Ne rien faire, la relation typeProduit n'existe plus
                     }
                     else if($filter['id'] == 'categorie') {
                         // Si c'est un ID numérique, on filtre par ID
@@ -196,8 +286,8 @@ class InventaireController extends Controller
                             $q->where('nom', 'like', "%{$filter['value']}%");
                         });
                     }
-                    else if($filter['id'] == 'seuil_minimal') {
-                        // Filtre spécial pour les produits sous le seuil minimal
+                    else if($filter['id'] == 'stock_critique') {
+                        // Filtre spécial pour les produits sous le seuil critique
                         $query->whereRaw('stockGlobal < stockCritique');
                     }
                     else if($filter['id'] == 'stockGlobal' && $filter['value'] == '0') {
@@ -225,9 +315,6 @@ class InventaireController extends Controller
                       ->orWhere('stockGlobal', 'like', $searchTerm)
                       ->orWhere('prixAchat', 'like', $searchTerm)
                       ->orWhere('prixVente', 'like', $searchTerm)
-                      ->orWhereHas('typeProduitAchat', function($subq) use ($searchTerm) {
-                          $subq->where('nom', 'like', $searchTerm);
-                      })
                       ->orWhereHas('categorie', function($subq) use ($searchTerm) {
                           $subq->where('nom', 'like', $searchTerm);
                       });

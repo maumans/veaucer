@@ -17,7 +17,6 @@ return new class extends Migration
             $table->string('nom')->nullable();
             $table->longText('description')->nullable();
             
-            
             $table->double('stockGlobal')->nullable();
             $table->double('stockCritique')->nullable();
             $table->double('seuilMaximal')->nullable();
@@ -25,13 +24,11 @@ return new class extends Migration
             $table->integer('notes')->nullable();
             $table->enum('etat',['ACTIF','HORS STOCK','EN PROMOTION'])->default("ACTIF")->nullable();
 
-            $table->foreignId('type_produit_achat_id')->nullable()->constrained('type_produits')->cascadeOnDelete();
-            $table->integer('quantiteAchat')->nullable();
-            $table->double('prixAchat')->nullable();
-
-            $table->foreignId('type_produit_vente_id')->nullable()->constrained('type_produits')->cascadeOnDelete();
-            $table->integer('quantiteVente')->nullable();
+            $table->double('prixAchat')->nullable(); 
             $table->double('prixVente')->nullable();
+
+            $table->double('quantiteEnsemble')->nullable();
+            $table->double('prixEnsemble')->nullable();
             
             $table->boolean('status')->default(true)->nullable();
             $table->foreignId('categorie_id')->nullable()->constrained('categories')->cascadeOnDelete();

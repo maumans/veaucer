@@ -52,7 +52,7 @@ import InputError from "@/Components/InputError.jsx";
 import dayjs from 'dayjs';
 import { formatNumber } from 'chart.js/helpers';
 
-function Index({ auth, errors, produits, typeProduits, categories, error, success, departements }) {
+function Index({ auth, errors, produits, typeProduits, categories, error, success, departements, statsGlobales }) {
     //PAGINATION
 
     const [produitsSt, setProduitsSt] = useState([]);
@@ -269,13 +269,13 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
                 size: 100,
                 Cell: ({ row }) => {
                     const stock = row.original.stockGlobal || 0;
-                    const seuilMin = row.original.stockCritique || 0;
-                    const seuilMax = row.original.seuilMaximal || 0;
+                    const stockCritique = row.original.stockCritique || 0;
+                    const seuilMaximal = row.original.seuilMaximal || 0;
                     
                     let color = 'success.main';
                     if (stock === 0) {
                         color = 'error.main';
-                    } else if (stock < seuilMin) {
+                    } else if (stock < stockCritique) {
                         color = 'warning.main';
                     }
                     
@@ -288,7 +288,7 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
             },
             {
                 accessorKey: 'stockCritique',
-                header: 'Seuil Min',
+                header: 'Stock Critique',
                 size: 100,
                 Cell: ({ row }) => (
                     <Typography>{formatNumber(row.original.stockCritique || 0)}</Typography>
@@ -377,6 +377,8 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
         []
     );
 
+    console.log(produitsSt)
+
     const table = useMaterialReactTable({
         columns,
         data: produitsSt,
@@ -409,18 +411,37 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
 
     // Calcul des statistiques pour le tableau de bord
     const statsData = useMemo(() => {
-        const totalProduits = produitsSt.length;
-        const sousstockCritique = produitsSt.filter(p => p.stockGlobal < p.stockCritique).length;
-        const enRupture = produitsSt.filter(p => p.stockGlobal === 0).length;
-        const valeurTotale = produitsSt.reduce((total, p) => total + ((p.stockGlobal || 0) * (p.prixAchat || 0)), 0);
-        
-        return {
-            totalProduits,
-            sousstockCritique,
-            enRupture,
-            valeurTotale
-        };
-    }, [produitsSt]);
+        // Si des statistiques sont disponibles depuis le serveur, les utiliser
+        if (data?.stats) {
+            return {
+                totalProduits: data.stats.totalProduits,
+                sousstockCritique: data.stats.sousstockCritique,
+                enRupture: data.stats.enRupture,
+                valeurTotale: data.stats.valeurTotale
+            };
+        } else if (statsGlobales) {
+            // Utiliser les statistiques globales envoyées lors du chargement initial
+            return {
+                totalProduits: statsGlobales.totalProduits,
+                sousstockCritique: statsGlobales.sousstockCritique,
+                enRupture: statsGlobales.enRupture,
+                valeurTotale: statsGlobales.valeurTotale
+            };
+        } else {
+            // Calcul local comme solution de secours
+            const totalProduits = produitsSt.length;
+            const sousstockCritique = produitsSt.filter(p => p.stockGlobal < p.stockCritique).length;
+            const enRupture = produitsSt.filter(p => p.stockGlobal === 0).length;
+            const valeurTotale = produitsSt.reduce((total, p) => total + ((p.stockGlobal || 0) * (p.prixAchat || 0)), 0);
+            
+            return {
+                totalProduits,
+                sousstockCritique,
+                enRupture,
+                valeurTotale
+            };
+        }
+    }, [produitsSt, data?.stats, statsGlobales]);
 
     // Les filtres avancés sont maintenant définis plus haut dans le composant
 
@@ -459,10 +480,10 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
                     id: 'stockGlobal',
                     value: '0'
                 });
-            } else if (filtresAvances.status === 'seuil') {
+            } else if (filtresAvances.status === 'sous_stock') {
                 // Ce filtre sera géré spécialement dans le backend
                 newColumnFilters.push({
-                    id: 'seuil_minimal',
+                    id: 'stock_critique',
                     value: 'true'
                 });
             } else {
@@ -600,7 +621,7 @@ function Index({ auth, errors, produits, typeProduits, categories, error, succes
                                     <MenuItem value="1">Actif</MenuItem>
                                     <MenuItem value="0">Inactif</MenuItem>
                                     <MenuItem value="rupture">En rupture</MenuItem>
-                                    <MenuItem value="seuil">Sous seuil minimal</MenuItem>
+                                    <MenuItem value="sous_stock">Stock critique</MenuItem>
                                 </Select>
                             </FormControl>
                         </Grid>

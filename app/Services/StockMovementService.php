@@ -40,7 +40,7 @@ class StockMovementService
                 'type_mouvement' => 'AJUSTEMENT',
                 'produit_id' => $ajustement->produit_id,
                 'quantite' => $ajustement->difference,
-                'prix_unitaire' => $ajustement->produit->prixAchat ?? 0,
+                'prix' => $ajustement->produit->prixAchat ?? 0,
                 'ajustement_inventaire_id' => $ajustement->id
             ]);
             
@@ -71,7 +71,7 @@ class StockMovementService
             // Créer l'opération
             $operation = $this->createOperation([
                 'date' => now(),
-                'montant' => $data['quantite'] * ($data['prix_unitaire'] ?? 0),
+                'montant' => $data['quantite'] * ($data['prix'] ?? 0),
                 'type_operation_id' => $typeOperation->id,
                 'departement_source_id' => $data['departement_source_id'],
                 'departement_destination_id' => $data['departement_destination_id'],
@@ -84,7 +84,7 @@ class StockMovementService
                 'type_mouvement' => 'TRANSFERT',
                 'produit_id' => $data['produit_id'],
                 'quantite' => $data['quantite'],
-                'prix_unitaire' => $data['prix_unitaire'] ?? 0
+                'prix' => $data['prix_unitaire'] ?? 0
             ]);
             
             // Mettre à jour le stock source (diminution)
@@ -117,7 +117,7 @@ class StockMovementService
             // Créer l'opération
             $operation = $this->createOperation([
                 'date' => now(),
-                'montant' => $data['quantite'] * ($data['prix_unitaire'] ?? 0),
+                'montant' => $data['quantite'] * ($data['prix'] ?? 0),
                 'type_operation_id' => $typeOperation->id,
                 'departement_destination_id' => $data['departement_id'],
                 'fournisseur_id' => $data['fournisseur_id'] ?? null,
@@ -130,7 +130,7 @@ class StockMovementService
                 'type_mouvement' => 'ENTREE',
                 'produit_id' => $data['produit_id'],
                 'quantite' => $data['quantite'],
-                'prix_unitaire' => $data['prix_unitaire'] ?? 0
+                'prix' => $data['prix_unitaire'] ?? 0
             ]);
             
             // Mettre à jour le stock (augmentation)
@@ -158,7 +158,7 @@ class StockMovementService
             // Créer l'opération
             $operation = $this->createOperation([
                 'date' => now(),
-                'montant' => $data['quantite'] * ($data['prix_unitaire'] ?? 0),
+                'montant' => $data['quantite'] * ($data['prix'] ?? 0),
                 'type_operation_id' => $typeOperation->id,
                 'departement_source_id' => $data['departement_id'],
                 'description' => 'Sortie de stock: ' . $data['description'] ?? '',
@@ -170,7 +170,7 @@ class StockMovementService
                 'type_mouvement' => 'SORTIE',
                 'produit_id' => $data['produit_id'],
                 'quantite' => $data['quantite'],
-                'prix_unitaire' => $data['prix_unitaire'] ?? 0
+                'prix' => $data['prix_unitaire'] ?? 0
             ]);
             
             // Mettre à jour le stock (diminution)

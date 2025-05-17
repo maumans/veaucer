@@ -16,9 +16,8 @@ return new class extends Migration
             
             $table->foreignId('type_produit_id')->constrained('type_produits')->cascadeOnDelete();
             $table->enum('type', ['achat', 'vente', 'transfert', 'ajustement']); 
+            $table->double('prix');
             $table->integer('quantite');
-            $table->double('prix_unitaire');
-
             $table->double('quantiteLivree')->nullable();
 
             $table->foreignId('stock_source_id')->nullable()->constrained('stocks')->cascadeOnDelete();

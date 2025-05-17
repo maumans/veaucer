@@ -109,7 +109,7 @@ function Create({ auth, produits, departements, departementPrincipal, caisses, c
                         quantiteAchat: parseInt(data[`quantiteAchat.${op.id}`]),
                         produit_id: op.produit_id,
                         produit_nom: op.produit_nom,
-                        type_produit_achat_id: op.type_produit_achat_id,
+                        type_produit_id: parseInt(data[`type_produit_id.${op.id}`] || 1) // 1 pour unité par défaut, 2 pour ensemble
                     })
                 }
 
@@ -169,8 +169,17 @@ function Create({ auth, produits, departements, departementPrincipal, caisses, c
     const [columnVisibility, setColumnVisibility] = useState({
         prixAchat: data.typeOperation?.nom === "entrée",
         montant: data.typeOperation?.nom === "entrée",
-        typeProduitAchat: data.typeOperation?.nom === "entrée"
+        typeProduit: data.typeOperation?.nom === "entrée"
     });
+    
+    // Mettre à jour la visibilité des colonnes lorsque le type d'opération change
+    useEffect(() => {
+        setColumnVisibility({
+            prixAchat: data.typeOperation?.nom === "entrée",
+            montant: data.typeOperation?.nom === "entrée",
+            typeProduit: data.typeOperation?.nom === "entrée"
+        });
+    }, [data.typeOperation]);
 
     useEffect(() => {
         setData((prevData) => ({
@@ -198,10 +207,18 @@ function Create({ auth, produits, departements, departementPrincipal, caisses, c
                 )
             },
             {
-                accessorKey: 'typeProduitAchat',
-                header: "Type d'achat",
+                accessorKey: 'typeProduit',
+                header: "Type de produit",
                 Cell: ({ row }) => (
-                    row.original.type_produit_achat?.toLowerCase() == 'ensemble' ? 'Engros' : 'Unité'
+                    <select
+                        name={`type_produit_id.${row.original.id}`}
+                        value={data[`type_produit_id.${row.original.id}`] || 1}
+                        onChange={onHandleChangeOperation}
+                        className="w-full p-2 border rounded"
+                    >
+                        <option value={1}>Unité</option>
+                        <option value={2}>Ensemble</option>
+                    </select>
                 )
             },
 
@@ -216,7 +233,7 @@ function Create({ auth, produits, departements, departementPrincipal, caisses, c
                             inputComponent: NumberFormatCustomUtils,
                             inputProps: {
                                 max: 100000000000,
-                                min: -1000000000000,
+                                min: 0,
                             },
                         }}
                         className="w-full"
@@ -236,7 +253,7 @@ function Create({ auth, produits, departements, departementPrincipal, caisses, c
                             inputComponent: NumberFormatCustomUtils,
                             inputProps: {
                                 max: 100000000000,
-                                min: -1000000000000,
+                                min: 0,
                             },
                         }}
                         className="w-full"
@@ -294,7 +311,7 @@ function Create({ auth, produits, departements, departementPrincipal, caisses, c
                             inputComponent: NumberFormatCustomUtils,
                             inputProps: {
                                 max: 100000000000,
-                                min: -1000000000000,
+                                min: 0,
                             },
                         }}
                         className="w-full"
@@ -374,8 +391,7 @@ function Create({ auth, produits, departements, departementPrincipal, caisses, c
                     produit: p,
                     produit_id: p?.id,
                     produit_nom: p?.nom,
-                    type_produit_achat: p?.type_produit_achat?.nom,
-                    type_produit_achat_id: p?.type_produit_achat?.id,
+                    type_produit_id: 1, // 1 pour unité par défaut, 2 pour ensemble
                     prixAchat: p.prixAchat,
                     quantiteAchat: '',
                     montant: '',
@@ -390,6 +406,7 @@ function Create({ auth, produits, departements, departementPrincipal, caisses, c
                     produit: p,
                     produit_id: p?.id,
                     produit_nom: p?.nom,
+                    type_produit_id: 1, // 1 pour unité par défaut, 2 pour ensemble
                     quantiteAchat: '',
                 })
 

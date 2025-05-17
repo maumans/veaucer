@@ -45,9 +45,7 @@ class ProduitController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('nom', 'like', "%{$search}%")
                   ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhereRelation('typeProduitAchat', 'nom', 'like', "%{$search}%")
-                  ->orWhereRelation('typeProduitVente', 'nom', 'like', "%{$search}%")
-                  ->orWhereRelation('categorie', 'nom', 'like', "%{$search}%")
+                  ->orWhereRelation('categorie', 'libelle', 'like', "%{$search}%")
                   ->orWhere('prixAchat', 'like', "%{$search}%")
                   ->orWhere('prixVente', 'like', "%{$search}%");
             });
@@ -56,14 +54,6 @@ class ProduitController extends Controller
         // Filtre par catégorie
         if (!empty($categorieFilter)) {
             $query->where('categorie_id', $categorieFilter);
-        }
-        
-        // Filtre par type de produit
-        if (!empty($typeProduitFilter)) {
-            $query->where(function ($q) use ($typeProduitFilter) {
-                $q->where('type_produit_achat_id', $typeProduitFilter)
-                  ->orWhere('type_produit_vente_id', $typeProduitFilter);
-            });
         }
         
         // Filtre par niveau de stock
@@ -90,7 +80,7 @@ class ProduitController extends Controller
         $query->orderBy($sortField, $sortDirection);
         
         // Exécuter la requête avec pagination
-        $produits = $query->with('typeProduitAchat', 'typeProduitVente', 'categorie')
+        $produits = $query->with('categorie', 'fournisseurPrincipal', 'uniteMesure', 'devise')
             ->paginate($perPage);
 
         // Récupérer les types de produits et catégories pour les filtres
@@ -105,187 +95,105 @@ class ProduitController extends Controller
             ->where(function ($query) {
                 $query->where("societe_id", session('societe')['id'])->orWhere("societe_id", null);
             })
-            ->orderBy('nom')
+            ->orderBy('libelle')
             ->get();
-            
-        // Récupérer les départements pour le filtre
+
         $departements = Departement::where('status', true)
             ->where(function ($query) {
                 $query->where("societe_id", session('societe')['id'])->orWhere("societe_id", null);
             })
             ->orderBy('nom')
             ->get();
+
+        // Calculer les statistiques
+        $baseStatsQuery = Produit::where('status', true)
+            ->where(function ($query) {
+                $query->where("societe_id", session('societe')['id'])->orWhere("societe_id", null);
+            });
             
+        // Appliquer les filtres aux statistiques
+        if (!empty($categorieFilter)) {
+            $baseStatsQuery->where('categorie_id', $categorieFilter);
+        }
+        
         // Statistiques globales
-        // Si un filtre est appliqué, les statistiques doivent refléter les produits filtrés
-        $statsQuery = clone $query; // Utiliser la même base de requête que pour les produits affichés
+        $totalProduits = clone $baseStatsQuery;
+        $totalProduits = $totalProduits->count();
         
-        $totalProduits = $statsQuery->count();
+        $stockCritique = clone $baseStatsQuery;
+        $stockCritique = $stockCritique->whereRaw('stockGlobal <= stockCritique AND stockGlobal > 0')->count();
         
-        $stockCritique = Produit::where('status', true)
-            ->where(function ($query) {
-                $query->where("societe_id", session('societe')['id'])->orWhere("societe_id", null);
-            });
-            
-        // Appliquer les mêmes filtres que la requête principale
-        if (!empty($categorieFilter)) {
-            $stockCritique->where('categorie_id', $categorieFilter);
-        }
+        $stockEpuise = clone $baseStatsQuery;
+        $stockEpuise = $stockEpuise->where('stockGlobal', '<=', 0)->count();
         
-        if (!empty($typeProduitFilter)) {
-            $stockCritique->where(function ($q) use ($typeProduitFilter) {
-                $q->where('type_produit_achat_id', $typeProduitFilter)
-                  ->orWhere('type_produit_vente_id', $typeProduitFilter);
-            });
-        }
+        $valeurTotaleStock = clone $baseStatsQuery;
+        $valeurTotaleStock = $valeurTotaleStock->sum(DB::raw('stockGlobal * prixAchat'));
         
+        // Statistiques par département si un département est sélectionné
+        $departementStats = null;
         if (!empty($departementFilter)) {
-            $stockCritique->whereHas('stocks', function($q) use ($departementFilter) {
+            $departement = Departement::find($departementFilter);
+            
+            $produitsDepartement = clone $baseStatsQuery;
+            $produitsDepartement = $produitsDepartement->whereHas('stocks', function($q) use ($departementFilter) {
                 $q->where('departement_id', $departementFilter);
-            });
-        }
-        
-        $stockCritique = $stockCritique->whereRaw('stockGlobal <= stockCritique')
-            ->count();
+            })->count();
             
-        $stockEpuise = Produit::where('status', true)
-            ->where(function ($query) {
-                $query->where("societe_id", session('societe')['id'])->orWhere("societe_id", null);
-            });
+            $stockCritiqueDepartement = clone $baseStatsQuery;
+            $stockCritiqueDepartement = $stockCritiqueDepartement
+                ->whereHas('stocks', function($q) use ($departementFilter) {
+                    $q->where('departement_id', $departementFilter)
+                      ->whereRaw('quantite <= produits.stockCritique AND quantite > 0');
+                })
+                ->count();
             
-        // Appliquer les mêmes filtres que la requête principale
-        if (!empty($categorieFilter)) {
-            $stockEpuise->where('categorie_id', $categorieFilter);
-        }
-        
-        if (!empty($typeProduitFilter)) {
-            $stockEpuise->where(function ($q) use ($typeProduitFilter) {
-                $q->where('type_produit_achat_id', $typeProduitFilter)
-                  ->orWhere('type_produit_vente_id', $typeProduitFilter);
-            });
-        }
-        
-        if (!empty($departementFilter)) {
-            $stockEpuise->whereHas('stocks', function($q) use ($departementFilter) {
-                $q->where('departement_id', $departementFilter);
-            });
-        }
-        
-        $stockEpuise = $stockEpuise->where('stockGlobal', '<=', 0)
-            ->count();
+            $stockEpuiseDepartement = clone $baseStatsQuery;
+            $stockEpuiseDepartement = $stockEpuiseDepartement
+                ->whereHas('stocks', function($q) use ($departementFilter) {
+                    $q->where('departement_id', $departementFilter)
+                      ->where('quantite', '<=', 0);
+                })
+                ->count();
             
-        $valeurTotaleStockQuery = Produit::where('status', true)
-            ->where(function ($query) {
-                $query->where("societe_id", session('societe')['id'])->orWhere("societe_id", null);
-            });
+            $valeurTotaleStockDepartement = DB::table('stocks')
+                ->where('departement_id', $departementFilter)
+                ->join('produits', 'stocks.produit_id', '=', 'produits.id')
+                ->sum(DB::raw('stocks.quantite * produits.prixAchat'));
             
-        // Appliquer les mêmes filtres que la requête principale
-        if (!empty($categorieFilter)) {
-            $valeurTotaleStockQuery->where('categorie_id', $categorieFilter);
+            $departementStats = [
+                'nom' => $departement->nom,
+                'total_produits' => $produitsDepartement,
+                'stockCritique' => $stockCritiqueDepartement,
+                'stock_epuise' => $stockEpuiseDepartement,
+                'valeur_totale_stock' => $valeurTotaleStockDepartement
+            ];
         }
         
-        if (!empty($typeProduitFilter)) {
-            $valeurTotaleStockQuery->where(function ($q) use ($typeProduitFilter) {
-                $q->where('type_produit_achat_id', $typeProduitFilter)
-                  ->orWhere('type_produit_vente_id', $typeProduitFilter);
-            });
-        }
-        
-        if (!empty($departementFilter)) {
-            $valeurTotaleStockQuery->whereHas('stocks', function($q) use ($departementFilter) {
-                $q->where('departement_id', $departementFilter);
-            });
-        }
-        
-        $valeurTotaleStock = $valeurTotaleStockQuery->selectRaw('SUM(stockGlobal * prixAchat) as valeur_totale')
-            ->first()
-            ->valeur_totale ?? 0;
+        // Préparer les statistiques à envoyer à la vue
+        $stats = [
+            'total_produits' => $totalProduits,
+            'stockCritique' => $stockCritique,
+            'stock_epuise' => $stockEpuise,
+            'valeur_totale_stock' => $valeurTotaleStock,
+            'departement' => $departementStats
+        ];
 
-        // Statistiques par département si un filtre de département est appliqué
-        $statsByDepartement = null;
-        if (!empty($departementFilter)) {
-            $departementInfo = Departement::find($departementFilter);
-            if ($departementInfo) {
-                // Statistiques par département avec les filtres appliqués
-                $stocksQuery = DB::table('stocks')
-                    ->join('produits', 'stocks.produit_id', '=', 'produits.id')
-                    ->where('stocks.departement_id', $departementFilter)
-                    ->where('produits.status', true)
-                    ->where(function ($query) {
-                        $query->where("produits.societe_id", session('societe')['id'])->orWhere("produits.societe_id", null);
-                    });
-
-                // Appliquer les mêmes filtres que la requête principale
-                if (!empty($categorieFilter)) {
-                    $stocksQuery->where('produits.categorie_id', $categorieFilter);
-                }
-                
-                if (!empty($typeProduitFilter)) {
-                    $stocksQuery->where(function ($q) use ($typeProduitFilter) {
-                        $q->where('produits.type_produit_achat_id', $typeProduitFilter)
-                          ->orWhere('produits.type_produit_vente_id', $typeProduitFilter);
-                    });
-                }
-                
-                if (!empty($search)) {
-                    $stocksQuery->where(function ($q) use ($search) {
-                        $q->where('produits.nom', 'like', "%{$search}%")
-                          ->orWhere('produits.description', 'like', "%{$search}%");
-                    });
-                }
-                
-                // Compter les produits dans ce département (avec filtres)
-                $totalProduitsByDept = $stocksQuery->count(DB::raw('DISTINCT produits.id'));
-                
-                // Stock critique par département (avec filtres)
-                $stockCritiqueByDept = clone $stocksQuery;
-                $stockCritiqueByDept = $stockCritiqueByDept
-                    ->whereRaw('stocks.quantite <= produits.stockCritique AND stocks.quantite > 0')
-                    ->count(DB::raw('DISTINCT produits.id'));
-                    
-                // Stock épuisé par département (avec filtres)
-                $stockEpuiseByDept = clone $stocksQuery;
-                $stockEpuiseByDept = $stockEpuiseByDept
-                    ->where('stocks.quantite', '<=', 0)
-                    ->count(DB::raw('DISTINCT produits.id'));
-                    
-                // Valeur totale du stock par département (avec filtres)
-                $valeurTotaleStockByDept = clone $stocksQuery;
-                $valeurTotaleStockByDept = $valeurTotaleStockByDept
-                    ->selectRaw('SUM(stocks.quantite * produits.prixAchat) as valeur_totale')
-                    ->first()
-                    ->valeur_totale ?? 0;
-                    
-                $statsByDepartement = [
-                    'nom_departement' => $departementInfo->nom,
-                    'total_produits' => $totalProduitsByDept,
-                    'stockCritique' => $stockCritiqueByDept,
-                    'stock_epuise' => $stockEpuiseByDept,
-                    'valeur_totale_stock' => $valeurTotaleStockByDept,
-                ];
-            }
-        }
-        
+        // Retourner la vue avec les données
         return Inertia::render('Admin/Stock/Produit/Index', [
             'produits' => $produits,
             'typeProduits' => $typeProduits,
             'categories' => $categories,
             'departements' => $departements,
+            'stats' => $stats,
             'filters' => [
                 'search' => $search,
-                'sort_field' => $sortField,
-                'sort_direction' => $sortDirection,
                 'categorie_id' => $categorieFilter,
                 'type_produit_id' => $typeProduitFilter,
                 'stock_filter' => $stockFilter,
                 'departement_id' => $departementFilter,
-            ],
-            'stats' => [
-                'total_produits' => $totalProduits,
-                'stockCritique' => $stockCritique,
-                'stock_epuise' => $stockEpuise,
-                'valeur_totale_stock' => $valeurTotaleStock,
-                'departement' => $statsByDepartement,
+                'per_page' => $perPage,
+                'sort_field' => $sortField,
+                'sort_direction' => $sortDirection,
             ],
         ]);
     }
@@ -302,14 +210,11 @@ class ProduitController extends Controller
             ->orderBy('nom')
             ->get();
 
-        $typeProduitAchat = TypeProduit::where('status', true)->where('nom', 'ensemble')->first();
-        $typeProduitVente = TypeProduit::where('status', true)->where('nom', 'unité')->first();
-
         $categories = Categorie::where('status', true)
             ->where(function ($query) {
                 $query->where("societe_id", session('societe')['id'])->orWhere("societe_id", null);
             })
-            ->orderBy('nom')
+            ->orderBy('libelle')
             ->get();
 
         $fournisseurs = Fournisseur::where('status', true)
@@ -319,17 +224,10 @@ class ProduitController extends Controller
             ->orderBy('nom')
             ->get();
 
-        $departements = Departement::where('id', session('societe')['id'])->where('status', true)->get();
-        $departementPrincipal = Departement::where('id', session('societe')['id'])->where('status', true)->where('type', 'PRINCIPAL')->first();
-
-        return Inertia::render("Admin/Stock/Produit/Create", [
+        return Inertia::render('Admin/Stock/Produit/Create', [
             'typeProduits' => $typeProduits,
-            'typeProduitAchat' => $typeProduitAchat,
-            'typeProduitVente' => $typeProduitVente,
             'categories' => $categories,
             'fournisseurs' => $fournisseurs,
-            'departements' => $departements,
-            'departementPrincipal' => $departementPrincipal,
         ]);
     }
 
@@ -340,14 +238,12 @@ class ProduitController extends Controller
     {
         $request->validate([
             'nom' => 'required',
-            "typeProduitAchat" => 'required',
-            "typeProduitVente" => 'required',
             "prixAchat" => 'required',
             "prixVente" => 'required',
             "stockGlobal" => 'required',
             "stockCritique" => 'required',
-            "quantiteAchat" => 'required',
-            "quantiteVente" => 'required',
+            "quantiteEnsemble" => 'nullable|numeric',
+            "prixEnsemble" => 'nullable|numeric',
             "categorie" => 'required',
             "image" => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
@@ -366,12 +262,10 @@ class ProduitController extends Controller
                 "stockCritique" => $request->stockCritique,
                 "stockGlobal" => $request->stockGlobal,
                 "image" => $imagePath,
-                "type_produit_achat_id" => $request->typeProduitAchat['id'],
-                "quantiteAchat" => $request->quantiteAchat,
                 "prixAchat" => $request->prixAchat,
-                "type_produit_vente_id" => $request->typeProduitVente['id'],
-                "quantiteVente" => $request->quantiteVente,
                 "prixVente" => $request->prixVente,
+                "quantiteEnsemble" => $request->quantiteEnsemble,
+                "prixEnsemble" => $request->prixEnsemble,
                 "categorie_id" => $request->categorie['id'],
                 "fournisseur_principal_id" => $request->fournisseur ? $request->fournisseur['id'] : null,
                 "unite_mesure_id" => $request->uniteMesure ? $request->uniteMesure['id'] : null,
@@ -403,26 +297,11 @@ class ProduitController extends Controller
      */
     public function show($userId, $produitId)
     {
-        $produit = Produit::with([
-            'typeProduitAchat', 
-            'typeProduitVente', 
-            'categorie', 
-            'fournisseurPrincipal', 
-            'stocks',
-            'operations' => function($query) {
-                $query->orderBy('created_at', 'desc')->limit(10);
-            }
-        ])->findOrFail($produitId);
-
-        // Récupérer les mouvements de stock liés à ce produit
-        $mouvements = Operation::where('produit_id', $produitId)
-            ->orderBy('created_at', 'desc')
-            ->with(['typeOperation', 'departementSource', 'departementDestination'])
-            ->paginate(10);
+        $produit = Produit::with('categorie', 'fournisseurPrincipal', 'uniteMesure', 'devise', 'stocks.departement')
+            ->findOrFail($produitId);
 
         return Inertia::render('Admin/Stock/Produit/Show', [
             'produit' => $produit,
-            'mouvements' => $mouvements
         ]);
     }
 
@@ -431,7 +310,8 @@ class ProduitController extends Controller
      */
     public function edit($userId, $produitId)
     {
-        $produit = Produit::with(['typeProduitAchat', 'typeProduitVente', 'categorie', 'fournisseurPrincipal', 'uniteMesure', 'devise'])->findOrFail($produitId);
+        $produit = Produit::with('categorie', 'fournisseurPrincipal', 'uniteMesure', 'devise')
+            ->findOrFail($produitId);
 
         $typeProduits = TypeProduit::where('status', true)
             ->where(function ($query) {
@@ -444,7 +324,7 @@ class ProduitController extends Controller
             ->where(function ($query) {
                 $query->where("societe_id", session('societe')['id'])->orWhere("societe_id", null);
             })
-            ->orderBy('nom')
+            ->orderBy('libelle')
             ->get();
 
         $fournisseurs = Fournisseur::where('status', true)
@@ -457,8 +337,6 @@ class ProduitController extends Controller
         return Inertia::render('Admin/Stock/Produit/Edit', [
             'produit' => $produit,
             'typeProduits' => $typeProduits,
-            'typeProduitAchat' => $produit->typeProduitAchat,
-            'typeProduitVente' => $produit->typeProduitVente,
             'categories' => $categories,
             'fournisseurs' => $fournisseurs,
         ]);
@@ -473,14 +351,12 @@ class ProduitController extends Controller
 
         $request->validate([
             'nom' => 'required',
-            "typeProduitAchat" => 'required',
-            "typeProduitVente" => 'required',
             "prixAchat" => 'required',
             "prixVente" => 'required',
             "stockGlobal" => 'required',
             "stockCritique" => 'required',
-            "quantiteAchat" => 'required',
-            "quantiteVente" => 'required',
+            "quantiteEnsemble" => 'nullable|numeric',
+            "prixEnsemble" => 'nullable|numeric',
             "categorie" => 'required',
             "image" => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
@@ -503,12 +379,10 @@ class ProduitController extends Controller
                 "stockCritique" => $request->stockCritique,
                 "stockGlobal" => $request->stockGlobal,
                 "image" => $imagePath,
-                "type_produit_achat_id" => $request->typeProduitAchat['id'],
-                "quantiteAchat" => $request->quantiteAchat,
                 "prixAchat" => $request->prixAchat,
-                "type_produit_vente_id" => $request->typeProduitVente['id'],
-                "quantiteVente" => $request->quantiteVente,
                 "prixVente" => $request->prixVente,
+                "quantiteEnsemble" => $request->quantiteEnsemble,
+                "prixEnsemble" => $request->prixEnsemble,
                 "categorie_id" => $request->categorie['id'],
                 "fournisseur_principal_id" => $request->fournisseur ? $request->fournisseur['id'] : null,
                 "unite_mesure_id" => $request->uniteMesure ? $request->uniteMesure['id'] : null,
@@ -546,20 +420,12 @@ class ProduitController extends Controller
      */
     public function destroy($userId, $produitId)
     {
-        $produit = Produit::findOrFail($produitId);
-
-        DB::beginTransaction();
-
         try {
-            $produit->status = !$produit->status;
-            $produit->save();
-
-            DB::commit();
-
-            return redirect()->back()->with('success', 'Statut du produit modifié avec succès');
+            $produit = Produit::findOrFail($produitId);
+            $produit->update(['status' => false]);
+            return redirect()->route('admin.stock.produit.index', Auth::id())->with('success', 'Produit supprimé avec succès');
         } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->back()->with('error', 'Erreur lors de la modification du status: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Erreur lors de la suppression du produit: ' . $e->getMessage());
         }
     }
 
@@ -568,50 +434,66 @@ class ProduitController extends Controller
      */
     public function paginationFiltre(Request $request)
     {
-        $extraQuery = Produit::where(function ($query) use ($request) {
-            foreach ($request->filters as $filter) {
-                if ($filter['id'] == 'typeProduit') {
-                    $query->whereRelation('typeProduit', 'nom', 'like', "%" . $filter['value'] . "%");
-                } else if ($filter['id'] == 'categorie') {
-                    $query->whereRelation('categorie', 'nom', 'like', "%" . $filter['value'] . "%");
-                } else if ($filter['id'] == 'fournisseur') {
-                    $query->whereRelation('fournisseurPrincipal', 'nom', 'like', "%" . $filter['value'] . "%");
-                } else if ($filter['id'] == 'quantiteAchat') {
-                    $query->whereRelation('quantiteAchat', 'like', "%" . $filter['value'] . "%");
-                } else if ($filter['id'] == 'quantiteVente') {
-                    $query->whereRelation('quantiteVente', 'like', "%" . $filter['value'] . "%");
-                } else {
-                    $query->where($filter['id'], 'like', "%" . $filter['value'] . "%");
-                }
-            }
-
-            if ($request->globalFilter) {
-                $query->where(function ($q) use ($request) {
-                    $q->whereRelation('typeProduitAchat', 'nom', 'like', "%" . $request->globalFilter . "%")
-                        ->orWhereRelation('typeProduitVente', 'nom', 'like', "%" . $request->globalFilter . "%")
-                        ->orWhereRelation('categorie', 'nom', 'like', "%" . $request->globalFilter . "%")
-                        ->orWhereRelation('fournisseurPrincipal', 'nom', 'like', "%" . $request->globalFilter . "%")
-                        ->orWhere('nom', 'like', "%" . $request->globalFilter . "%")
-                        ->orWhere('prixAchat', 'like', "%" . $request->globalFilter . "%")
-                        ->orWhere('prixVente', 'like', "%" . $request->globalFilter . "%");
-                });
-            }
-        })->with('typeProduitAchat', 'typeProduitVente', 'categorie', "fournisseurPrincipal")
-            ->skip($request->start)
-            ->take($request->size);
-
-        foreach ($request->sorting as $sort) {
-            if ($sort['desc']) {
-                $extraQuery->orderBy($sort['id'], 'desc');
-            } else {
-                $extraQuery->orderBy($sort['id'], 'asc');
+        // Récupérer les paramètres de pagination, tri et recherche
+        $perPage = $request->input('per_page', 10);
+        $page = $request->input('page', 1);
+        $search = $request->input('search', '');
+        $sortField = $request->input('sort_field', 'nom');
+        $sortDirection = $request->input('sort_direction', 'asc');
+        $categorieFilter = $request->input('categorie_id');
+        $stockFilter = $request->input('stock_filter'); // 'all', 'low', 'out'
+        $departementFilter = $request->input('departement_id');
+        
+        // Construire la requête de base
+        $query = Produit::where('status', true)
+            ->where(function ($query) {
+                $query->where("societe_id", session('societe')['id'])->orWhere("societe_id", null);
+            });
+            
+        // Appliquer la recherche si elle est fournie
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('nom', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhereRelation('categorie', 'libelle', 'like', "%{$search}%")
+                  ->orWhere('prixAchat', 'like', "%{$search}%")
+                  ->orWhere('prixVente', 'like', "%{$search}%");
+            });
+        }
+        
+        // Filtre par catégorie
+        if (!empty($categorieFilter)) {
+            $query->where('categorie_id', $categorieFilter);
+        }
+        
+        // Filtre par niveau de stock
+        if (!empty($stockFilter)) {
+            switch ($stockFilter) {
+                case 'low':
+                    $query->whereRaw('stockGlobal <= stockCritique AND stockGlobal > 0');
+                    break;
+                case 'out':
+                    $query->where('stockGlobal', '<=', 0);
+                    break;
+                // 'all' n'a pas besoin de filtre spécifique
             }
         }
-
-        $produits = $extraQuery->get();
-        $rowCount = $extraQuery->paginate($request->size)->total();
-
-        return response()->json(['data' => $produits, 'rowCount' => $rowCount]);
+        
+        // Filtre par département (affecte les produits qui ont du stock dans ce département)
+        if (!empty($departementFilter)) {
+            $query->whereHas('stocks', function($q) use ($departementFilter) {
+                $q->where('departement_id', $departementFilter);
+            });
+        }
+        
+        // Appliquer le tri
+        $query->orderBy($sortField, $sortDirection);
+        
+        // Exécuter la requête avec pagination
+        $produits = $query->with('categorie', 'fournisseurPrincipal', 'uniteMesure', 'devise')
+            ->paginate($perPage);
+            
+        return response()->json($produits);
     }
 
     /**
@@ -623,7 +505,7 @@ class ProduitController extends Controller
             ->where(function ($query) {
                 $query->where("societe_id", session('societe')['id'])->orWhere("societe_id", null);
             })
-            ->with('typeProduitAchat', 'typeProduitVente', 'categorie', 'fournisseurPrincipal')
+            ->with('categorie', 'fournisseurPrincipal')
             ->get();
             
 
@@ -639,8 +521,7 @@ class ProduitController extends Controller
             $file = fopen('php://output', 'w');
             fputcsv($file, [
                 'ID', 'Nom', 'Description', 'Stock Global', 'Stock Critique',
-                'Type Achat', 'Quantité Achat', 'Prix Achat',
-                'Type Vente', 'Quantité Vente', 'Prix Vente',
+                'Prix Achat', 'Prix Vente', 'Quantité Ensemble', 'Prix Ensemble',
                 'Catégorie', 'Fournisseur Principal'
             ]);
 
@@ -651,13 +532,11 @@ class ProduitController extends Controller
                     $produit->description,
                     $produit->stockGlobal,
                     $produit->stockCritique,
-                    $produit->typeProduitAchat ? $produit->typeProduitAchat->nom : '',
-                    $produit->quantiteAchat,
                     $produit->prixAchat,
-                    $produit->typeProduitVente ? $produit->typeProduitVente->nom : '',
-                    $produit->quantiteVente,
                     $produit->prixVente,
-                    $produit->categorie ? $produit->categorie->nom : '',
+                    $produit->quantiteEnsemble,
+                    $produit->prixEnsemble,
+                    $produit->categorie ? $produit->categorie->libelle : '',
                     $produit->fournisseurPrincipal ? $produit->fournisseurPrincipal->nom : ''
                 ]);
             }
@@ -686,22 +565,18 @@ class ProduitController extends Controller
             $header = fgetcsv($handle); // Skip header row
 
             while (($row = fgetcsv($handle)) !== false) {
-                $typeProduitAchat = TypeProduit::where('nom', $row[5])->first();
-                $typeProduitVente = TypeProduit::where('nom', $row[8])->first();
-                $categorie = Categorie::where('nom', $row[11])->first();
-                $fournisseur = Fournisseur::where('nom', $row[12])->first();
+                $categorie = Categorie::where('libelle', $row[9])->first();
+                $fournisseur = Fournisseur::where('nom', $row[10])->first();
 
                 $produit = Produit::create([
                     "nom" => $row[1],
                     "description" => $row[2],
                     "stockGlobal" => $row[3],
                     "stockCritique" => $row[4],
-                    "type_produit_achat_id" => $typeProduitAchat ? $typeProduitAchat->id : null,
-                    "quantiteAchat" => $row[6],
-                    "prixAchat" => $row[7],
-                    "type_produit_vente_id" => $typeProduitVente ? $typeProduitVente->id : null,
-                    "quantiteVente" => $row[9],
-                    "prixVente" => $row[10],
+                    "prixAchat" => $row[5],
+                    "prixVente" => $row[6],
+                    "quantiteEnsemble" => $row[7],
+                    "prixEnsemble" => $row[8],
                     "categorie_id" => $categorie ? $categorie->id : null,
                     "fournisseur_principal_id" => $fournisseur ? $fournisseur->id : null,
                     "societe_id" => session('societe')['id'],

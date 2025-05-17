@@ -136,7 +136,7 @@ class DashboardController extends Controller
                     $q->where('departement_destination_id', $departementId);
                 });
             }
-        })->sum(DB::raw('prix_unitaire * quantite'));
+        })->sum(DB::raw('prix * quantite'));
         
         $valeurSorties = OperationProduit::whereHas('operation', function($query) use ($dateDebut, $dateFin, $departementId) {
             $query->whereBetween('date', [$dateDebut, $dateFin])
@@ -149,7 +149,7 @@ class DashboardController extends Controller
                     $q->where('departement_source_id', $departementId);
                 });
             }
-        })->sum(DB::raw('prix_unitaire * quantite'));
+        })->sum(DB::raw('prix * quantite'));
         
         return [
             'total' => $operationsQuery->count(),

@@ -44,8 +44,8 @@ return new class extends Migration
             // Quantité du mouvement
             $table->decimal('quantite', 10, 2)->nullable();
             
-            // Prix unitaire au moment du mouvement
-            $table->decimal('prix_unitaire', 10, 2)->nullable();
+            // Prix au moment du mouvement
+            $table->decimal('prix', 10, 2)->nullable();
             
             // Inventaire physique associé
             $table->foreignId('inventaire_physique_id')->nullable()->constrained('inventaires_physiques')->nullOnDelete();

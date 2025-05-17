@@ -134,7 +134,7 @@ Route::middleware(['auth', "userIsAdmin", "profilActif"])->group(function () {
     });
 
     // Maintenir la compatibilité avec l'ancien contrôleur pour éviter les erreurs
-    Route::resource('admin.produit', \App\Http\Controllers\Admin\ProduitController::class);
+    //Route::resource('admin.produit', \App\Http\Controllers\Admin\ProduitController::class);
 
 
 

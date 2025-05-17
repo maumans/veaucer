@@ -202,7 +202,7 @@ function Index({ auth, errors, produits, typeProduits, categories, departements,
     };
 
     const handleSubmit = () => {
-        post(route('admin.produit.store'), {
+        post(route('admin.stock.produit.store'), {
             onSuccess: () => {
                 reset()
                 setOpen(false);
@@ -211,7 +211,7 @@ function Index({ auth, errors, produits, typeProduits, categories, departements,
     };
 
     const handleEdit = (el) => {
-        router.get(route("admin.produit.edit", [auth.user.id, el.id]), { preserveScroll: true })
+        router.get(route("admin.stock.produit.edit", [auth.user.id, el.id]), { preserveScroll: true })
     };
 
     const handleShow = (el) => {
@@ -235,7 +235,7 @@ function Index({ auth, errors, produits, typeProduits, categories, departements,
     };
 
     const handleUpdate = () => {
-        put(route('admin.produit.update', data.id), {
+        put(route('admin.stock.produit.update', data.id), {
             onSuccess: () => {
                 reset()
                 setOpenEdit(false);
@@ -246,7 +246,7 @@ function Index({ auth, errors, produits, typeProduits, categories, departements,
 
     const handleSuspend = () => {
         setOpen(false);
-        router.delete(route('admin.produit.destroy', { id: data.id }))
+        router.delete(route('admin.stock.produit.destroy', { id: data.id }))
     };
 
     const columns = useMemo(
@@ -258,11 +258,11 @@ function Index({ auth, errors, produits, typeProduits, categories, departements,
             },
 
             {
-                accessorKey: 'typeProduitAchat',
-                header: 'Option d\'achat',
+                accessorKey: 'mode_achat',
+                header: 'Mode de vente',
                 //size: 50,
                 Cell: ({ row }) => (
-                    row.original.type_produit_achat?.libelle
+                    row.original.quantiteEnsemble > 0 ? 'Ensemble' : 'Unité'
                 )
             },
             {
@@ -274,38 +274,32 @@ function Index({ auth, errors, produits, typeProduits, categories, departements,
                 )
             },
             {
-                accessorKey: 'quantiteAchat',
-                header: 'Quantité à l\'achat',
+                accessorKey: 'quantiteEnsemble',
+                header: 'Quantité par ensemble',
                 //size: 50,
                 Cell: ({ row }) => (
-                    formatNumber(row.original.quantiteAchat ?? 0)
+                    formatNumber(row.original.quantiteEnsemble ?? 0)
                 )
             },
 
-            {
-                accessorKey: 'typeProduitVente',
-                header: 'Option de vente',
-                //size: 50,
-                Cell: ({ row }) => (
-                    row.original.type_produit_vente?.libelle
-                )
-            },
+            // Colonne d'option de vente supprimée car redondante avec le mode de vente
             {
                 accessorKey: 'prixVente', //access nested data with dot notation
-                header: "Prix d'achat (GNF)",
+                header: "Prix de vente unité (GNF)",
                 //size: 10,
                 Cell: ({ row }) => (
                     formatNumber(row.original.prixVente ?? 0)
                 )
             },
             {
-                accessorKey: 'quantiteVente',
-                header: 'Quantité à la vente',
-                //size: 50,
+                accessorKey: 'prixEnsemble',
+                header: "Prix de vente ensemble (GNF)",
+                //size: 10,
                 Cell: ({ row }) => (
-                    formatNumber(row.original.quantiteVente ?? 0)
+                    row.original.quantiteEnsemble > 0 ? formatNumber(row.original.prixEnsemble ?? 0) : '-'
                 )
             },
+            // Colonne de quantité à la vente supprimée car ce champ n'existe plus dans la structure de la base de données
 
             {
                 accessorKey: 'categorie',

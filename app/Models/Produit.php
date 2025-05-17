@@ -11,15 +11,8 @@ class Produit extends Model
 
     protected $guarded=[];
 
-    public function typeProduitAchat()
-    {
-        return $this->belongsTo(TypeProduit::class,'type_produit_achat_id');
-    }
-
-    public function typeProduitVente()
-    {
-        return $this->belongsTo(TypeProduit::class,'type_produit_vente_id');
-    }
+    // Les relations typeProduitAchat et typeProduitVente ont été supprimées
+    // car nous avons simplifié la structure de la table produits
 
     public function categorie()
     {
@@ -49,6 +42,16 @@ class Produit extends Model
     public function societe()
     {
         return $this->belongsTo(Societe::class);
+    }
+
+    public function uniteMesure()
+    {
+        return $this->belongsTo(UniteMesure::class);
+    }
+
+    public function devise()
+    {
+        return $this->belongsTo(Devise::class);
     }
 
 }

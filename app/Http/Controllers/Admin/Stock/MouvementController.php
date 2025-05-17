@@ -183,7 +183,7 @@ class MouvementController extends Controller
 
         $produits = Produit::where('status', true)->where(function ($query) {
             $query->where("societe_id", session('societe')['id'])->orWhere("societe_id", null);
-        })->orderBy('nom')->with('typeProduitAchat')->get();
+        })->orderBy('nom')->get();
 
         return Inertia::render("Admin/Stock/Mouvement/Create", [
             'produits' => $produits,
@@ -306,10 +306,10 @@ class MouvementController extends Controller
             }
             
             OperationProduit::create([
-                'type_produit_id' => $operationProduit['type_produit_achat_id'],
+                'type_produit_id' => $operationProduit['type_produit_id'] ?? 1, // 1 pour unité par défaut, 2 pour ensemble
                 'type' => 'achat',
+                'prix' => $operationProduit['prixAchat'],
                 'quantite' => $operationProduit['quantiteAchat'],
-                'prix_unitaire' => $operationProduit['prixAchat'],
                 'produit_id' => $operationProduit['produit_id'],
                 'stock_destination_id' => $stock->id,
                 'operation_id' => $operation->id,
@@ -360,10 +360,10 @@ class MouvementController extends Controller
                 return redirect()->back()->with('error', 'Stock source inexistant '.$operationProduit['produit_nom']);
             }
             OperationProduit::create([
-                'type_produit_id' => $operationProduit['type_produit_achat_id'] ?? $operationProduit['produit']['type_produit_id'] ?? null,
+                'type_produit_id' => $operationProduit['type_produit_id'] ?? 1, // 1 pour unité par défaut, 2 pour ensemble
                 'type' => 'vente',
                 'quantite' => $operationProduit['quantiteAchat'],
-                'prix_unitaire' => $operationProduit['prixAchat'] ?? 0,
+                'prix' => $operationProduit['prixAchat'] ?? 0,
                 'produit_id' => $operationProduit['produit_id'],
                 'stock_source_id' => $stock->id,
                 'operation_id' => $operation->id,
@@ -404,10 +404,10 @@ class MouvementController extends Controller
             }
 
             OperationProduit::create([
-                'type_produit_id' => $operationProduit['type_produit_achat_id'] ?? $operationProduit['produit']['type_produit_id'] ?? null,
+                'type_produit_id' => $operationProduit['type_produit_id'] ?? 1, // 1 pour unité par défaut, 2 pour ensemble
                 'type' => 'transfert',
                 'quantite' => $operationProduit['quantiteAchat'],
-                'prix_unitaire' => $operationProduit['prixAchat'] ?? 0,
+                'prix' => $operationProduit['prixAchat'] ?? 0,
                 'produit_id' => $operationProduit['produit_id'],
                 'stock_source_id' => $stockSource->id,
                 'stock_destination_id' => $stockDestination->id,
