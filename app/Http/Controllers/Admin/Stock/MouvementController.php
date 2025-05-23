@@ -318,7 +318,18 @@ class MouvementController extends Controller
             ]);
             
             if (!$enregistrer) {
-                $stock->quantite += $operationProduit['quantiteAchat'];
+                // Récupérer le type de produit depuis la base de données
+                $typeProduit = TypeProduit::find($operationProduit['type_produit_id']);
+                $produit = Produit::find($operationProduit['produit_id']);
+                
+                // Si le type de produit est un ensemble, multiplier par la quantité par ensemble
+                if ($typeProduit && $typeProduit->nom === 'ensemble') {
+                    $quantiteAAjouter = $operationProduit['quantiteAchat'] * ($produit->quantiteEnsemble ?? 1);
+                    $stock->quantite += $quantiteAAjouter;
+                } else {
+                    // Si c'est une unité ou si le type n'est pas défini, ajouter simplement la quantité achetée
+                    $stock->quantite += $operationProduit['quantiteAchat'];
+                }
                 $stock->save();
 
                 if ($caisse) {
@@ -371,10 +382,23 @@ class MouvementController extends Controller
                 "etat" => $enregistrer ? 'EN ATTENTE' : 'VALIDE',
             ]);
             if (!$enregistrer) {
-                if($stock->quantite < $operationProduit['quantiteAchat']){
-                    return redirect()->back()->with('error', 'Quantité insuffisante dans le stock '.$stock->produit->nom);
+                // Récupérer le type de produit depuis la base de données
+                $typeProduit = TypeProduit::find($operationProduit['type_produit_id']);
+                $produit = Produit::find($operationProduit['produit_id']);
+                
+                // Calculer la quantité réelle à soustraire
+                if ($typeProduit && $typeProduit->nom === 'ensemble') {
+                    $quantiteReelle = $operationProduit['quantiteAchat'] * ($produit->quantiteEnsemble ?? 1);
+                    if($stock->quantite < $quantiteReelle){
+                        return redirect()->back()->with('error', 'Quantité insuffisante dans le stock '.$stock->produit->nom);
+                    }
+                    $stock->quantite -= $quantiteReelle;
+                } else {
+                    if($stock->quantite < $operationProduit['quantiteAchat']){
+                        return redirect()->back()->with('error', 'Quantité insuffisante dans le stock '.$stock->produit->nom);
+                    }
+                    $stock->quantite -= $operationProduit['quantiteAchat'];
                 }
-                $stock->quantite -= $operationProduit['quantiteAchat'];
                 $stock->save();
             }
         }
@@ -417,13 +441,28 @@ class MouvementController extends Controller
             ]);
 
             if (!$enregistrer) {
-                if($stockSource->quantite < $operationProduit['quantiteAchat']){
-                    return redirect()->back()->with('error', 'Quantité insuffisante dans le stock source '.$stockSource->produit->nom);
+                // Récupérer le type de produit depuis la base de données
+                $typeProduit = TypeProduit::find($operationProduit['type_produit_id']);
+                $produit = Produit::find($operationProduit['produit_id']);
+                
+                // Calculer la quantité réelle à transférer
+                $quantiteATransferer = $operationProduit['quantiteAchat'];
+                if ($typeProduit && $typeProduit->nom === 'ensemble') {
+                    $quantiteReelleSource = $operationProduit['quantiteAchat'] * ($produit->quantiteEnsemble ?? 1);
+                    if($stockSource->quantite < $quantiteReelleSource){
+                        return redirect()->back()->with('error', 'Quantité insuffisante dans le stock source '.$stockSource->produit->nom);
+                    }
+                    $stockSource->quantite -= $quantiteReelleSource;
+                    $stockDestination->quantite += $quantiteReelleSource;
+                } else {
+                    if($stockSource->quantite < $quantiteATransferer){
+                        return redirect()->back()->with('error', 'Quantité insuffisante dans le stock source '.$stockSource->produit->nom);
+                    }
+                    $stockSource->quantite -= $quantiteATransferer;
+                    $stockDestination->quantite += $quantiteATransferer;
                 }
-                $stockSource->quantite -= $operationProduit['quantiteAchat'];
+                
                 $stockSource->save();
-
-                $stockDestination->quantite += $operationProduit['quantiteAchat'];
                 $stockDestination->save();
             }
         }
@@ -462,15 +501,20 @@ class MouvementController extends Controller
         
         // Formater les données des produits pour la vue
         $produits = $operation->produits->map(function ($op) use (&$totalProduits) {
-            $sousTotal = $op->quantiteAchat * $op->prixAchat;
+            // Calcul du sous-total en utilisant prix et quantite
+            $sousTotal = $op->prix * $op->quantite;
             $totalProduits += $sousTotal;
+            
+            // Récupérer le type de produit
+            $typeProduit = TypeProduit::find($op->type_produit_id);
             
             return [
                 'id' => $op->id,
                 'produit' => $op->produit,
-                'quantiteAchat' => $op->quantiteAchat,
-                'prixAchat' => $op->prixAchat,
+                'quantite' => $op->quantite,
+                'prix' => $op->prix,
                 'total' => $sousTotal,
+                'typeProduit' => $typeProduit,
             ];
         });
 
