@@ -48,6 +48,7 @@ class DepartementController extends Controller
 
         $departement = Departement::create([
             ...$validated,
+            'type' => 'SECONDAIRE',
             'societe_id' => auth()->user()->societe_id,
             'user_id' => auth()->id()
         ]);

@@ -96,6 +96,7 @@ function Create({ auth, produits, departements, departementPrincipal, caisses, c
                                 id: op.id,
                                 produit_id: op.produit_id,
                                 produit_nom: op.produit_nom,
+                                type_produit_id: data.typeProduitGlobal,
                                 quantiteAchat: quantiteAchat,
                                 // Pas de prix d'achat ou de total pour sorties/transferts ici, géré côté serveur si besoin
                             });
@@ -267,6 +268,7 @@ function Create({ auth, produits, departements, departementPrincipal, caisses, c
                             } else if (dataWithFieldUpdates.typeOperation?.nom === "sortie" || dataWithFieldUpdates.typeOperation?.nom === "transfert") {
                                 newOperationData.push({
                                     id: op.id, produit_id: op.produit_id, produit_nom: op.produit_nom,
+                                    type_produit_id: dataWithFieldUpdates.typeProduitGlobal,
                                     quantiteAchat: quantiteAchat,
                                 });
                                 // Pas de total opération pour sorties/transferts basé sur prix client
@@ -436,8 +438,8 @@ function Create({ auth, produits, departements, departementPrincipal, caisses, c
     const [columnVisibility, setColumnVisibility] = useState({
         prixAchat: data.typeOperation?.nom === "entrée",
         montant: data.typeOperation?.nom === "entrée",
-        typeProduit: data.typeOperation?.nom === "entrée",
-        quantiteEnsemble: data.typeOperation?.nom === "entrée" && data.typeProduitGlobal === 2
+        //typeProduit: data.typeOperation?.nom === "entrée",
+        quantiteEnsemble: data.typeProduitGlobal === 2
     });
 
     // Mettre à jour la visibilité des colonnes lorsque le type d'opération ou le type de produit change
@@ -445,8 +447,8 @@ function Create({ auth, produits, departements, departementPrincipal, caisses, c
         setColumnVisibility({
             prixAchat: data.typeOperation?.nom === "entrée",
             montant: data.typeOperation?.nom === "entrée",
-            typeProduit: data.typeOperation?.nom === "entrée",
-            quantiteEnsemble: data.typeOperation?.nom === "entrée" && data.typeProduitGlobal === 2
+            //typeProduit: data.typeOperation?.nom === "entrée",
+            quantiteEnsemble: data.typeProduitGlobal === 2
         });
     }, [data.typeOperation, data.typeProduitGlobal]);
 
@@ -681,6 +683,7 @@ function Create({ auth, produits, departements, departementPrincipal, caisses, c
             depenses: data.depenseData,
             totalOperation: data.totalOperation,
             totalDepense: data.totalDepense,
+            typeProduitGlobal: data.typeProduitGlobal,
         }, { preserveScroll: true })
     }
 
@@ -1099,24 +1102,22 @@ function Create({ auth, produits, departements, departementPrincipal, caisses, c
                 <InputError message={errors["produits"]} />
             </div>
 
-            {data.typeOperation?.nom === "entrée" && (
-                <div className={"w-full"}>
-                    <Autocomplete
-                        value={data.typeProduitGlobal === 1 ? { id: 1, nom: "Unité" } : { id: 2, nom: "Ensemble" }}
-                        className="w-full"
-                        onChange={handleTypeProduitChange}
-                        disablePortal={true}
-                        options={[
-                            { id: 1, nom: "Unité" },
-                            { id: 2, nom: "Ensemble" }
-                        ]}
-                        getOptionLabel={(option) => option.nom}
-                        isOptionEqualToValue={(option, value) => option.id === value.id}
-                        renderInput={(params) => <TextField fullWidth {...params} label={"Mode d'achat"} placeholder="Type de produit" size="small" />}
-                        size="small"
-                    />
-                </div>
-            )}
+            <div className={"w-full"}>
+                <Autocomplete
+                    value={data.typeProduitGlobal === 1 ? { id: 1, nom: "Unité" } : { id: 2, nom: "Ensemble" }}
+                    className="w-full"
+                    onChange={handleTypeProduitChange}
+                    disablePortal={true}
+                    options={[
+                        { id: 1, nom: "Unité" },
+                        { id: 2, nom: "Ensemble" }
+                    ]}
+                    getOptionLabel={(option) => option.nom}
+                    isOptionEqualToValue={(option, value) => option.id === value.id}
+                    renderInput={(params) => <TextField fullWidth {...params} label={"Type"} placeholder="Type de produit" size="small" />}
+                    size="small"
+                />
+            </div>
 
             <div className={"md:col-span-2"}>
                 {data.operations.length > 0 ? (

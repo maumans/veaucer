@@ -41,29 +41,26 @@ class MouvementController extends Controller
             })->when($request->get("filters"), function ($query, $filters) {
                 // Déboguer les filtres reçus
                 \Illuminate\Support\Facades\Log::info('Filtres reçus:', ['filters' => $filters]);
-                
+
                 foreach ($filters as $key => $value) {
                     // Ignorer les valeurs vides
                     if ((empty($value) && $value !== 0) || $value === null) {
                         continue;
                     }
-                    
+
                     // Gestion des filtres avancés
                     if ($key === 'type_operation') {
                         // Assurez-vous que le filtre est appliqué sur l'ID du type d'opération
                         \Illuminate\Support\Facades\Log::info('Filtre type_operation:', ['value' => $value]);
                         $query->where('type_operation_id', $value);
-                    } 
-                    elseif ($key === 'departement') {
-                        $query->where(function($q) use ($value) {
+                    } elseif ($key === 'departement') {
+                        $query->where(function ($q) use ($value) {
                             $q->where('departement_source_id', $value)
-                              ->orWhere('departement_destination_id', $value);
+                                ->orWhere('departement_destination_id', $value);
                         });
-                    }
-                    elseif ($key === 'fournisseur') {
+                    } elseif ($key === 'fournisseur') {
                         $query->where('fournisseur_id', $value);
-                    }
-                    elseif ($key === 'date_range') {
+                    } elseif ($key === 'date_range') {
                         if (is_array($value) && isset($value['start']) && isset($value['end'])) {
                             // Assurez-vous que les dates sont au bon format
                             $startDate = $value['start'];
@@ -71,17 +68,13 @@ class MouvementController extends Controller
                             \Illuminate\Support\Facades\Log::info('Filtre date_range:', ['start' => $startDate, 'end' => $endDate]);
                             $query->whereBetween('date', [$startDate, $endDate]);
                         }
-                    }
-                    elseif ($key === 'min_montant') {
+                    } elseif ($key === 'min_montant') {
                         $query->where('montant', '>=', $value);
-                    }
-                    elseif ($key === 'max_montant') {
+                    } elseif ($key === 'max_montant') {
                         $query->where('montant', '<=', $value);
-                    }
-                    elseif ($key === 'etat') {
+                    } elseif ($key === 'etat') {
                         $query->where('etat', $value);
-                    }
-                    else {
+                    } else {
                         $f = explode('.', $key);
                         if (isset($f[1])) {
                             $query->whererelation($f[0], $f[1], 'like', "%" . $value . "%");
@@ -107,14 +100,14 @@ class MouvementController extends Controller
             ->select('id', 'nom')
             ->orderBy('nom')
             ->get();
-            
+
         // Récupérer les fournisseurs pour les filtres
         $fournisseurs = Fournisseur::where('societe_id', session('societe')['id'])
             ->where('status', true)
             ->select('id', 'nom')
             ->orderBy('nom')
             ->get();
-            
+
         // Récupérer les types d'opérations pour les filtres
         $typeOperations = TypeOperation::where('status', true)
             ->select('id', 'nom')
@@ -130,7 +123,7 @@ class MouvementController extends Controller
             ->select('id', 'nom')
             ->orderBy('nom')
             ->get();
-            
+
         return Inertia::render('Admin/Stock/Mouvement/Index', [
             'operations' => $query->paginate($request->size ?? 10),
             'departements' => $departements,
@@ -208,10 +201,18 @@ class MouvementController extends Controller
      */
     public function store($id, Request $request)
     {
+        // Récupérer les types de produit depuis la base de données
+        $typeUnite = TypeProduit::where('nom', 'unité')->first();
+        $typeEnsemble = TypeProduit::where('nom', 'ensemble')->first();
+
+        // Créer un tableau des IDs valides pour la validation
+        $typeProduitIds = [$typeUnite->id, $typeEnsemble->id];
+
         $request->validate([
             "date" => 'required',
             "typeOperation" => 'required',
             "fournisseur" => 'nullable',
+            "typeProduitGlobal" => 'required|integer|in:' . implode(',', $typeProduitIds), // Validation basée sur les IDs réels
             "departementSource" => [
                 Rule::requiredIf(function () use ($request) {
                     return in_array($request->input('typeOperation_nom'), ['sortie', 'transfert']);
@@ -223,21 +224,21 @@ class MouvementController extends Controller
                 })
             ],
             "motifSortie" => [
-                Rule::requiredIf(fn () => $request->input('typeOperation_nom') === 'sortie')
+                Rule::requiredIf(fn() => $request->input('typeOperation_nom') === 'sortie')
             ],
             "motifTransfert" => [
-                Rule::requiredIf(fn () => $request->input('typeOperation_nom') === 'transfert')
+                Rule::requiredIf(fn() => $request->input('typeOperation_nom') === 'transfert')
             ],
             "caisse" => [
-                Rule::requiredIf(fn () => $request->input('typeOperation_nom') === 'entrée')
+                Rule::requiredIf(fn() => $request->input('typeOperation_nom') === 'entrée')
             ],
             "operations" => 'required',
             "depenses" => 'nullable',
             "totalOperation" => [
-                Rule::requiredIf(fn () => $request->input('typeOperation_nom') === 'entrée')
+                Rule::requiredIf(fn() => $request->input('typeOperation_nom') === 'entrée')
             ],
         ]);
-        
+
         DB::beginTransaction();
 
         try {
@@ -256,18 +257,22 @@ class MouvementController extends Controller
 
             switch ($request->typeOperation_nom) {
                 case 'sortie':
-                    $this->sortie($operation, $request->motifSortie, $request->operations, $request->departementSource, $request->enregistrer);
+                    $this->sortie($operation, $request->motifSortie, $request->operations, $request->departementSource, $request->enregistrer, $request->typeProduitGlobal);
                     break;
                 case 'entrée':
-                    $this->entree($operation, $request->caisse, $request->totalOperation, $request->totalDepense, $request->operations, $request->depenses, $request->departementDestination, $request->fournisseur, $request->enregistrer);
+                    $this->entree($operation, $request->caisse, $request->totalOperation, $request->totalDepense, $request->operations, $request->depenses, $request->departementDestination, $request->fournisseur, $request->enregistrer, $request->typeProduitGlobal);
                     break;
                 case 'transfert':
-                    $this->transfert($operation, $request->motifTransfert, $request->operations, $request->departementSource, $request->departementDestination, $request->enregistrer);
+                    $this->transfert($operation, $request->motifTransfert, $request->operations, $request->departementSource, $request->departementDestination, $request->enregistrer, $request->typeProduitGlobal);
                     break;
                 default:
                     return redirect()->back()->with('error', 'Type d\'opération non reconnu');
                     break;
             }
+
+            // Enregistrer le type de produit global utilisé pour cette opération
+            $operation->type_produit_id = $request->typeProduitGlobal;
+            $operation->save();
 
             DB::commit();
 
@@ -278,7 +283,7 @@ class MouvementController extends Controller
         }
     }
 
-    public function entree($operation, $caisse, $totalOperation, $totalDepense, $operations, $depenses, $departement, $fournisseur, $enregistrer)
+    public function entree($operation, $caisse, $totalOperation, $totalDepense, $operations, $depenses, $departement, $fournisseur, $enregistrer, $typeProduitGlobal = null)
     {
         if (!$enregistrer) {
             $caisse = Caisse::where('id', $caisse)->where('status', true)->first();
@@ -294,7 +299,7 @@ class MouvementController extends Controller
 
         foreach ($operations as $operationProduit) {
             $stock = Stock::where('departement_id', $departement)->where('status', true)->where('produit_id', $operationProduit['produit_id'])->where('societe_id', session('societe')['id'])->first();
-            if(!$stock){
+            if (!$stock) {
                 $stock = Stock::create([
                     'quantite' =>  0,
                     'type' =>  Departement::where('id', $departement)->first()->type,
@@ -304,7 +309,7 @@ class MouvementController extends Controller
                     "societe_id" => session('societe')['id'],
                 ]);
             }
-            
+
             OperationProduit::create([
                 'type_produit_id' => $operationProduit['type_produit_id'] ?? 1, // 1 pour unité par défaut, 2 pour ensemble
                 'type' => 'achat',
@@ -316,12 +321,12 @@ class MouvementController extends Controller
                 "societe_id" => session('societe')['id'],
                 "etat" => $enregistrer ? 'EN ATTENTE' : 'VALIDE',
             ]);
-            
+
             if (!$enregistrer) {
                 // Récupérer le type de produit depuis la base de données
                 $typeProduit = TypeProduit::find($operationProduit['type_produit_id']);
                 $produit = Produit::find($operationProduit['produit_id']);
-                
+
                 // Si le type de produit est un ensemble, multiplier par la quantité par ensemble
                 if ($typeProduit && $typeProduit->nom === 'ensemble') {
                     $quantiteAAjouter = $operationProduit['quantiteAchat'] * ($produit->quantiteEnsemble ?? 1);
@@ -340,7 +345,7 @@ class MouvementController extends Controller
                 }
             }
         }
-        
+
         foreach ($depenses as $depense) {
             Depense::create([
                 "total" => $depense['montant'],
@@ -354,8 +359,8 @@ class MouvementController extends Controller
             ]);
 
             if (!$enregistrer) {
-                if($caisse->solde < $depense['montant']){
-                    return redirect()->back()->with('error', 'Solde insuffisant dans la caisse '.$caisse->departement->nom);
+                if ($caisse->solde < $depense['montant']) {
+                    return redirect()->back()->with('error', 'Solde insuffisant dans la caisse ' . $caisse->departement->nom);
                 }
                 $caisse->solde -= $depense['montant'];
                 $caisse->save();
@@ -363,15 +368,18 @@ class MouvementController extends Controller
         }
     }
 
-    public function sortie($operation, $motifSortie, $operations, $departementSource, $enregistrer)
+    public function sortie($operation, $motifSortie, $operations, $departementSource, $enregistrer, $typeProduitGlobal = null)
     {
         foreach ($operations as $operationProduit) {
             $stock = Stock::where('departement_id', $departementSource)->where('status', true)->where('produit_id', $operationProduit['produit_id'])->where('societe_id', session('societe')['id'])->first();
-            if(!$stock){
-                return redirect()->back()->with('error', 'Stock source inexistant '.$operationProduit['produit_nom']);
+            if (!$stock) {
+                return redirect()->back()->with('error', 'Stock source inexistant ' . $operationProduit['produit_nom']);
             }
+            // Utiliser le typeProduitGlobal s'il est fourni, sinon utiliser celui du produit individuel
+            $typeProduitId = $typeProduitGlobal ?? $operationProduit['type_produit_id'] ?? 1;
+
             OperationProduit::create([
-                'type_produit_id' => $operationProduit['type_produit_id'] ?? 1, // 1 pour unité par défaut, 2 pour ensemble
+                'type_produit_id' => $typeProduitId,
                 'type' => 'vente',
                 'quantite' => $operationProduit['quantiteAchat'],
                 'prix' => $operationProduit['prixAchat'] ?? 0,
@@ -383,19 +391,21 @@ class MouvementController extends Controller
             ]);
             if (!$enregistrer) {
                 // Récupérer le type de produit depuis la base de données
-                $typeProduit = TypeProduit::find($operationProduit['type_produit_id']);
+                // Utiliser le typeProduitGlobal s'il est fourni, sinon utiliser celui du produit individuel
+                $typeProduitId = $typeProduitGlobal ?? $operationProduit['type_produit_id'] ?? 1;
+                $typeProduit = TypeProduit::find($typeProduitId);
                 $produit = Produit::find($operationProduit['produit_id']);
-                
+
                 // Calculer la quantité réelle à soustraire
                 if ($typeProduit && $typeProduit->nom === 'ensemble') {
                     $quantiteReelle = $operationProduit['quantiteAchat'] * ($produit->quantiteEnsemble ?? 1);
-                    if($stock->quantite < $quantiteReelle){
-                        return redirect()->back()->with('error', 'Quantité insuffisante dans le stock '.$stock->produit->nom);
+                    if ($stock->quantite < $quantiteReelle) {
+                        return redirect()->back()->with('error', 'Quantité insuffisante dans le stock ' . $stock->produit->nom);
                     }
                     $stock->quantite -= $quantiteReelle;
                 } else {
-                    if($stock->quantite < $operationProduit['quantiteAchat']){
-                        return redirect()->back()->with('error', 'Quantité insuffisante dans le stock '.$stock->produit->nom);
+                    if ($stock->quantite < $operationProduit['quantiteAchat']) {
+                        return redirect()->back()->with('error', 'Quantité insuffisante dans le stock ' . $stock->produit->nom);
                     }
                     $stock->quantite -= $operationProduit['quantiteAchat'];
                 }
@@ -406,69 +416,75 @@ class MouvementController extends Controller
         $operation->save();
     }
 
-    public function transfert($operation, $motifTransfert, $operations, $departementSource, $departementDestination, $enregistrer)
-    {
-        foreach ($operations as $operationProduit) {
-            
-            $stockSource = Stock::where('departement_id', $departementSource)->where('status', true)->where('produit_id', $operationProduit['produit_id'])->where('societe_id', session('societe')['id'])->first();
-            if(!$stockSource){
-                return redirect()->back()->with('error', 'Stock source inexistant '.$operationProduit['produit_nom']);
-            }
-            
-            $stockDestination = Stock::where('departement_id', $departementDestination)->where('status', true)->where('produit_id', $operationProduit['produit_id'])->where('societe_id', session('societe')['id'])->first();
-            if(!$stockDestination){
-                $stockDestination = Stock::create([
-                    'quantite' =>  $operationProduit['quantiteAchat'],
-                    'type' =>  Departement::where('id', $departementDestination)->first()->type,
-                    'departement_id' => $departementDestination,
-                    'user_id' => Auth::id(),
-                    'produit_id' => $operationProduit['produit_id'],
-                    "societe_id" => session('societe')['id'],
-                ]);
-            }
-
-            OperationProduit::create([
-                'type_produit_id' => $operationProduit['type_produit_id'] ?? 1, // 1 pour unité par défaut, 2 pour ensemble
-                'type' => 'transfert',
-                'quantite' => $operationProduit['quantiteAchat'],
-                'prix' => $operationProduit['prixAchat'] ?? 0,
-                'produit_id' => $operationProduit['produit_id'],
-                'stock_source_id' => $stockSource->id,
-                'stock_destination_id' => $stockDestination->id,
-                'operation_id' => $operation->id,
-                "societe_id" => session('societe')['id'],
-                "etat" => $enregistrer ? 'EN ATTENTE' : 'VALIDE',
-            ]);
-
-            if (!$enregistrer) {
-                // Récupérer le type de produit depuis la base de données
-                $typeProduit = TypeProduit::find($operationProduit['type_produit_id']);
-                $produit = Produit::find($operationProduit['produit_id']);
-                
-                // Calculer la quantité réelle à transférer
-                $quantiteATransferer = $operationProduit['quantiteAchat'];
-                if ($typeProduit && $typeProduit->nom === 'ensemble') {
-                    $quantiteReelleSource = $operationProduit['quantiteAchat'] * ($produit->quantiteEnsemble ?? 1);
-                    if($stockSource->quantite < $quantiteReelleSource){
-                        return redirect()->back()->with('error', 'Quantité insuffisante dans le stock source '.$stockSource->produit->nom);
-                    }
-                    $stockSource->quantite -= $quantiteReelleSource;
-                    $stockDestination->quantite += $quantiteReelleSource;
-                } else {
-                    if($stockSource->quantite < $quantiteATransferer){
-                        return redirect()->back()->with('error', 'Quantité insuffisante dans le stock source '.$stockSource->produit->nom);
-                    }
-                    $stockSource->quantite -= $quantiteATransferer;
-                    $stockDestination->quantite += $quantiteATransferer;
-                }
-                
-                $stockSource->save();
-                $stockDestination->save();
-            }
+    public function transfert($operation, $motifTransfert, $operations, $departementSource, $departementDestination, $enregistrer, $typeProduitGlobal = null)
+{
+    foreach ($operations as $operationProduit) {
+        
+        $stockSource = Stock::where('departement_id', $departementSource)->where('status', true)->where('produit_id', $operationProduit['produit_id'])->where('societe_id', session('societe')['id'])->first();
+        if(!$stockSource){
+            return redirect()->back()->with('error', 'Stock source inexistant '.$operationProduit['produit_nom']);
         }
-        $operation->motif_id = $motifTransfert;
-        $operation->save();
+        
+        $stockDestination = Stock::where('departement_id', $departementDestination)->where('status', true)->where('produit_id', $operationProduit['produit_id'])->where('societe_id', session('societe')['id'])->first();
+        if(!$stockDestination){
+            $stockDestination = Stock::create([
+                'quantite' =>  $operationProduit['quantiteAchat'],
+                "stockCritique" => 10,
+                'type' =>  Departement::where('id', $departementDestination)->first()->type,
+                'departement_id' => $departementDestination,
+                'user_id' => Auth::id(),
+                'produit_id' => $operationProduit['produit_id'],
+                "societe_id" => session('societe')['id'],
+            ]);
+        }
+
+        // Utiliser le typeProduitGlobal s'il est fourni, sinon utiliser celui du produit individuel
+        $typeProduitId = $typeProduitGlobal ?? $operationProduit['type_produit_id'] ?? 1;
+
+        OperationProduit::create([
+            'type_produit_id' => $typeProduitId,
+            'type' => 'transfert',
+            'quantite' => $operationProduit['quantiteAchat'],
+            'prix' => $operationProduit['prixAchat'] ?? 0,
+            'produit_id' => $operationProduit['produit_id'],
+            'stock_source_id' => $stockSource->id,
+            'stock_destination_id' => $stockDestination->id,
+            'operation_id' => $operation->id,
+            "societe_id" => session('societe')['id'],
+            "etat" => $enregistrer ? 'EN ATTENTE' : 'VALIDE',
+        ]);
+
+        if (!$enregistrer) {
+            // Récupérer le type de produit depuis la base de données
+            // Utiliser le typeProduitGlobal s'il est fourni, sinon utiliser celui du produit individuel
+            $typeProduitId = $typeProduitGlobal ?? $operationProduit['type_produit_id'] ?? 1;
+            $typeProduit = TypeProduit::find($typeProduitId);
+            $produit = Produit::find($operationProduit['produit_id']);
+            
+            // Calculer la quantité réelle à transférer
+            $quantiteATransferer = $operationProduit['quantiteAchat'];
+            if ($typeProduit && $typeProduit->nom === 'ensemble') {
+                $quantiteReelleSource = $operationProduit['quantiteAchat'] * ($produit->quantiteEnsemble ?? 1);
+                if($stockSource->quantite < $quantiteReelleSource){
+                    return redirect()->back()->with('error', 'Quantité insuffisante dans le stock source '.$stockSource->produit->nom);
+                }
+                $stockSource->quantite -= $quantiteReelleSource;
+                $stockDestination->quantite += $quantiteReelleSource;
+            } else {
+                if($stockSource->quantite < $quantiteATransferer){
+                    return redirect()->back()->with('error', 'Quantité insuffisante dans le stock source '.$stockSource->produit->nom);
+                }
+                $stockSource->quantite -= $quantiteATransferer;
+                $stockDestination->quantite += $quantiteATransferer;
+            }
+            
+            $stockSource->save();
+            $stockDestination->save();
+        }
     }
+    $operation->motif_id = $motifTransfert;
+    $operation->save();
+}
 
     /**
      * Display the specified resource.
@@ -487,7 +503,7 @@ class MouvementController extends Controller
                 'caisseDestination',
                 'produits' => function ($query) {
                     $query->where('operation_produits.status', true)
-                          ->with('produit');
+                        ->with('produit');
                 },
                 'depenses' => function ($query) {
                     $query->with('motif');
@@ -498,16 +514,16 @@ class MouvementController extends Controller
 
         // Calculer le total des produits
         $totalProduits = 0;
-        
+
         // Formater les données des produits pour la vue
         $produits = $operation->produits->map(function ($op) use (&$totalProduits) {
             // Calcul du sous-total en utilisant prix et quantite
             $sousTotal = $op->prix * $op->quantite;
             $totalProduits += $sousTotal;
-            
+
             // Récupérer le type de produit
             $typeProduit = TypeProduit::find($op->type_produit_id);
-            
+
             return [
                 'id' => $op->id,
                 'produit' => $op->produit,
@@ -568,7 +584,7 @@ class MouvementController extends Controller
                 'caisseDestination',
                 'produits' => function ($query) {
                     $query->where('operation_produits.status', true)
-                          ->with('produit');
+                        ->with('produit');
                 },
                 'depenses' => function ($query) {
                     $query->with('motif');
@@ -579,12 +595,12 @@ class MouvementController extends Controller
 
         // Calculer le total des produits
         $totalProduits = 0;
-        
+
         // Formater les données des produits pour la vue
         $produits_operation = $operation->produits->map(function ($op) use (&$totalProduits) {
             $sousTotal = $op->quantiteAchat * $op->prixAchat;
             $totalProduits += $sousTotal;
-            
+
             return [
                 'id' => $op->id,
                 'produit' => $op->produit,
@@ -691,7 +707,7 @@ class MouvementController extends Controller
         try {
             // Récupérer l'opération existante
             $operation = Operation::findOrFail($id);
-            
+
             // Annuler les effets de l'opération précédente
             // Pour une entrée, réduire les stocks
             if ($operation->typeOperation->nom === 'entrée') {
@@ -701,7 +717,7 @@ class MouvementController extends Controller
                             ->where('departement_id', $operation->departement_destination_id)
                             ->where('societe_id', session('societe')['id'])
                             ->first();
-                        
+
                         if ($stock) {
                             $stock->quantite -= $produit->quantiteAchat;
                             $stock->save();
@@ -717,7 +733,7 @@ class MouvementController extends Controller
                             ->where('departement_id', $operation->departement_source_id)
                             ->where('societe_id', session('societe')['id'])
                             ->first();
-                        
+
                         if ($stock) {
                             $stock->quantite += $produit->quantiteAchat;
                             $stock->save();
@@ -734,18 +750,18 @@ class MouvementController extends Controller
                             ->where('departement_id', $operation->departement_source_id)
                             ->where('societe_id', session('societe')['id'])
                             ->first();
-                        
+
                         if ($stockSource) {
                             $stockSource->quantite += $produit->quantiteAchat;
                             $stockSource->save();
                         }
-                        
+
                         // Réduire le stock destination
                         $stockDestination = Stock::where('produit_id', $produit->produit_id)
                             ->where('departement_id', $operation->departement_destination_id)
                             ->where('societe_id', session('societe')['id'])
                             ->first();
-                        
+
                         if ($stockDestination) {
                             $stockDestination->quantite -= $produit->quantiteAchat;
                             $stockDestination->save();
@@ -759,7 +775,7 @@ class MouvementController extends Controller
             foreach ($request->produits as $produit) {
                 $totalProduits += $produit['quantiteAchat'] * $produit['prixAchat'];
             }
-            
+
             $totalDepenses = 0;
             if ($request->depenses) {
                 foreach ($request->depenses as $depense) {
@@ -801,40 +817,38 @@ class MouvementController extends Controller
                         ]
                     );
                     $stockId = $stock->id;
-                    
+
                     // Mettre à jour le stock
                     $stock->quantite += $produit['quantiteAchat'];
                     $stock->save();
-                }
-                else if ($request->typeOperation['nom'] === 'sortie' && $request->departementSource) {
+                } else if ($request->typeOperation['nom'] === 'sortie' && $request->departementSource) {
                     $stock = Stock::where('produit_id', $produit['produit']['id'])
                         ->where('departement_id', $request->departementSource['id'])
                         ->where('societe_id', session('societe')['id'])
                         ->first();
-                    
+
                     if ($stock) {
                         $stockId = $stock->id;
-                        
+
                         // Mettre à jour le stock
                         $stock->quantite -= $produit['quantiteAchat'];
                         $stock->save();
                     }
-                }
-                else if ($request->typeOperation['nom'] === 'transfert') {
+                } else if ($request->typeOperation['nom'] === 'transfert') {
                     // Réduire le stock source
                     $stockSource = Stock::where('produit_id', $produit['produit']['id'])
                         ->where('departement_id', $request->departementSource['id'])
                         ->where('societe_id', session('societe')['id'])
                         ->first();
-                    
+
                     if ($stockSource) {
                         $stockId = $stockSource->id;
-                        
+
                         // Mettre à jour le stock source
                         $stockSource->quantite -= $produit['quantiteAchat'];
                         $stockSource->save();
                     }
-                    
+
                     // Augmenter le stock destination
                     $stockDestination = Stock::firstOrCreate(
                         [
@@ -847,7 +861,7 @@ class MouvementController extends Controller
                             'status' => true,
                         ]
                     );
-                    
+
                     // Mettre à jour le stock destination
                     $stockDestination->quantite += $produit['quantiteAchat'];
                     $stockDestination->save();
@@ -901,7 +915,7 @@ class MouvementController extends Controller
         try {
             // Récupérer l'opération
             $operation = Operation::with(['produits.produit', 'typeOperation'])->findOrFail($id);
-            
+
             // Annuler les effets du mouvement sur les stocks selon le type d'opération
             if ($operation->typeOperation->nom === 'entrée') {
                 // Pour une entrée, on réduit les quantités
@@ -910,12 +924,12 @@ class MouvementController extends Controller
                         $produit = $operationProduit->produit;
                         $produit->stockGlobal -= $operationProduit->quantite;
                         $produit->save();
-                        
+
                         // Mettre à jour le stock dans le département de destination
                         $stock = Stock::where('produit_id', $produit->id)
                             ->where('departement_id', $operation->departement_destination_id)
                             ->first();
-                            
+
                         if ($stock) {
                             $stock->quantite -= $operationProduit->quantite;
                             $stock->save();
@@ -928,12 +942,12 @@ class MouvementController extends Controller
                     $produit = $operationProduit->produit;
                     $produit->stockGlobal += $operationProduit->quantite;
                     $produit->save();
-                    
+
                     // Mettre à jour le stock dans le département source
                     $stock = Stock::where('produit_id', $produit->id)
                         ->where('departement_id', $operation->departement_source_id)
                         ->first();
-                        
+
                     if ($stock) {
                         $stock->quantite += $operationProduit->quantite;
                         $stock->save();
@@ -946,28 +960,28 @@ class MouvementController extends Controller
                     $stockSource = Stock::where('produit_id', $operationProduit->produit_id)
                         ->where('departement_id', $operation->departement_source_id)
                         ->first();
-                        
+
                     if ($stockSource) {
                         $stockSource->quantite += $operationProduit->quantite;
                         $stockSource->save();
                     }
-                    
+
                     // Mettre à jour le stock dans le département destination (diminuer)
                     $stockDestination = Stock::where('produit_id', $operationProduit->produit_id)
                         ->where('departement_id', $operation->departement_destination_id)
                         ->first();
-                        
+
                     if ($stockDestination) {
                         $stockDestination->quantite -= $operationProduit->quantite;
                         $stockDestination->save();
                     }
                 }
             }
-            
+
             // Marquer l'opération comme supprimée (soft delete) ou la supprimer définitivement
             $operation->status = false;
             $operation->save();
-            
+
             // Vous pouvez également supprimer les enregistrements associés si nécessaire
             // $operation->produits()->delete();
             // $operation->depenses()->delete();
@@ -995,18 +1009,18 @@ class MouvementController extends Controller
             // Récupérer l'opération à annuler
             $operation = Operation::with(['produits.produit', 'typeOperation', 'fournisseur', 'departementSource', 'departementDestination'])
                 ->findOrFail($id);
-            
+
             if (!$operation->status) {
                 return redirect()->back()->withErrors(['error' => 'Ce mouvement a déjà été annulé ou supprimé.']);
             }
-            
+
             // Créer une nouvelle opération d'annulation
             $annulation = new Operation();
             $annulation->date = Carbon::now();
             $annulation->description = 'Annulation du mouvement #' . $operation->id . ' du ' . Carbon::parse($operation->date)->format('d/m/Y');
             $annulation->societe_id = session('societe')['id'];
             $annulation->status = true;
-            
+
             // Définir les relations selon le type d'opération original
             if ($operation->typeOperation->nom === 'entrée') {
                 // Pour annuler une entrée, on crée une sortie
@@ -1027,15 +1041,15 @@ class MouvementController extends Controller
                 $annulation->departement_source_id = $operation->departement_destination_id;
                 $annulation->departement_destination_id = $operation->departement_source_id;
             }
-            
+
             $annulation->save();
-            
+
             // Créer les produits associés à l'annulation
             $totalAnnulation = 0;
             foreach ($operation->produits as $operationProduit) {
                 if ($operationProduit->status) { // Seulement si le produit a été reçu/sorti/transféré
                     $produit = $operationProduit->produit;
-                    
+
                     // Créer l'opération produit pour l'annulation
                     $annulationProduit = new OperationProduit();
                     $annulationProduit->produit_id = $operationProduit->produit_id;
@@ -1046,19 +1060,19 @@ class MouvementController extends Controller
                     $annulationProduit->societe_id = session('societe')['id'];
                     $annulationProduit->status = true; // L'annulation est appliquée immédiatement
                     $annulationProduit->save();
-                    
+
                     $totalAnnulation += $operationProduit->quantite * $operationProduit->prixAchat;
-                    
+
                     // Mettre à jour les stocks selon le type d'opération
                     if ($operation->typeOperation->nom === 'entrée') {
                         // Annuler une entrée = réduire le stock
                         $produit->stockGlobal -= $operationProduit->quantite;
                         $produit->save();
-                        
+
                         $stock = Stock::where('produit_id', $produit->id)
                             ->where('departement_id', $operation->departement_destination_id)
                             ->first();
-                            
+
                         if ($stock) {
                             $stock->quantite -= $operationProduit->quantite;
                             $stock->save();
@@ -1067,11 +1081,11 @@ class MouvementController extends Controller
                         // Annuler une sortie = augmenter le stock
                         $produit->stockGlobal += $operationProduit->quantite;
                         $produit->save();
-                        
+
                         $stock = Stock::where('produit_id', $produit->id)
                             ->where('departement_id', $operation->departement_source_id)
                             ->first();
-                            
+
                         if ($stock) {
                             $stock->quantite += $operationProduit->quantite;
                             $stock->save();
@@ -1081,16 +1095,16 @@ class MouvementController extends Controller
                         $stockSource = Stock::where('produit_id', $produit->id)
                             ->where('departement_id', $operation->departement_destination_id)
                             ->first();
-                            
+
                         if ($stockSource) {
                             $stockSource->quantite -= $operationProduit->quantite;
                             $stockSource->save();
                         }
-                        
+
                         $stockDestination = Stock::where('produit_id', $produit->id)
                             ->where('departement_id', $operation->departement_source_id)
                             ->first();
-                            
+
                         if ($stockDestination) {
                             $stockDestination->quantite += $operationProduit->quantite;
                             $stockDestination->save();
@@ -1098,11 +1112,11 @@ class MouvementController extends Controller
                     }
                 }
             }
-            
+
             // Mettre à jour le montant total de l'annulation
             $annulation->montant = $totalAnnulation;
             $annulation->save();
-            
+
             // Marquer l'opération originale comme annulée
             $operation->status = false;
             $operation->description = $operation->description . ' (Annulé le ' . Carbon::now()->format('d/m/Y') . ')';
@@ -1125,7 +1139,7 @@ class MouvementController extends Controller
     public function dashboard($userId)
     {
         // Récupérer les données pour le tableau de bord
-        
+
         // 1. Nombre total de mouvements par type (entrée, sortie, transfert)
         $mouvementsParType = DB::table('operations')
             ->join('type_operations', 'operations.type_operation_id', '=', 'type_operations.id')
@@ -1134,7 +1148,7 @@ class MouvementController extends Controller
             ->select('type_operations.nom as type', DB::raw('count(*) as total'))
             ->groupBy('type_operations.nom')
             ->get();
-            
+
         // 2. Valeur totale des mouvements par mois (6 derniers mois)
         $dateDebut = Carbon::now()->subMonths(5)->startOfMonth();
         $mouvementsParMois = DB::table('operations')
@@ -1150,18 +1164,18 @@ class MouvementController extends Controller
             ->orderBy('annee')
             ->orderBy('mois')
             ->get();
-            
+
         // Formater les données pour le graphique
         $moisLabels = [];
         $montantData = [];
-        
+
         // Créer un tableau avec tous les mois des 6 derniers mois
         for ($i = 5; $i >= 0; $i--) {
             $date = Carbon::now()->subMonths($i);
             $moisLabels[] = $date->format('M Y');
             $montantData[] = 0; // Valeur par défaut
         }
-        
+
         // Remplir avec les données réelles
         foreach ($mouvementsParMois as $mouvement) {
             $date = Carbon::createFromDate($mouvement->annee, $mouvement->mois, 1);
@@ -1170,7 +1184,7 @@ class MouvementController extends Controller
                 $montantData[$index] = $mouvement->montant_total;
             }
         }
-        
+
         // 3. Top 5 des produits les plus mouvementés
         $topProduits = DB::table('operation_produits')
             ->join('produits', 'operation_produits.produit_id', '=', 'produits.id')
@@ -1187,7 +1201,7 @@ class MouvementController extends Controller
             ->orderBy('quantite_totale', 'desc')
             ->limit(5)
             ->get();
-            
+
         // 4. Derniers mouvements (10 derniers)
         $derniersMouvements = Operation::with(['typeOperation', 'fournisseur', 'departementSource', 'departementDestination'])
             ->where('societe_id', session('societe')['id'])
@@ -1195,7 +1209,7 @@ class MouvementController extends Controller
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get();
-            
+
         // 5. Statistiques générales
         $statsGenerales = [
             'total_mouvements' => Operation::where('societe_id', session('societe')['id'])->where('status', true)->count(),
@@ -1211,7 +1225,7 @@ class MouvementController extends Controller
                 ->whereMonth('date', Carbon::now()->month)
                 ->sum('montant'),
         ];
-        
+
         // 6. Mouvements par département
         $mouvementsParDepartement = DB::table('operations')
             ->leftJoin('departements as source', 'operations.departement_source_id', '=', 'source.id')
@@ -1228,7 +1242,7 @@ class MouvementController extends Controller
             )
             ->groupBy('type_operations.nom', 'source.nom', 'dest.nom')
             ->get();
-        
+
         return Inertia::render('Admin/Stock/Mouvement/Dashboard', [
             'mouvementsParType' => $mouvementsParType,
             'moisLabels' => $moisLabels,

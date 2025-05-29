@@ -33,29 +33,29 @@ class ProduitController extends Controller
         $typeProduitFilter = $request->input('type_produit_id');
         $stockFilter = $request->input('stock_filter'); // 'all', 'low', 'out'
         $departementFilter = $request->input('departement_id');
-        
+
         // Construire la requête de base
         $query = Produit::where('status', true)
             ->where(function ($query) {
                 $query->where("societe_id", session('societe')['id'])->orWhere("societe_id", null);
             });
-            
+
         // Appliquer la recherche si elle est fournie
         if (!empty($search)) {
             $query->where(function ($q) use ($search) {
                 $q->where('nom', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhereRelation('categorie', 'libelle', 'like', "%{$search}%")
-                  ->orWhere('prixAchat', 'like', "%{$search}%")
-                  ->orWhere('prixVente', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhereRelation('categorie', 'libelle', 'like', "%{$search}%")
+                    ->orWhere('prixAchat', 'like', "%{$search}%")
+                    ->orWhere('prixVente', 'like', "%{$search}%");
             });
         }
-        
+
         // Filtre par catégorie
         if (!empty($categorieFilter)) {
             $query->where('categorie_id', $categorieFilter);
         }
-        
+
         // Filtre par niveau de stock
         if (!empty($stockFilter)) {
             switch ($stockFilter) {
@@ -65,22 +65,30 @@ class ProduitController extends Controller
                 case 'out':
                     $query->where('stockGlobal', '<=', 0);
                     break;
-                // 'all' n'a pas besoin de filtre spécifique
+                    // 'all' n'a pas besoin de filtre spécifique
             }
         }
-        
+
         // Filtre par département (affecte les produits qui ont du stock dans ce département)
         if (!empty($departementFilter)) {
-            $query->whereHas('stocks', function($q) use ($departementFilter) {
+            $query->whereHas('stocks', function ($q) use ($departementFilter) {
                 $q->where('departement_id', $departementFilter);
             });
         }
-        
+
         // Appliquer le tri
         $query->orderBy($sortField, $sortDirection);
-        
+
         // Exécuter la requête avec pagination
-        $produits = $query->with('categorie', 'fournisseurPrincipal', 'uniteMesure', 'devise')
+        $produits = $query->with([
+            'categorie',
+            'fournisseurPrincipal',
+            'uniteMesure',
+            'devise',
+            'stocks' => function ($query) {
+                $query->where('status', true);
+            }
+        ])
             ->paginate($perPage);
 
         // Récupérer les types de produits et catégories pour les filtres
@@ -110,56 +118,56 @@ class ProduitController extends Controller
             ->where(function ($query) {
                 $query->where("societe_id", session('societe')['id'])->orWhere("societe_id", null);
             });
-            
+
         // Appliquer les filtres aux statistiques
         if (!empty($categorieFilter)) {
             $baseStatsQuery->where('categorie_id', $categorieFilter);
         }
-        
+
         // Statistiques globales
         $totalProduits = clone $baseStatsQuery;
         $totalProduits = $totalProduits->count();
-        
+
         $stockCritique = clone $baseStatsQuery;
         $stockCritique = $stockCritique->whereRaw('stockGlobal <= stockCritique AND stockGlobal > 0')->count();
-        
+
         $stockEpuise = clone $baseStatsQuery;
         $stockEpuise = $stockEpuise->where('stockGlobal', '<=', 0)->count();
-        
+
         $valeurTotaleStock = clone $baseStatsQuery;
         $valeurTotaleStock = $valeurTotaleStock->sum(DB::raw('stockGlobal * prixAchat'));
-        
+
         // Statistiques par département si un département est sélectionné
         $departementStats = null;
         if (!empty($departementFilter)) {
             $departement = Departement::find($departementFilter);
-            
+
             $produitsDepartement = clone $baseStatsQuery;
-            $produitsDepartement = $produitsDepartement->whereHas('stocks', function($q) use ($departementFilter) {
+            $produitsDepartement = $produitsDepartement->whereHas('stocks', function ($q) use ($departementFilter) {
                 $q->where('departement_id', $departementFilter);
             })->count();
-            
+
             $stockCritiqueDepartement = clone $baseStatsQuery;
             $stockCritiqueDepartement = $stockCritiqueDepartement
-                ->whereHas('stocks', function($q) use ($departementFilter) {
+                ->whereHas('stocks', function ($q) use ($departementFilter) {
                     $q->where('departement_id', $departementFilter)
-                      ->whereRaw('quantite <= produits.stockCritique AND quantite > 0');
+                        ->whereRaw('quantite <= produits.stockCritique AND quantite > 0');
                 })
                 ->count();
-            
+
             $stockEpuiseDepartement = clone $baseStatsQuery;
             $stockEpuiseDepartement = $stockEpuiseDepartement
-                ->whereHas('stocks', function($q) use ($departementFilter) {
+                ->whereHas('stocks', function ($q) use ($departementFilter) {
                     $q->where('departement_id', $departementFilter)
-                      ->where('quantite', '<=', 0);
+                        ->where('quantite', '<=', 0);
                 })
                 ->count();
-            
+
             $valeurTotaleStockDepartement = DB::table('stocks')
                 ->where('departement_id', $departementFilter)
                 ->join('produits', 'stocks.produit_id', '=', 'produits.id')
                 ->sum(DB::raw('stocks.quantite * produits.prixAchat'));
-            
+
             $departementStats = [
                 'nom' => $departement->nom,
                 'total_produits' => $produitsDepartement,
@@ -168,7 +176,7 @@ class ProduitController extends Controller
                 'valeur_totale_stock' => $valeurTotaleStockDepartement
             ];
         }
-        
+
         // Préparer les statistiques à envoyer à la vue
         $stats = [
             'total_produits' => $totalProduits,
@@ -273,7 +281,7 @@ class ProduitController extends Controller
                 "societe_id" => session('societe')['id'],
             ]);
 
-            $departement=Departement::where("nom","principal")->where("societe_id",session('societe')['id'])->first();
+            $departement = Departement::where("nom", "principal")->where("societe_id", session('societe')['id'])->first();
 
             // Création du stock initial
             Stock::create([
@@ -443,29 +451,29 @@ class ProduitController extends Controller
         $categorieFilter = $request->input('categorie_id');
         $stockFilter = $request->input('stock_filter'); // 'all', 'low', 'out'
         $departementFilter = $request->input('departement_id');
-        
+
         // Construire la requête de base
         $query = Produit::where('status', true)
             ->where(function ($query) {
                 $query->where("societe_id", session('societe')['id'])->orWhere("societe_id", null);
             });
-            
+
         // Appliquer la recherche si elle est fournie
         if (!empty($search)) {
             $query->where(function ($q) use ($search) {
                 $q->where('nom', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhereRelation('categorie', 'libelle', 'like', "%{$search}%")
-                  ->orWhere('prixAchat', 'like', "%{$search}%")
-                  ->orWhere('prixVente', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhereRelation('categorie', 'libelle', 'like', "%{$search}%")
+                    ->orWhere('prixAchat', 'like', "%{$search}%")
+                    ->orWhere('prixVente', 'like', "%{$search}%");
             });
         }
-        
+
         // Filtre par catégorie
         if (!empty($categorieFilter)) {
             $query->where('categorie_id', $categorieFilter);
         }
-        
+
         // Filtre par niveau de stock
         if (!empty($stockFilter)) {
             switch ($stockFilter) {
@@ -475,24 +483,26 @@ class ProduitController extends Controller
                 case 'out':
                     $query->where('stockGlobal', '<=', 0);
                     break;
-                // 'all' n'a pas besoin de filtre spécifique
+                    // 'all' n'a pas besoin de filtre spécifique
             }
         }
-        
+
         // Filtre par département (affecte les produits qui ont du stock dans ce département)
         if (!empty($departementFilter)) {
-            $query->whereHas('stocks', function($q) use ($departementFilter) {
+            $query->whereHas('stocks', function ($q) use ($departementFilter) {
                 $q->where('departement_id', $departementFilter);
             });
         }
-        
+
         // Appliquer le tri
         $query->orderBy($sortField, $sortDirection);
-        
+
         // Exécuter la requête avec pagination
-        $produits = $query->with('categorie', 'fournisseurPrincipal', 'uniteMesure', 'devise')
+        $produits = $query->with(['categorie', 'fournisseurPrincipal', 'uniteMesure', 'devise', 'stocks' => function($query) {
+                $query->where('status', true);
+            }])
             ->paginate($perPage);
-            
+
         return response()->json($produits);
     }
 
@@ -507,7 +517,7 @@ class ProduitController extends Controller
             })
             ->with('categorie', 'fournisseurPrincipal')
             ->get();
-            
+
 
         $headers = [
             'Content-Type' => 'text/csv',
@@ -520,9 +530,17 @@ class ProduitController extends Controller
         $callback = function () use ($produits) {
             $file = fopen('php://output', 'w');
             fputcsv($file, [
-                'ID', 'Nom', 'Description', 'Stock Global', 'Stock Critique',
-                'Prix Achat', 'Prix Vente', 'Quantité Ensemble', 'Prix Ensemble',
-                'Catégorie', 'Fournisseur Principal'
+                'ID',
+                'Nom',
+                'Description',
+                'Stock Global',
+                'Stock Critique',
+                'Prix Achat',
+                'Prix Vente',
+                'Quantité Ensemble',
+                'Prix Ensemble',
+                'Catégorie',
+                'Fournisseur Principal'
             ]);
 
             foreach ($produits as $produit) {

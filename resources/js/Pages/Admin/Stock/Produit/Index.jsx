@@ -43,6 +43,7 @@ function Index({ auth, errors, produits, typeProduits, categories, departements,
     const [categorieFilter, setCategorieFilter] = useState(filters?.categorie_id || '');
     const [typeProduitFilter, setTypeProduitFilter] = useState(filters?.type_produit_id || '');
     const [stockFilter, setStockFilter] = useState(filters?.stock_filter || 'all');
+    // Par défaut, sélectionner "Tous les départements" (valeur vide)
     const [departementFilter, setDepartementFilter] = useState(filters?.departement_id || '');
 
     // Utiliser directement les données fournies par le contrôleur
@@ -53,10 +54,16 @@ function Index({ auth, errors, produits, typeProduits, categories, departements,
         router.get(route('admin.stock.produit.index', { userId: auth.user.id }), {
             page: updatedPagination.pageIndex + 1,
             per_page: updatedPagination.pageSize,
+            // Inclure tous les filtres actuels pour maintenir la cohérence
+            search: filters?.search || '',
+            categorie_id: categorieFilter,
+            type_produit_id: typeProduitFilter,
+            stock_filter: stockFilter,
+            departement_id: departementFilter,
         }, {
             preserveState: true,
             preserveScroll: true,
-            only: ['produits'],
+            only: ['produits', 'stats', 'filters'],
         });
     };
 
@@ -72,12 +79,13 @@ function Index({ auth, errors, produits, typeProduits, categories, departements,
         }, {
             preserveState: true,
             preserveScroll: true,
-            only: ['produits'],
+            only: ['produits', 'stats', 'filters'],
         });
     };
 
     // Fonction pour gérer les changements de filtres
     const handleFilterChange = (filterType, value) => {
+        // Mettre à jour l'état local immédiatement
         switch (filterType) {
             case 'categorie':
                 setCategorieFilter(value);
@@ -95,7 +103,7 @@ function Index({ auth, errors, produits, typeProduits, categories, departements,
                 break;
         }
 
-        // Appliquer les filtres
+        // Appliquer les filtres via Inertia (approche SPA)
         router.get(route('admin.stock.produit.index', { userId: auth.user.id }), {
             search: filters?.search || '',
             page: 1, // Réinitialiser à la première page lors d'un changement de filtre
@@ -106,7 +114,8 @@ function Index({ auth, errors, produits, typeProduits, categories, departements,
         }, {
             preserveState: true,
             preserveScroll: true,
-            only: ['produits', 'stats'],
+            // Ne pas limiter les données mises à jour pour s'assurer que tout est rechargé
+            only: ['produits', 'stats', 'filters'],
         });
     };
 
@@ -117,6 +126,7 @@ function Index({ auth, errors, produits, typeProduits, categories, departements,
                 sort_field: updatedSorting[0].id,
                 sort_direction: updatedSorting[0].desc ? 'desc' : 'asc',
                 page: pagination.pageIndex + 1,
+                search: filters?.search || '',
                 categorie_id: categorieFilter,
                 type_produit_id: typeProduitFilter,
                 stock_filter: stockFilter,
@@ -124,7 +134,7 @@ function Index({ auth, errors, produits, typeProduits, categories, departements,
             }, {
                 preserveState: true,
                 preserveScroll: true,
-                only: ['produits'],
+                only: ['produits', 'stats', 'filters'],
             });
         }
     }
@@ -258,12 +268,57 @@ function Index({ auth, errors, produits, typeProduits, categories, departements,
             },
 
             {
-                accessorKey: 'mode_achat',
-                header: 'Mode de vente',
+                accessorKey: 'stock',
+                header: 'Stock',
                 //size: 50,
-                Cell: ({ row }) => (
-                    row.original.quantiteEnsemble > 0 ? 'Ensemble' : 'Unité'
-                )
+                Cell: ({ row }) => {
+                    // Utiliser forceUpdate pour forcer le re-rendu de cette cellule
+                    // eslint-disable-next-line no-unused-vars
+                    const update = forceUpdate;
+                    
+                    // Si un département est sélectionné, afficher le stock de ce département
+                    if (departementFilter) {
+                        // Vérifier si les stocks sont disponibles
+                        if (!row.original.stocks || row.original.stocks.length === 0) {
+                            return (
+                                <div className="font-bold text-gray-500">
+                                    0
+                                </div>
+                            );
+                        }
+                        
+                        const stockDepartement = row.original.stocks.find(s => s.departement_id === parseInt(departementFilter));
+                        // Si le stock pour ce département existe, afficher sa quantité
+                        if (stockDepartement) {
+                            return (
+                                <div className={`font-bold ${stockDepartement.quantite <= row.original.stockCritique ? 'text-red-500' : 'text-green-500'}`}>
+                                    {formatNumber(stockDepartement.quantite || 0)}
+                                </div>
+                            );
+                        } else {
+                            // Si aucun stock n'existe pour ce département
+                            return (
+                                <div className="font-bold text-gray-500">
+                                    0
+                                </div>
+                            );
+                        }
+                    } else {
+                        // Si aucun département n'est sélectionné, calculer la somme de tous les stocks
+                        let totalStock = 0;
+                        
+                        // Si les stocks sont disponibles, calculer la somme
+                        if (row.original.stocks && row.original.stocks.length > 0) {
+                            totalStock = row.original.stocks.reduce((sum, stock) => sum + (stock.quantite || 0), 0);
+                        }
+                        
+                        return (
+                            <div className={`font-bold ${totalStock <= row.original.stockCritique ? 'text-red-500' : 'text-green-500'}`}>
+                                {formatNumber(totalStock)}
+                            </div>
+                        );
+                    }
+                }
             },
             {
                 accessorKey: 'prixAchat', //access nested data with dot notation
@@ -309,6 +364,7 @@ function Index({ auth, errors, produits, typeProduits, categories, departements,
                     row.original.categorie?.libelle
                 )
             },
+            
             /* {
                 accessorKey: 'fournisseurPrincipal',
                 header: 'Fournisseur principal',
@@ -365,6 +421,25 @@ function Index({ auth, errors, produits, typeProduits, categories, departements,
         [],
     );
 
+
+    // Effet pour forcer la mise à jour de l'affichage lorsque le département change
+    const [forceUpdate, setForceUpdate] = useState(0);
+    
+    useEffect(() => {
+        // Forcer un re-rendu du composant lorsque le département change
+        setForceUpdate(prev => prev + 1);
+        
+        // Déboguer les données de stock
+        if (produits.data && produits.data.length > 0) {
+            console.log('Données produits:', produits.data[0]);
+            console.log('Stocks disponibles:', produits.data[0].stocks);
+            if (departementFilter) {
+                console.log('Département sélectionné:', departementFilter);
+                const stockDepartement = produits.data[0].stocks?.find(s => s.departement_id === parseInt(departementFilter));
+                console.log('Stock pour ce département:', stockDepartement);
+            }
+        }
+    }, [produits.data, departementFilter]);
 
     const table = useMaterialReactTable({
         columns,
@@ -705,8 +780,9 @@ function Index({ auth, errors, produits, typeProduits, categories, departements,
                                     value={departementFilter}
                                     onChange={(e) => handleFilterChange('departement', e.target.value)}
                                     label="Département"
+                                    displayEmpty
                                 >
-                                    <MenuItem value="">Tous les départements</MenuItem>
+                                    <MenuItem value="" style={{ fontWeight: 'bold' }}>Tous les départements</MenuItem>
                                     {departements?.map((departement) => (
                                         <MenuItem key={departement.id} value={departement.id}>{departement.nom}</MenuItem>
                                     ))}
